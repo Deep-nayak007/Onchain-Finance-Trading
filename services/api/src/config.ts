@@ -34,6 +34,8 @@ export const ConfigSchema = z.object({
   PRIVY_APP_SECRET: opt,
   NANSEN_API_KEY: opt,
   NANSEN_CACHE_SECONDS: num(900),
+  /** Each netflow call costs 5 credits on the free plan. */
+  NANSEN_DAILY_CALLS: num(10),
   GATEWAY_URL: opt,
   ENVIO_URL: opt,
   TENDERLY_ACCESS_KEY: opt,

@@ -129,6 +129,13 @@ describe("intent proposal", () => {
     expect(fallbackIntent(input(null)).action).toBe("HOLD");
   });
 
+  it("HOLD without venue/market/side is accepted; a trade without them is not", async () => {
+    const p = await proposeIntent(new FakeChat([JSON.stringify({ action: "HOLD", venue: "", market: "", rationale: "flat" })]), "m", input(0.1));
+    expect(p.model).toBe("m");
+    expect(p.intent).toMatchObject({ action: "HOLD", venue: "PERPL", market: "MON-PERP", sizeUsd: "0" });
+    expect(IntentProposal.safeParse({ action: "OPEN", sizeUsd: "5", leverage: 1, confidence: 0.9, rationale: "x" }).success).toBe(false);
+  });
+
   it("IntentProposal rejects out-of-range confidence", () => {
     expect(IntentProposal.safeParse(JSON.parse(intentJson({ confidence: 2 }))).success).toBe(false);
   });

@@ -68,16 +68,17 @@ export class Engine {
   }
 
   // ---------------- live persona, per user ----------------
-  async tickUser(account: Address): Promise<TickResult> {
+  /** Reads the Rules knot + signals for one user. Returns a stop/skip result, or the decision context. */
+  private async context(account: Address) {
     const user = this.d.store.getUser(account);
-    if (!user || user.state !== "RUNNING") return { kind: "stopped", reason: "not running" };
+    if (!user || user.state !== "RUNNING") return { stop: { kind: "stopped", reason: "not running" } as TickResult };
 
     let mandate: MandateView | null = null;
     let slack: SlackGrant | null = null;
     if (this.d.registry) {
       if (!(await this.d.registry.isActive(account))) {
         this.d.store.setUserState(account, "PAUSED");
-        return { kind: "stopped", reason: "mandate inactive onchain" };
+        return { stop: { kind: "stopped", reason: "mandate inactive onchain" } as TickResult };
       }
       [mandate, slack] = await Promise.all([this.d.registry.getMandate(account), this.d.registry.activeSlack(account)]);
     }
@@ -87,15 +88,8 @@ export class Engine {
     const { snapshot, risk } = await gatherSnapshot(this.d, { account, market, now });
     if (!risk) {
       this.d.store.recordTick(account, undefined);
-      return { kind: "skipped", reason: "risk unavailable (fail closed)" };
+      return { stop: { kind: "skipped", reason: "risk unavailable (fail closed)" } as TickResult };
     }
-    const key = `user:${account.toLowerCase()}`;
-    if (!changedMeaningfully(this.lastSnapshot.get(key), snapshot)) {
-      this.d.store.recordTick(account, undefined);
-      return { kind: "skipped", reason: "no meaningful change" };
-    }
-    this.lastSnapshot.set(key, snapshot);
-
     const state = {
       now,
       paused: false,
@@ -107,19 +101,45 @@ export class Engine {
       lastTradeAt: this.d.store.lastExecutedAt(account),
       smartMoneyScore: snapshot.smartMoneyScore,
     };
+    return { ctx: { user, policy, slack, snapshot, state, now } };
+  }
+
+  async tickUser(account: Address): Promise<TickResult> {
+    const c = await this.context(account);
+    if (!c.ctx) return c.stop;
+    const { user, policy, slack, snapshot, state, now } = c.ctx;
+    const key = `user:${account.toLowerCase()}`;
+    if (!changedMeaningfully(this.lastSnapshot.get(key), snapshot)) {
+      this.d.store.recordTick(account, undefined);
+      return { kind: "skipped", reason: "no meaningful change" };
+    }
+    this.lastSnapshot.set(key, snapshot);
+
     const limits = effectiveLimits(policy, slack, state);
     const proposal = await proposeIntent(this.d.chat, this.d.modelTick, { persona: user.persona, policy, limits, snapshot, now });
     if (proposal.llmError) this.log(`[tick ${short(account)}] LLM fallback: ${proposal.llmError}`);
-    const decision = checkIntent(policy, slack, state, proposal.intent);
+    return this.decide(account, c.ctx, proposal.intent, proposal.model);
+  }
+
+  /** Dev/demo path: submit a hand-written intent through the exact same checker → receipt → slack path. */
+  async submitIntent(account: Address, intent: Intent, model: string): Promise<TickResult> {
+    const c = await this.context(account);
+    if (!c.ctx) return c.stop;
+    return this.decide(account, c.ctx, intent, model);
+  }
+
+  private async decide(account: Address, ctx: NonNullable<Awaited<ReturnType<Engine["context"]>>["ctx"]>, intent: Intent, model: string): Promise<TickResult> {
+    const { user, policy, slack, snapshot, state, now } = ctx;
+    const decision = checkIntent(policy, slack, state, intent);
     this.d.store.recordTick(account, decision);
-    if (proposal.intent.action === "HOLD") return { kind: "hold", intent: proposal.intent, model: proposal.model };
+    if (intent.action === "HOLD") return { kind: "hold", intent, model };
 
-    const result = await this.executeAndReceipt({ account, persona: user.persona, intent: proposal.intent, decision, snapshot, model: proposal.model });
+    const result = await this.executeAndReceipt({ account, persona: user.persona, intent, decision, snapshot, model });
 
-    if (!decision.allowed && shouldAskForSlack(decision, proposal.intent, livePending(this.d.store, account, now))) {
-      const req = createSlackRequest({ account, persona: user.persona, policy, intent: proposal.intent, decision, why: whyChips(snapshot), now });
+    if (!decision.allowed && shouldAskForSlack(decision, intent, livePending(this.d.store, account, now))) {
+      const req = createSlackRequest({ account, persona: user.persona, policy, intent, decision, why: whyChips(snapshot), now });
       if (req) {
-        this.d.store.saveSlack(req, { intent: proposal.intent, snapshot, model: proposal.model, decidedAt: now });
+        this.d.store.saveSlack(req, { intent, snapshot, model, decidedAt: now });
         await this.d.pusher.send(account, `${personaOf(user.persona).name} is asking for more leash`, humanAsk(req), { type: "slack", id: req.id }).catch(() => 0);
         return { ...result, slackRequestId: req.id };
       }

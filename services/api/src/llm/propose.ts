@@ -25,7 +25,7 @@ const usd = z.union([z.string(), z.number()]).transform((v, ctx) => {
   return s;
 });
 
-export const IntentProposal = z.object({
+const IntentProposalStrict = z.object({
   action: IntentAction,
   venue: Venue,
   market: z.string().min(1),
@@ -36,7 +36,26 @@ export const IntentProposal = z.object({
   rationale: z.string().min(1).max(500),
   signals: z.array(Signal).max(8).default([]),
 });
-export type IntentProposal = z.infer<typeof IntentProposal>;
+
+/** HOLD needs no venue/market/side (models often omit them); fill safe defaults for HOLD only. Trades stay strict. */
+export function intentProposalSchema(defaultMarket = "MON-PERP") {
+  return z.preprocess((v) => {
+    if (!v || typeof v !== "object" || (v as { action?: unknown }).action !== "HOLD") return v;
+    const o = v as Record<string, unknown>;
+    return {
+      venue: "PERPL",
+      market: defaultMarket,
+      side: "LONG",
+      sizeUsd: "0",
+      leverage: 0,
+      confidence: 0,
+      rationale: "Holding: nothing changed enough to act.",
+      ...Object.fromEntries(Object.entries(o).filter(([, x]) => x !== null && x !== "")),
+    };
+  }, IntentProposalStrict);
+}
+export const IntentProposal = intentProposalSchema();
+export type IntentProposal = z.infer<typeof IntentProposalStrict>;
 
 export type ProposeInput = {
   persona: PersonaId;
@@ -91,7 +110,8 @@ export function fallbackIntent(input: ProposeInput): Intent {
 
 export async function proposeIntent(chat: ChatJson | null, model: string, input: ProposeInput): Promise<Proposal> {
   try {
-    const { data } = await completeJson(chat, IntentProposal, { model, system: personaSystemPrompt(input.persona), user: userPrompt(input) });
+    const market = input.policy.markets.find((m) => m.endsWith("-PERP")) ?? input.policy.markets[0];
+    const { data } = await completeJson(chat, intentProposalSchema(market), { model, system: personaSystemPrompt(input.persona), user: userPrompt(input) });
     return { intent: toIntent(data, input), model };
   } catch (e) {
     const msg = e instanceof LlmError ? `${e.kind}: ${e.message}` : (e as Error).message;

@@ -74,16 +74,16 @@ const usdText = (s: string) => `$${fromUsd6(toUsd6(s))}`;
 
 export function leashCard(p: Policy, persona: PersonaId): string[] {
   const name = PERSONA_DEFS[persona].name;
-  const lines = [
-    `${name} may trade ${p.markets.join(" and ")} only.`,
+  const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? "" : "s"}`;
+  const kuru = toUsd6(p.sleeveUsd) > 0n ? ` (up to ${usdText(p.sleeveUsd)} on Kuru spot to hedge)` : "";
+  return [
+    `${name} may trade ${p.markets.join(" and ")} only${kuru}.`,
     `Each trade is at most ${usdText(p.maxNotionalUsd)} with up to ${p.maxLeverage}x leverage; never more than ${usdText(p.maxTotalExposureUsd)} open at once.`,
     `If you're down ${p.maxWeeklyLossPct}% this week, trading stops until next week.`,
-    `At most ${p.maxTradesPerHour} trades an hour, and at least ${Math.round(p.cooldownSec / 60)} min between trades.`,
+    `At most ${plural(p.maxTradesPerHour, "trade")} an hour, with at least ${plural(Math.round(p.cooldownSec / 60), "minute")} between trades.`,
     p.requireSmartMoneyAgreement ? `${name} only opens a trade when smart money (Nansen) agrees.` : `${name} acts on its own signals, and only when confident (≥ ${Math.round(p.minConfidence * 100)}%).`,
+    "It can never withdraw your money. You can pull the leash any time.",
   ];
-  if (toUsd6(p.sleeveUsd) > 0n) lines.push(`Up to ${usdText(p.sleeveUsd)} can be swapped on Kuru to hedge.`);
-  lines.push("It can never withdraw your money. You can pull the leash any time.");
-  return lines.slice(0, 6);
 }
 
 export async function compilePolicy(chat: ChatJson | null, model: string, text: string, persona: PersonaId): Promise<CompileResult> {

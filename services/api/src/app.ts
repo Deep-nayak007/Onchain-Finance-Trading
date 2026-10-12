@@ -37,7 +37,7 @@ export function buildApp(cfg: Config, opts: { store?: Store; startLoops?: boolea
   });
 
   const gateway = makeGateway(cfg);
-  const nansen = new Nansen(store, { apiKey: cfg.NANSEN_API_KEY, cacheSeconds: cfg.NANSEN_CACHE_SECONDS });
+  const nansen = new Nansen(store, { apiKey: cfg.NANSEN_API_KEY, cacheSeconds: cfg.NANSEN_CACHE_SECONDS, dailyBudget: cfg.NANSEN_DAILY_CALLS });
   const envio = new Envio(cfg.ENVIO_URL);
   const chat = makeChat(cfg);
   const pusher = new ExpoPusher(store);

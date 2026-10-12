@@ -42,8 +42,10 @@ describe("Privy policy: user×trader wallet (default deny)", () => {
     expect(evaluate(p, { chainId: 10143, to: RECEIPT_LOG, value: 0n, functionName: "logShadow" })).toBe("ALLOW");
     expect(evaluate(p, { chainId: 10143, to: RECEIPT_LOG, value: 0n, functionName: "logReceipt" })).toBe("DENY");
   });
-  it("policy JSON uses Privy's documented shape", () => {
+  it("policy JSON uses Privy's documented shape (names < 50 chars)", () => {
     expect(policy).toMatchObject({ version: "1.0", chain_type: "ethereum" });
+    expect(policy.name.length).toBeLessThan(50);
+    for (const r of policy.rules) expect(r.name.length).toBeLessThan(50);
     for (const r of policy.rules) for (const c of r.conditions) expect(["ethereum_transaction", "ethereum_calldata"]).toContain((c as { field_source: string }).field_source);
   });
 });

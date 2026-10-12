@@ -45,12 +45,14 @@ export class Nansen {
 
   /** Cached signal; refetches at most once per cache window and never beyond the daily budget. */
   async get(): Promise<NansenSignal | null> {
-    const cached = this.store.getKv<NansenSignal | null>(CACHE_KEY, this.opts.cacheSeconds * 1000);
-    if (cached !== null) return cached;
+    // Wrapped so an empty answer ("no MON rows") is a cache hit too, not a reason to refetch.
+    const cached = this.store.getKv<{ signal: NansenSignal | null }>(CACHE_KEY, this.opts.cacheSeconds * 1000);
+    if (cached) return cached.signal;
     if (!this.opts.apiKey) return null;
-    const budget = this.opts.dailyBudget ?? 24;
+    const stale = () => this.store.getKv<{ signal: NansenSignal | null }>(CACHE_KEY, 86_400_000)?.signal ?? null;
+    const budget = this.opts.dailyBudget ?? 10;
     const used = this.store.getKv<number>(BUDGET_KEY(), 86_400_000) ?? 0;
-    if (used >= budget) return this.store.getKv<NansenSignal | null>(CACHE_KEY, 86_400_000);
+    if (used >= budget) return stale();
     this.store.setKv(BUDGET_KEY(), used + 1);
 
     try {
@@ -77,11 +79,11 @@ export class Nansen {
             traderCount: sum(rows, "trader_count"),
           }
         : null;
-      this.store.setKv(CACHE_KEY, signal);
+      this.store.setKv(CACHE_KEY, { signal });
       return signal;
     } catch {
       // Serve the last good value (up to a day old) rather than nothing.
-      return this.store.getKv<NansenSignal | null>(CACHE_KEY, 86_400_000);
+      return stale();
     }
   }
 }

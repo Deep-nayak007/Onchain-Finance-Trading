@@ -39,6 +39,9 @@ const fnAbi = (name: string) => receiptLogAbi.filter((x) => x.type === "function
 const tx = (field: string, operator: string, value: unknown) => ({ field_source: "ethereum_transaction", field, operator, value });
 const call = (field: string, abi: readonly unknown[], operator: string, value: unknown) => ({ field_source: "ethereum_calldata", field, abi, operator, value });
 
+/** Privy requires rule names < 50 chars. */
+const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`.toLowerCase();
+
 const common = (chainId: number) => [tx("chain_id", "eq", String(chainId)), tx("value", "eq", "0x0")];
 
 export type UserWalletPolicyInput = {
@@ -67,14 +70,14 @@ export function userWalletPolicy(i: UserWalletPolicyInput): PrivyPolicy {
   const maxValue = `0x${(i.maxKuruValueWei ?? 50n * 10n ** 18n).toString(16)}`;
   for (const m of i.kuruMarkets) {
     rules.push({
-      name: `Allow Kuru market ${lower(m)}`,
+      name: `Allow Kuru market ${short(m)}`,
       method: METHOD,
       action: "ALLOW",
       conditions: [tx("chain_id", "eq", String(i.chainId)), tx("to", "eq", lower(m)), tx("value", "lte", maxValue)],
     });
     for (const t of i.tokens) {
       rules.push({
-        name: `Allow ${lower(t)} approve to Kuru market`,
+        name: `Allow approve ${short(t)} to Kuru ${short(m)}`,
         method: METHOD,
         action: "ALLOW",
         conditions: [...common(i.chainId), tx("to", "eq", lower(t)), call("approve.spender", ERC20_APPROVE_ABI, "eq", lower(m))],
@@ -83,13 +86,13 @@ export function userWalletPolicy(i: UserWalletPolicyInput): PrivyPolicy {
   }
   for (const t of i.tokens) {
     rules.push({
-      name: `Allow ERC-20 ${lower(t)} transfer back to the user only`,
+      name: `Allow ${short(t)} transfer to user only`,
       method: METHOD,
       action: "ALLOW",
       conditions: [...common(i.chainId), tx("to", "eq", lower(t)), call("transfer.to", ERC20_TRANSFER_ABI, "eq", lower(i.user))],
     });
   }
-  return { version: "1.0", name: `leash ${i.persona} ${lower(i.user)}`.slice(0, 50), chain_type: "ethereum", rules };
+  return { version: "1.0", name: `leash ${i.persona} ${lower(i.user)}`.slice(0, 49), chain_type: "ethereum", rules };
 }
 
 export function personaWalletPolicy(i: { chainId: number; persona: string; receiptLog: Address }): PrivyPolicy {
@@ -112,7 +115,7 @@ export function personaWalletPolicy(i: { chainId: number; persona: string; recei
 export function denyAllPolicy(label: string): PrivyPolicy {
   return {
     version: "1.0",
-    name: `leash deny-all ${label}`.slice(0, 50),
+    name: `leash deny-all ${label}`.slice(0, 49),
     chain_type: "ethereum",
     rules: [{ name: "Deny every transaction", method: METHOD, action: "DENY", conditions: [tx("chain_id", "in", ["143", "10143"])] }],
   };
