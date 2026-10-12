@@ -1,0 +1,25 @@
+{
+  "account": "0x00000000000000000000000000000000000a11ce",
+  "ts": "2026-10-12T05:00:30.000Z",
+  "equityUsd": "101.25",
+  "collateralUsd": "100",
+  "marginUsedUsd": "12.5",
+  "weeklyPnlPct": 1.25,
+  "fundingPaidUsd": "0.03",
+  "slackLeftUsd": "0",
+  "positions": [
+    {
+      "market": "MON-PERP",
+      "side": "LONG",
+      "sizeUsd": "25",
+      "entryPrice": "0.0412",
+      "markPrice": "0.0414",
+      "liqPrice": "0.0215",
+      "liqDistancePct": 48.07,
+      "unrealizedPnlUsd": "0.121359"
+    }
+  ],
+  "exposureByMarket": {
+    "MON-PERP": "25"
+  }
+}

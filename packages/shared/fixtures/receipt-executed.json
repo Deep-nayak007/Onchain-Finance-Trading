@@ -1,0 +1,68 @@
+{
+  "reasonHash": "0xd0f4bdc8cc07b5b9c92c204c944de164d842f3225cdf547667d387b13a0f36b3",
+  "signalHash": "0x7c0e4b253ecf84ee777f75890fcd139073ba2884817dc742acd54f78681ea233",
+  "intent": {
+    "id": "3f1c2a8e-7b4d-4e2a-9c61-0d5b8e7f1a01",
+    "ts": "2026-10-12T05:00:00.000Z",
+    "persona": "falcon",
+    "action": "OPEN",
+    "venue": "PERPL",
+    "market": "MON-PERP",
+    "side": "LONG",
+    "sizeUsd": "25",
+    "leverage": 2,
+    "confidence": 0.78,
+    "rationale": "Smart money net inflow of $182k over 24h and mark up 1.8% in the last hour. Small momentum long within limits.",
+    "signals": [
+      {
+        "source": "nansen",
+        "key": "smartMoneyNetflow24hUsd",
+        "value": "182000"
+      },
+      {
+        "source": "nansen",
+        "key": "smartMoneyScore",
+        "value": "0.64"
+      },
+      {
+        "source": "perpl",
+        "key": "markChange1hPct",
+        "value": "1.8"
+      }
+    ]
+  },
+  "decision": {
+    "intentId": "3f1c2a8e-7b4d-4e2a-9c61-0d5b8e7f1a01",
+    "allowed": true,
+    "reasons": [
+      "OK"
+    ],
+    "usedSlack": false,
+    "checkedAt": "2026-10-12T05:00:00.040Z"
+  },
+  "signalsSnapshot": {
+    "ts": "2026-10-12T04:59:55.000Z",
+    "smartMoneyScore": 0.64,
+    "nansen": {
+      "token": "MON",
+      "smartMoneyNetflow24hUsd": "182000",
+      "topBuyers": 7,
+      "topSellers": 2
+    },
+    "perpl": {
+      "market": "MON-PERP",
+      "mark": "0.0412",
+      "index": "0.0411",
+      "fundingRate": "0.0001",
+      "markChange1hPct": 1.8
+    },
+    "envio": {
+      "recentReceipts": 3,
+      "openPositions": 0
+    }
+  },
+  "model": "qwen-flash-character",
+  "decidedAtMs": 1791781200040,
+  "confirmedAtMs": 1791781200452,
+  "execTxHash": "0xabababababababababababababababababababababababababababababababab"
+}

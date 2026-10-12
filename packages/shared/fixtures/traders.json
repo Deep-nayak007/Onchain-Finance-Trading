@@ -1,0 +1,82 @@
+[
+  {
+    "id": "falcon",
+    "agentId": "1",
+    "name": "Falcon",
+    "style": "Momentum. Follows smart money (Nansen) into strength.",
+    "mode": "LIVE",
+    "wallet": "0x00000000000000000000000000000000000000f1",
+    "defaultPolicy": {
+      "version": 1,
+      "markets": [
+        "MON-PERP"
+      ],
+      "venues": [
+        "PERPL"
+      ],
+      "maxLeverage": 3,
+      "maxNotionalUsd": "50",
+      "maxTotalExposureUsd": "100",
+      "maxWeeklyLossPct": 10,
+      "maxTradesPerHour": 4,
+      "cooldownSec": 300,
+      "requireSmartMoneyAgreement": true,
+      "minConfidence": 0.6,
+      "sleeveUsd": "0"
+    }
+  },
+  {
+    "id": "otter",
+    "agentId": "2",
+    "name": "Otter",
+    "style": "Mean reversion. Small size, long cooldowns.",
+    "mode": "SHADOW",
+    "wallet": "0x00000000000000000000000000000000000000f2",
+    "defaultPolicy": {
+      "version": 1,
+      "markets": [
+        "MON-PERP"
+      ],
+      "venues": [
+        "PERPL"
+      ],
+      "maxLeverage": 2,
+      "maxNotionalUsd": "20",
+      "maxTotalExposureUsd": "40",
+      "maxWeeklyLossPct": 10,
+      "maxTradesPerHour": 2,
+      "cooldownSec": 1800,
+      "requireSmartMoneyAgreement": false,
+      "minConfidence": 0.65,
+      "sleeveUsd": "0"
+    }
+  },
+  {
+    "id": "owl",
+    "agentId": "3",
+    "name": "Owl",
+    "style": "Funding harvester. Hedges spot on Kuru.",
+    "mode": "SHADOW",
+    "wallet": "0x00000000000000000000000000000000000000f3",
+    "defaultPolicy": {
+      "version": 1,
+      "markets": [
+        "MON-PERP",
+        "MON/AUSD"
+      ],
+      "venues": [
+        "PERPL",
+        "KURU"
+      ],
+      "maxLeverage": 2,
+      "maxNotionalUsd": "30",
+      "maxTotalExposureUsd": "60",
+      "maxWeeklyLossPct": 10,
+      "maxTradesPerHour": 2,
+      "cooldownSec": 900,
+      "requireSmartMoneyAgreement": false,
+      "minConfidence": 0.6,
+      "sleeveUsd": "30"
+    }
+  }
+]

@@ -1,0 +1,21 @@
+{
+  "ts": "2026-10-12T04:59:55.000Z",
+  "smartMoneyScore": 0.64,
+  "nansen": {
+    "token": "MON",
+    "smartMoneyNetflow24hUsd": "182000",
+    "topBuyers": 7,
+    "topSellers": 2
+  },
+  "perpl": {
+    "market": "MON-PERP",
+    "mark": "0.0412",
+    "index": "0.0411",
+    "fundingRate": "0.0001",
+    "markChange1hPct": 1.8
+  },
+  "envio": {
+    "recentReceipts": 3,
+    "openPositions": 0
+  }
+}
