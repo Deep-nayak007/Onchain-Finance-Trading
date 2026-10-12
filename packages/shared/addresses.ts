@@ -91,6 +91,15 @@ export const PERSONAS = {
 /**
  * Kuru spot order book — router + MON/AUSD market. Supplied by Brain (Q3) at
  * CP2. Left null until sourced and bytecode-checked on chain 143.
+ *
+ * Integration notes:
+ * - Owl's hedge sleeve + Face's spot screen use the Kuru TS SDK
+ *   `@kuru-labs/kuru-sdk` (e.g. `KuruSdk.IOC.placeMarket()`), owned by
+ *   Brain/Face.
+ * - RAILS indexes the order book's `Trade` event into `KuruTrade`; the event
+ *   signature comes from the Monad kuru-terminal reference indexer
+ *   (https://github.com/monad-developers/kuru-terminal). The `monAusdMarket`
+ *   address below is the order-book contract the indexer watches.
  */
 export const KURU = {
   router: null as `0x${string}` | null,

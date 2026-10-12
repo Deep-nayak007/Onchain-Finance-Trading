@@ -30,10 +30,14 @@ the real implementation can drop in without a shape change.
 
 ## Envio
 - **PnL + fills not yet indexed.** `realizedPnlUsd`, `shadowPnlUsd`,
-  `maxDrawdownPct`, `PnlSnapshot`, `PerplFill` and `KuruTrade` are defined in
-  the schema but populated at CP3 once the Perpl fill / Kuru trade ABIs are
-  wired (Kuru addresses are Q3, from Brain). Receipts, mandates, slack, pauses
-  and the executed/rejected/shadow leaderboard counters are live now.
+  `maxDrawdownPct`, `PnlSnapshot` and `PerplFill` are defined in the schema but
+  populated at CP3 once the Perpl fill ABI is wired. Receipts, mandates, slack,
+  pauses and the executed/rejected/shadow leaderboard counters are live now.
+- **Kuru `Trade` is wired but needs the market address + decimals.** The
+  `KuruOrderBook.Trade` event (signature from the Monad kuru-terminal reference
+  indexer) is in `config.yaml` and handled into `KuruTrade`; it only needs the
+  MON/AUSD order-book address (Q3, from Brain) and the market's base/quote
+  decimals to scale `baseAmount`/`quoteAmount`. Side and price map today.
 - **Persona-gated shadow counting** keys off `PERSONA_WALLETS` in
   `EventHandlers.ts`, which is empty until the persona wallet addresses land in
   `addresses.ts` at CP1. Until then shadows are counted unconditionally (noted

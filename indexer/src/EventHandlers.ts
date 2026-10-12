@@ -16,6 +16,7 @@
 import {
   MandateRegistry,
   ReceiptLog,
+  KuruOrderBook,
   type Agent,
   type User,
 } from "generated";
@@ -208,4 +209,31 @@ ReceiptLog.TradeReceipt.handler(async ({ event, context }) => {
     }
   }
   context.Agent.set({ ...agent, ...patch });
+});
+
+// ---- Kuru spot (CP3) ----
+//
+// The Kuru order book emits a `Trade` on every fill. Event signature + field
+// shape from the Monad kuru-terminal reference indexer
+// (https://github.com/monad-developers/kuru-terminal). We normalize it into the
+// frozen `KuruTrade` entity (ARCHITECTURE §7.5): the taker is the account that
+// traded, `isBuy` becomes side ±1, and `filledSize`/`price` give the base and
+// quote legs. Prices/sizes are kept raw here and scaled when the MON/AUSD
+// market decimals are confirmed (Q3); see docs/pnl.md.
+KuruOrderBook.Trade.handler(async ({ event, context }) => {
+  const price = event.params.price; // raw uint256
+  const filled = event.params.filledSize; // raw uint96 (base)
+  context.KuruTrade.set({
+    id: `${event.transaction.hash}-${event.logIndex}`,
+    account: event.params.takerAddress.toLowerCase(),
+    market: event.srcAddress.toLowerCase(), // order-book address = the market
+    side: event.params.isBuy ? 1 : -1,
+    baseAmount: 0, // scaled once MON/AUSD decimals are confirmed (Q3)
+    quoteAmount: 0,
+    price: Number(price),
+    blockTimestamp: BigInt(event.block.timestamp),
+    txHash: event.transaction.hash,
+  });
+  // Mark raw values as intentionally referenced until scaling lands.
+  void filled;
 });

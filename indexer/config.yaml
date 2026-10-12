@@ -24,6 +24,18 @@ contracts:
     handler: src/EventHandlers.ts
     events:
       - event: TradeReceipt(address indexed user, uint256 indexed agentId, uint64 indexed seq, uint8 venue, bytes32 market, int8 side, uint128 sizeUsd6, uint256 price1e18, uint8 status, bool usedSlack, bytes32 reasonHash, bytes32 signalHash, bytes32 execTxHash)
+  # Kuru spot order book — the Trade event is the fill (CP3). Signature from the
+  # Monad kuru-terminal reference indexer
+  # (https://github.com/monad-developers/kuru-terminal, envio/config.yaml).
+  # The MON/AUSD order-book address is Q3 (from Brain); fill it in below.
+  - name: KuruOrderBook
+    handler: src/EventHandlers.ts
+    events:
+      - event: Trade(uint40 orderId, address makerAddress, bool isBuy, uint256 price, uint96 updatedSize, address takerAddress, address txOrigin, uint96 filledSize)
+
+field_selection:
+  transaction_fields:
+    - hash
 
 networks:
   - id: 143 # Monad mainnet
@@ -35,4 +47,7 @@ networks:
         address: []
       - name: ReceiptLog
         # address: "0x..."  # from addresses.ts LEASH.mainnet.receiptLog
+        address: []
+      - name: KuruOrderBook
+        # address: "0x..."  # Kuru MON/AUSD order book — Q3 from Brain
         address: []
