@@ -5,10 +5,22 @@
   "type": "module",
   "scripts": {
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "dev": "tsx watch src/main.ts",
+    "start": "tsx src/main.ts",
+    "persona-wallets": "tsx scripts/persona-wallets.ts"
   },
   "dependencies": {
-    "@leash/shared": "workspace:*"
+    "@hono/node-server": "^2.1.4",
+    "@kuru-labs/kuru-sdk": "^0.0.95",
+    "@leash/shared": "workspace:*",
+    "dotenv": "^18.0.7",
+    "ethers": "5.7.1",
+    "expo-server-sdk": "^7.2.0",
+    "hono": "^4.13.13",
+    "openai": "^7.32.0",
+    "viem": "^2.57.4",
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "@types/node": "22",
@@ -16,6 +28,7 @@
     "ajv-formats": "^3.0.1",
     "typescript": "~5.9.0",
     "vitest": "^5.0.3",
-    "yaml": "^2.9.1"
+    "yaml": "^2.9.1",
+    "tsx": "^4.20.0"
   }
 }
