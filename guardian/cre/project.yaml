@@ -1,0 +1,9 @@
+# CRE project settings (LEASH Referee). RPC URLs are public endpoints; no secrets here.
+staging-settings:
+  rpcs:
+    - chain-name: monad-testnet
+      url: https://testnet-rpc.monad.xyz
+production-settings:
+  rpcs:
+    - chain-name: monad-testnet
+      url: https://testnet-rpc.monad.xyz

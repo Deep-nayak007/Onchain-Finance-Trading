@@ -1,0 +1,10 @@
+{
+  "schedule": "0 */1 * * * *",
+  "chainSelectorName": "monad-testnet",
+  "mandateRegistry": "0x81bbeaf263eeae41cfd4be137427af3ba7248467",
+  "gatewayUrl": "http://127.0.0.1:8790",
+  "envioUrl": "",
+  "watch": ["0xE7f1FFcC13C1384a2a1d7eaC19edF0F69e85f4FD"],
+  "minLiqDistancePct": 5,
+  "maxCacheLagBlocks": 20
+}

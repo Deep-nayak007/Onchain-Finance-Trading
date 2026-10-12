@@ -39,3 +39,6 @@ indexer/db/
 data/
 *.db
 coverage/
+
+# Referee breach log is a deliverable (video evidence)
+!docs/referee-sim.log
