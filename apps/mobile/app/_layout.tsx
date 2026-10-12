@@ -14,6 +14,8 @@ import { Button, Loading, Screen, Type } from '../components/ui';
 import { listenForSlack } from '../lib/notifications';
 import { TransactionReview } from '../components/TransactionReview';
 import { useReducedMotion } from '../lib/useReducedMotion';
+import { prepareMockDevClient } from '../mocks/dev-client';
+import { config } from '../lib/config';
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 1500, refetchOnWindowFocus: true } },
 });
@@ -26,6 +28,9 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   );
 }
 export default function RootLayout() {
+  useEffect(() => {
+    if (config.useMocks) void prepareMockDevClient().catch(() => {});
+  }, []);
   const reducedMotion = useReducedMotion();
   const [fontsLoaded, fontError] = useFonts({
     BigShouldersDisplay_800ExtraBold,
