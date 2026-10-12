@@ -1,0 +1,11 @@
+{
+  "name": "leash", "private": true, "version": "0.1.0",
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "start": "npm run start --workspace @leash/mobile",
+    "web": "npm run web --workspace @leash/mobile",
+    "ios": "npm run ios --workspace @leash/mobile",
+    "check": "npm run check --workspace @leash/mobile",
+    "test": "npm run test --workspace @leash/mobile"
+  }
+}
