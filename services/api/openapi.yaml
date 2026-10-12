@@ -24,6 +24,7 @@ tags:
   - name: gas
   - name: config
   - name: webhooks
+  - name: spot
 
 paths:
   /mandate/compile:
@@ -64,9 +65,17 @@ paths:
                     maxItems: 6
                     items: { type: string }
                   warnings: { type: array, items: { type: string } }
-                  agentId: { $ref: "#/components/schemas/Uint256String" }
-                  agentWallet: { $ref: "#/components/schemas/Address" }
-                  perplKey: { $ref: "#/components/schemas/Address" }
+                  agentId: { $ref: "#/components/schemas/Uint256String", description: "\"0\" until the persona is registered (ERC-8004)" }
+                  agentWallet:
+                    description: Privy wallet for this user×trader; null (with a warning) if it couldn't be created
+                    oneOf:
+                      - { $ref: "#/components/schemas/Address" }
+                      - { type: "null" }
+                  perplKey:
+                    description: tradeKey from gateway /keys/prepare; null (with a warning) if the gateway is unavailable
+                    oneOf:
+                      - { $ref: "#/components/schemas/Address" }
+                      - { type: "null" }
         "400": { $ref: "#/components/responses/BadRequest" }
         "502": { $ref: "#/components/responses/Upstream" }
 
@@ -321,11 +330,55 @@ paths:
                     items: { $ref: "#/components/schemas/Persona" }
                   live: { type: boolean, description: "LIVE flag; false = paper mode" }
 
+  /spot/prepare:
+    post:
+      tags: [spot]
+      summary: "ADDITIVE: unsigned Kuru swap txs (approve + market order) for Face's spot screen; the user signs with Mera"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [account, side, sizeUsd]
+              properties:
+                account: { $ref: "#/components/schemas/Address" }
+                side: { type: string, enum: [BUY, SELL], description: "BUY spends sizeUsd of the quote token; SELL sells sizeUsd worth of MON" }
+                sizeUsd: { type: number, exclusiveMinimum: 0, maximum: 100 }
+      responses:
+        "200":
+          description: Txs to sign in order
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [txs, estimatedOut, minOut]
+                properties:
+                  txs: { type: array, items: { $ref: "#/components/schemas/TxRequest" } }
+                  estimatedOut: { type: number }
+                  minOut: { type: number, description: "1% slippage floor enforced onchain" }
+        "503":
+          description: Kuru not configured / no liquidity
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /health:
+    get:
+      tags: [config]
+      summary: Liveness + which integrations are wired
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+
   /webhooks/alchemy:
     post:
       tags: [webhooks]
       summary: Alchemy Notify (address activity) → AUSD deposit push
-      description: Signature verified with ALCHEMY_NOTIFY_TOKEN (X-Alchemy-Signature header).
+      description: "X-Alchemy-Signature = hex(HMAC-SHA256(ALCHEMY_WEBHOOK_SIGNING_KEY, raw body))."
       parameters:
         - name: X-Alchemy-Signature
           in: header
@@ -546,6 +599,16 @@ components:
         createdAt: { $ref: "#/components/schemas/IsoDateTime" }
         expiresAt: { $ref: "#/components/schemas/IsoDateTime" }
         status: { type: string, enum: [PENDING, APPROVED, DENIED, EXPIRED] }
+
+    TxRequest:
+      type: object
+      required: [to, data, value, gas, chainId]
+      properties:
+        to: { $ref: "#/components/schemas/Address" }
+        data: { $ref: "#/components/schemas/Hex" }
+        value: { $ref: "#/components/schemas/Uint256String" }
+        gas: { $ref: "#/components/schemas/Uint256String" }
+        chainId: { $ref: "#/components/schemas/ChainId" }
 
     AgentStatus:
       type: object

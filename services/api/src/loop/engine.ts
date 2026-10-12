@@ -228,7 +228,23 @@ export class Engine {
     if (!changedMeaningfully(this.lastSnapshot.get(key), snapshot)) return { kind: "skipped", reason: "no meaningful change" };
     this.lastSnapshot.set(key, snapshot);
 
-    const state = {
+    const state = this.shadowState(persona, now, snapshot);
+    const proposal = await proposeIntent(this.d.chat, this.d.modelTick, { persona, policy, limits: effectiveLimits(policy, null, state), snapshot, now });
+    return this.decideShadow(persona, proposal.intent, proposal.model, snapshot, state);
+  }
+
+  /** Dev/demo path for shadow personas: a hand-written intent through the same checker → logShadow path. */
+  async submitShadowIntent(persona: PersonaId, intent: Intent, model: string): Promise<TickResult> {
+    const policy = personaOf(persona).defaultPolicy;
+    const market = policy.markets.find((m) => m.endsWith("-PERP")) ?? policy.markets[0]!;
+    const now = this.now();
+    const { snapshot } = await gatherSnapshot(this.d, { account: null, market, now });
+    return this.decideShadow(persona, intent, model, snapshot, this.shadowState(persona, now, snapshot));
+  }
+
+  private shadowState(persona: PersonaId, now: number, snapshot: Snapshot) {
+    const key = `persona:${persona}`;
+    return {
       now,
       paused: false,
       positions: [],
@@ -238,18 +254,23 @@ export class Engine {
       lastTradeAt: this.d.store.lastExecutedAt(key),
       smartMoneyScore: snapshot.smartMoneyScore,
     };
-    const proposal = await proposeIntent(this.d.chat, this.d.modelTick, { persona, policy, limits: effectiveLimits(policy, null, state), snapshot, now });
-    const decision = checkIntent(policy, null, state, proposal.intent);
-    if (proposal.intent.action === "HOLD") return { kind: "hold", intent: proposal.intent, model: proposal.model };
+  }
+
+  private async decideShadow(persona: PersonaId, intent: Intent, model: string, snapshot: Snapshot, state: ReturnType<Engine["shadowState"]>): Promise<TickResult> {
+    const p = personaOf(persona);
+    const key = `persona:${persona}`;
+    const now = state.now;
+    const decision = checkIntent(p.defaultPolicy, null, state, intent);
+    if (intent.action === "HOLD") return { kind: "hold", intent, model };
     if (!decision.allowed) return { kind: "skipped", reason: `shadow call denied: ${decision.reasons.join(",")}` };
 
     const detail: ReceiptDetail = {
-      reasonHash: reasonHash({ intent: proposal.intent, decision }),
+      reasonHash: reasonHash({ intent, decision }),
       signalHash: signalHash(snapshot),
-      intent: proposal.intent,
+      intent,
       decision,
       signalsSnapshot: snapshot,
-      model: proposal.model,
+      model,
       decidedAtMs: now,
       confirmedAtMs: null,
       execTxHash: null,
@@ -258,7 +279,7 @@ export class Engine {
     this.d.store.saveReceipt(detail, { account: key, status: "EXECUTED" });
     try {
       const logged = await this.d.sink.logShadow(persona, BigInt(p.agentId), {
-        intent: proposal.intent,
+        intent,
         price: snapshot.perpl?.mark ?? "0",
         usedSlack: false,
         reasonHash: detail.reasonHash as Hex,

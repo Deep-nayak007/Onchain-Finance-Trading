@@ -36,6 +36,14 @@ export function buildApp(cfg: Config, opts: { store?: Store; startLoops?: boolea
     tokens: sleeveTokens,
   });
 
+  if (cfg.PERSONA_WALLETS) {
+    const parsed = JSON.parse(cfg.PERSONA_WALLETS) as Record<string, { id: string; address: Address }>;
+    for (const [persona, w] of Object.entries(parsed)) {
+      const key = `persona:${persona}`;
+      if (!store.getWallet(key)) store.saveWallet({ key, walletId: w.id, address: w.address, policyId: null });
+    }
+  }
+
   const gateway = makeGateway(cfg);
   const nansen = new Nansen(store, { apiKey: cfg.NANSEN_API_KEY, cacheSeconds: cfg.NANSEN_CACHE_SECONDS, dailyBudget: cfg.NANSEN_DAILY_CALLS });
   const envio = new Envio(cfg.ENVIO_URL);

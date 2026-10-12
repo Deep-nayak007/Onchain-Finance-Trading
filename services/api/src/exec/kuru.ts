@@ -112,6 +112,8 @@ export class Kuru implements SpotExecutor {
     const raw = await this.rawParams();
     const params = toParams(raw);
     const est = side === "BUY" ? await CostEstimator.estimateMarketBuy(this.provider, this.o.market, raw, amount) : await CostEstimator.estimateMarketSell(this.provider, this.o.market, raw, amount);
+    // No liquidity → refuse rather than send an order with minOut 0 (unbounded slippage).
+    if (!(est.output > 0)) throw new Error(`Kuru: no ${side === "BUY" ? "asks" : "bids"} to fill ${amount}`);
     const minOut = est.output * (1 - (this.o.slippageBps ?? 100) / 10_000);
     return { output: est.output, minOut, params };
   }

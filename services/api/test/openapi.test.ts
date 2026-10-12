@@ -22,7 +22,7 @@ const validate = (schema: string, value: unknown) => {
 };
 
 describe("openapi.yaml", () => {
-  it("covers every §7.4 route", () => {
+  it("covers every §7.4 route (+ additive /spot/prepare, /health)", () => {
     const routes = Object.entries(spec.paths).flatMap(([p, ops]) => Object.keys(ops).map((m) => `${m.toUpperCase()} ${p}`));
     expect(routes.sort()).toEqual(
       [
@@ -39,6 +39,8 @@ describe("openapi.yaml", () => {
         "POST /gas/drip",
         "GET /config",
         "POST /webhooks/alchemy",
+        "POST /spot/prepare",
+        "GET /health",
       ].sort(),
     );
   });

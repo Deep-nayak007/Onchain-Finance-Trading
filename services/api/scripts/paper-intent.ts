@@ -3,10 +3,12 @@
 // The receipt's model is "manual-paper-test" so it can never be mistaken for an LLM decision.
 //
 //   CHAIN_ID=10143 pnpm tsx scripts/paper-intent.ts <account> OPEN LONG 10 2 0.8
+//   CHAIN_ID=10143 pnpm tsx scripts/paper-intent.ts otter OPEN SHORT 10 1 0.8     (shadow persona → logShadow)
 import "dotenv/config";
 import { randomUUID } from "node:crypto";
 import { Intent } from "@leash/shared";
 import type { Address } from "viem";
+import { PERSONA_IDS } from "../src/personas";
 import { buildApp } from "../src/app";
 import { loadConfig } from "../src/config";
 
@@ -26,7 +28,7 @@ console.log(`[paper-intent] ${summary}`);
 const intent = Intent.parse({
   id: randomUUID(),
   ts: new Date().toISOString(),
-  persona: "falcon",
+  persona: PERSONA_IDS.includes(account as never) ? account : "falcon",
   action,
   venue: "PERPL",
   market: "MON-PERP",
@@ -37,7 +39,9 @@ const intent = Intent.parse({
   rationale: "Manual paper test submitted by the Brain operator to verify the receipt path.",
   signals: [],
 });
-const r = await deps.engine.submitIntent(account as Address, intent, "manual-paper-test");
+const r = PERSONA_IDS.includes(account as never)
+  ? await deps.engine.submitShadowIntent(account as "otter", intent, "manual-paper-test")
+  : await deps.engine.submitIntent(account as Address, intent, "manual-paper-test");
 if (r.kind !== "decided") {
   console.log(`[paper-intent] ${r.kind}${"reason" in r ? `: ${r.reason}` : ""}`);
   process.exit(0);

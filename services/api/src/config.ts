@@ -43,6 +43,8 @@ export const ConfigSchema = z.object({
   MAX_ORDER_USD: num(25),
   TICK_SECONDS: num(30),
   SHADOW_TICK_SECONDS: num(180),
+  /** JSON {"falcon":{"id","address"},...} from scripts/persona-wallets.ts; keeps persona wallets stable across deploys. */
+  PERSONA_WALLETS: opt,
   /** Comma-separated origins; empty = allow all (mobile app has no origin). */
   CORS_ORIGINS: opt,
 });
