@@ -1,0 +1,18 @@
+const { getDefaultConfig } = require('expo/metro-config');
+const fs = require('fs');
+const path = require('path');
+const config = getDefaultConfig(__dirname);
+const root = path.resolve(__dirname, '../..');
+config.watchFolders = [...new Set([...(config.watchFolders || []), root])];
+config.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (moduleName === '@leash/shared/canonical') {
+    if (process.env.EXPO_PUBLIC_USE_MOCKS !== 'false') {
+      return { filePath: path.join(__dirname, 'mocks/canonical.ts'), type: 'sourceFile' };
+    }
+    const shared = path.join(root, 'packages/shared/canonical.ts');
+    if (fs.existsSync(shared)) return { filePath: shared, type: 'sourceFile' };
+    throw new Error('Live mode requires Prem’s packages/shared/canonical.ts.');
+  }
+  return context.resolveRequest(context, moduleName, platform);
+};
+module.exports = config;

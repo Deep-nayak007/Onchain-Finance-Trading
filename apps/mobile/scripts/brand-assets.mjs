@@ -1,0 +1,12 @@
+import sharp from 'sharp';
+import { writeFile } from 'node:fs/promises';
+const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 40 40"><rect width="40" height="40" rx="9" fill="#0F0D16"/><g transform="translate(7 5) scale(.68)"><path d="M12 6c-8 0-9 12-3 17l15 12c6 4 14-3 10-9L19 6c-4-6-15-2-12 5l15 23" fill="none" stroke="#ECA43F" stroke-width="3.2" stroke-linecap="round"/><path d="m27 6-15 27" stroke="#0F0D16" stroke-width="6"/><path d="m27 6-15 27" stroke="#ECA43F" stroke-width="3.2" stroke-linecap="round"/></g></svg>`;
+await writeFile(new URL('../assets/leash-icon.svg', import.meta.url), svg);
+await sharp(Buffer.from(svg))
+  .png()
+  .toFile(new URL('../assets/icon.png', import.meta.url).pathname);
+await sharp(Buffer.from(svg))
+  .resize(64, 64)
+  .png()
+  .toFile(new URL('../assets/favicon.png', import.meta.url).pathname);
+console.log('LEASH icon and favicon created.');

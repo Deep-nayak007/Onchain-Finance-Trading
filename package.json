@@ -1,11 +1,23 @@
 {
   "name": "leash",
   "private": true,
+  "version": "0.1.0",
   "engines": {
     "node": ">=20"
   },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "test": "pnpm -r --filter '!leash-indexer' test",
-    "typecheck": "pnpm -r --filter '!leash-indexer' typecheck"
+    "test": "pnpm -r --filter '!leash-indexer' --filter '!@leash/mobile' test",
+    "typecheck": "pnpm -r --filter '!leash-indexer' --filter '!@leash/mobile' typecheck",
+    "start": "npm run start --workspace @leash/mobile",
+    "web": "npm run web --workspace @leash/mobile",
+    "ios": "npm run ios --workspace @leash/mobile",
+    "check": "npm run check --workspace @leash/mobile",
+    "test:mobile": "npm run test --workspace @leash/mobile",
+    "mock:ios": "npm run mock:ios --workspace @leash/mobile",
+    "mock:web": "npm run mock:web --workspace @leash/mobile"
   }
 }

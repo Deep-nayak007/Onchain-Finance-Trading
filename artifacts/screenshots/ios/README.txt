@@ -1,0 +1,1 @@
+Six actual iOS Simulator screenshots from the installed LEASH development build, iPhone 17 Pro / iOS 26.5. All data is demo data. Native passkey and mainnet proof require the real domain, signing details, and team services.

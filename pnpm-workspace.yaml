@@ -1,5 +1,6 @@
 packages:
   - "apps/*"
+  - "!apps/mobile"   # Face uses npm workspaces (package-lock.json) for Expo
   - "services/*"
   - "packages/*"
   - "indexer"

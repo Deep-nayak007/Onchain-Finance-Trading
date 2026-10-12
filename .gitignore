@@ -42,3 +42,11 @@ coverage/
 
 # Referee breach log is a deliverable (video evidence)
 !docs/referee-sim.log
+
+# Face (apps/mobile)
+.expo/
+.env.local
+apps/mobile/ios/
+apps/mobile/android/
+artifacts/raw/
+artifacts/*.zip

@@ -77,7 +77,7 @@ export function makeEngine(over: Partial<EngineDeps> & { replies?: (string | Err
   const pusher = new MemoryPusher();
   const gateway = new MockGateway({ maxOrderUsd: 25 });
   const nansen = over.nansen ?? new FakeNansen(nansenSignal(150_000));
-  let t = Date.parse("2026-10-12T12:00:00.000Z");
+  let t = Date.now(); // real "now": routes check expiry against Date.now()
   const deps: EngineDeps = {
     live: false,
     modelTick: "qwen-flash-character",
