@@ -1,0 +1,30 @@
+{
+  "data": {
+    "PnlSnapshot": [
+      {
+        "id": "1-20361",
+        "day": 20361,
+        "realizedPnlUsd": "5.20",
+        "shadowPnlUsd": "0",
+        "cumulativeRealizedUsd": "5.20",
+        "equityUsd": "105.20"
+      },
+      {
+        "id": "1-20362",
+        "day": 20362,
+        "realizedPnlUsd": "8.01",
+        "shadowPnlUsd": "0",
+        "cumulativeRealizedUsd": "13.21",
+        "equityUsd": "113.21"
+      },
+      {
+        "id": "1-20363",
+        "day": 20363,
+        "realizedPnlUsd": "10.20",
+        "shadowPnlUsd": "0",
+        "cumulativeRealizedUsd": "23.41",
+        "equityUsd": "123.41"
+      }
+    ]
+  }
+}

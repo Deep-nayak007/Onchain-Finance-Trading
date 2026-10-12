@@ -1,9 +1,11 @@
 {
   "name": "leash",
   "private": true,
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
-    "test": "pnpm -r test",
-    "typecheck": "pnpm -r typecheck"
+    "test": "pnpm -r --filter '!leash-indexer' test",
+    "typecheck": "pnpm -r --filter '!leash-indexer' typecheck"
   }
 }

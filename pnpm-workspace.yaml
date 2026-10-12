@@ -4,5 +4,12 @@ packages:
   - "packages/*"
   - "indexer"
   - "guardian"
+
+# Pre-approve build scripts so `pnpm install` doesn't halt with
+# ERR_PNPM_IGNORED_BUILDS (pnpm 10+/11+ blocks postinstall scripts by default).
+# Envio pulls in esbuild, which needs its build step.
+allowBuilds:
+  esbuild: true
+
 minimumReleaseAgeExclude:
   - zod@4.6.6

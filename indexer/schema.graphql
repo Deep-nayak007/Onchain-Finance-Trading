@@ -1,0 +1,115 @@
+## LEASH Envio HyperIndex schema — frozen at CP0 (ARCHITECTURE §7.5).
+## Entities every screen reads: receipts feed, mandate/slack state, pauses,
+## the agent leaderboard, Perpl fills, Kuru trades and daily PnL snapshots.
+
+type User {
+  id: ID! # user address (lowercased)
+  mandate: Mandate
+  activeAgentId: BigInt
+  firstSeenBlock: BigInt!
+  updatedAt: BigInt!
+}
+
+type Mandate {
+  id: ID! # user address
+  user: User!
+  agentId: BigInt!
+  policyHash: String!
+  maxNotionalUsd6: BigInt!
+  maxLeverageX10: Int!
+  maxWeeklyLossBps: Int!
+  agentWallet: String!
+  perplKey: String!
+  paused: Boolean!
+  updatedAt: BigInt!
+}
+
+type SlackGrant {
+  id: ID! # txHash-logIndex
+  user: User! @index # queried by user in the Paused/SlackRevoked handlers
+  maxLeverageX10: Int!
+  maxNotionalUsd6: BigInt!
+  extraRiskUsd6: BigInt!
+  expiresAt: BigInt!
+  grantedAt: BigInt!
+  revokedAt: BigInt
+  active: Boolean!
+}
+
+type Agent {
+  id: ID! # agentId
+  executed: Int!
+  rejected: Int!
+  shadow: Int!
+  volumeUsd: BigDecimal!
+  realizedPnlUsd: BigDecimal!
+  shadowPnlUsd: BigDecimal!
+  maxDrawdownPct: BigDecimal!
+}
+
+type Receipt {
+  id: ID! # txHash-logIndex
+  user: User!
+  agent: Agent!
+  agentId: BigInt!
+  seq: BigInt!
+  venue: String! # PERPL | KURU
+  market: String! # keccak hash, hex
+  marketName: String # resolved human label where known
+  side: Int! # +1 / -1
+  sizeUsd6: BigInt!
+  price1e18: BigInt!
+  status: String! # EXECUTED | REJECTED | FAILED | SHADOW
+  usedSlack: Boolean!
+  reasonHash: String!
+  signalHash: String!
+  execTxHash: String!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  txHash: String!
+  logIndex: Int!
+}
+
+type PauseEvent {
+  id: ID! # txHash-logIndex
+  user: User!
+  by: String!
+  reason: String!
+  blockTimestamp: BigInt!
+  txHash: String!
+}
+
+type PerplFill {
+  id: ID! # txHash-logIndex
+  account: String!
+  market: String!
+  side: Int!
+  sizeUsd: BigDecimal!
+  price: BigDecimal!
+  feeUsd: BigDecimal!
+  blockTimestamp: BigInt!
+  txHash: String!
+}
+
+type KuruTrade {
+  id: ID! # txHash-logIndex
+  account: String!
+  market: String!
+  side: Int!
+  baseAmount: BigDecimal!
+  quoteAmount: BigDecimal!
+  price: BigDecimal!
+  blockTimestamp: BigInt!
+  txHash: String!
+}
+
+type PnlSnapshot {
+  id: ID! # agentId-YYYYMMDD
+  agent: Agent!
+  agentId: BigInt!
+  day: Int! # unix day (floor(ts / 86400))
+  realizedPnlUsd: BigDecimal!
+  shadowPnlUsd: BigDecimal!
+  cumulativeRealizedUsd: BigDecimal!
+  equityUsd: BigDecimal!
+}

@@ -1,0 +1,328 @@
+openapi: 3.1.0
+info:
+  title: LEASH Perpl Gateway
+  version: 0.1.0
+  description: >
+    Fail-closed execution gateway over the Perpl perpetuals exchange on Monad
+    (ARCHITECTURE §7.3). Read endpoints serve a live SDK snapshot; the write
+    path signs with per-user trade-only keys that can never withdraw, and
+    refuses when the mandate is inactive, the cache is stale, the market is not
+    allowlisted, or the order size exceeds MAX_ORDER_USD.
+servers:
+  - url: "{gatewayUrl}"
+    variables:
+      gatewayUrl:
+        default: http://localhost:8080
+paths:
+  /health:
+    get:
+      summary: Liveness + cache freshness
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Health" }
+  /markets:
+    get:
+      summary: Listed perpetual markets
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Market" }
+  /book/{market}:
+    get:
+      summary: Order book for a market
+      parameters:
+        - name: market
+          in: path
+          required: true
+          schema: { type: string }
+        - name: depth
+          in: query
+          required: false
+          schema: { type: integer, default: 20 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Book" }
+        "404": { $ref: "#/components/responses/Error" }
+  /account/{address}:
+    get:
+      summary: Account collateral, equity and positions
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Account" }
+  /risk/{address}:
+    get:
+      summary: Risk snapshot (liq distance, exposure, weekly PnL, slack left)
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RiskSnapshot" }
+  /orders/prepare:
+    post:
+      summary: Build an unsigned order tx for the user to sign
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PrepareOrder" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TxRequest" }
+        "403": { $ref: "#/components/responses/Error" }
+  /orders/execute:
+    post:
+      summary: Sign + send an order with the user's trade-only key
+      description: >
+        Idempotent on idempotencyKey. Fails closed with a stable error code
+        when the mandate is inactive, the cache is stale, the market is not
+        allowlisted, the size exceeds MAX_ORDER_USD, or the key is disabled.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ExecuteOrder" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExecuteResult" }
+        "403": { $ref: "#/components/responses/Error" }
+  /deposit/prepare:
+    post:
+      summary: Approve + deposit collateral txs for the user to sign
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PrepareDeposit" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/TxRequest" }
+  /keys/prepare:
+    post:
+      summary: Create a trade-only key + enrollment payload for the user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/KeyRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/KeyPrepareResult" }
+  /keys/disable:
+    post:
+      summary: Kill switch — the user's key refuses all executes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/KeyRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Ack" }
+components:
+  responses:
+    Error:
+      description: Error with a stable machine-readable code
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+  schemas:
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          enum:
+            - MANDATE_INACTIVE
+            - STALE_CACHE
+            - MARKET_NOT_ALLOWED
+            - SIZE_EXCEEDS_MAX
+            - KEY_DISABLED
+            - NO_KEY
+            - NOT_FOUND
+            - BAD_REQUEST
+            - UPSTREAM_ERROR
+            - INTERNAL_ERROR
+        message: { type: string }
+    Health:
+      type: object
+      required: [ok, block, cacheLagBlocks]
+      properties:
+        ok: { type: boolean }
+        block: { type: integer }
+        cacheLagBlocks: { type: integer }
+    Market:
+      type: object
+      required: [market, perpId, mark, index, fundingRate, tickSize, lotSize]
+      properties:
+        market: { type: string }
+        perpId: { type: integer }
+        mark: { type: string }
+        index: { type: string }
+        fundingRate: { type: string }
+        tickSize: { type: string }
+        lotSize: { type: string }
+    BookLevel:
+      type: object
+      required: [price, size]
+      properties:
+        price: { type: string }
+        size: { type: string }
+    Book:
+      type: object
+      required: [bids, asks, ts]
+      properties:
+        bids:
+          type: array
+          items: { $ref: "#/components/schemas/BookLevel" }
+        asks:
+          type: array
+          items: { $ref: "#/components/schemas/BookLevel" }
+        ts: { type: integer }
+    Position:
+      type: object
+      required:
+        [market, side, sizeUsd, entryPrice, markPrice, liqPrice, liqDistancePct, unrealizedPnlUsd]
+      properties:
+        market: { type: string }
+        side: { type: string, enum: [LONG, SHORT] }
+        sizeUsd: { type: string }
+        entryPrice: { type: string }
+        markPrice: { type: string }
+        liqPrice: { type: string }
+        liqDistancePct: { type: string }
+        unrealizedPnlUsd: { type: string }
+    Account:
+      type: object
+      required: [collateralUsd, equityUsd, marginUsedUsd, positions]
+      properties:
+        collateralUsd: { type: string }
+        equityUsd: { type: string }
+        marginUsedUsd: { type: string }
+        positions:
+          type: array
+          items: { $ref: "#/components/schemas/Position" }
+    RiskSnapshot:
+      type: object
+      required:
+        - account
+        - ts
+        - equityUsd
+        - collateralUsd
+        - marginUsedUsd
+        - weeklyPnlPct
+        - fundingPaidUsd
+        - slackLeftUsd
+        - positions
+        - exposureByMarket
+      properties:
+        account: { type: string }
+        ts: { type: integer }
+        equityUsd: { type: string }
+        collateralUsd: { type: string }
+        marginUsedUsd: { type: string }
+        weeklyPnlPct: { type: string }
+        fundingPaidUsd: { type: string }
+        slackLeftUsd: { type: string }
+        positions:
+          type: array
+          items: { $ref: "#/components/schemas/Position" }
+        exposureByMarket:
+          type: object
+          additionalProperties: { type: string }
+    TxRequest:
+      type: object
+      required: [to, data, value, gas, chainId]
+      properties:
+        to: { type: string }
+        data: { type: string }
+        value: { type: string }
+        gas: { type: string }
+        chainId: { type: integer, const: 143 }
+    PrepareOrder:
+      type: object
+      required: [account, market, side, sizeUsd, price, leverage]
+      properties:
+        account: { type: string }
+        market: { type: string }
+        side: { type: string, enum: [LONG, SHORT] }
+        sizeUsd: { type: string }
+        price: { type: string }
+        leverage: { type: number }
+        reduce_only: { type: boolean, default: false }
+    ExecuteOrder:
+      allOf:
+        - $ref: "#/components/schemas/PrepareOrder"
+        - type: object
+          required: [idempotencyKey]
+          properties:
+            idempotencyKey: { type: string }
+    ExecuteResult:
+      type: object
+      required: [txHash, status]
+      properties:
+        txHash: { type: string }
+        status: { type: string, enum: [SENT, DUPLICATE] }
+    PrepareDeposit:
+      type: object
+      required: [account, amountUsd]
+      properties:
+        account: { type: string }
+        amountUsd: { type: string }
+    KeyRequest:
+      type: object
+      required: [account]
+      properties:
+        account: { type: string }
+    KeyPrepareResult:
+      type: object
+      required: [tradeKey, enrollment]
+      properties:
+        tradeKey: { type: string }
+        enrollment: { $ref: "#/components/schemas/TxRequest" }
+    Ack:
+      type: object
+      required: [ok]
+      properties:
+        ok: { type: boolean }

@@ -11,8 +11,10 @@
     "./canonical": "./src/canonical.ts",
     "./sendTx": "./src/sendTx.ts",
     "./abis": "./abis/index.ts",
-    "./addresses": "./src/addresses.ts",
-    "./fixtures/*": "./fixtures/*"
+    "./addresses": "./addresses.ts",
+    "./fixtures/*": "./fixtures/*",
+    "./queries.graphql": "./queries.graphql",
+    "./gateway.openapi.yaml": "./gateway.openapi.yaml"
   },
   "scripts": {
     "test": "vitest run",
@@ -28,5 +30,6 @@
     "tsx": "^4.23.15",
     "typescript": "~5.9.0",
     "vitest": "^5.0.3"
-  }
+  },
+  "description": "Shared schemas, canonical JSON, sendTx, checker (Brain) + ABIs, addresses, queries (Rails)."
 }

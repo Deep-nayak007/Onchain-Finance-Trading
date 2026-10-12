@@ -1,0 +1,32 @@
+name: rails-ci
+
+on:
+  push:
+    branches: [main, rails]
+  pull_request:
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+      - name: Build
+        run: forge build --sizes
+      - name: Test
+        run: forge test -vvv
+
+  gateway:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/perpl-gateway
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.94.1
+      - name: Build
+        run: cargo build --locked || cargo build

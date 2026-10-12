@@ -1,0 +1,17 @@
+{
+  "collateralUsd": "100.00",
+  "equityUsd": "103.45",
+  "marginUsedUsd": "8.10",
+  "positions": [
+    {
+      "market": "MON-PERP",
+      "side": "LONG",
+      "sizeUsd": "20.00",
+      "entryPrice": "2.4100",
+      "markPrice": "2.4315",
+      "liqPrice": "1.9200",
+      "liqDistancePct": "21.03",
+      "unrealizedPnlUsd": "3.45"
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": { "types": ["node"] },
-  "include": ["src", "abis", "scripts", "test"]
+  "include": ["src", "abis", "scripts", "test", "addresses.ts"]
 }

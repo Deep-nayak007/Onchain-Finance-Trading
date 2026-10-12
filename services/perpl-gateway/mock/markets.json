@@ -1,0 +1,11 @@
+[
+  {
+    "market": "MON-PERP",
+    "perpId": 1,
+    "mark": "2.4315",
+    "index": "2.4320",
+    "fundingRate": "0.0000125",
+    "tickSize": "0.0001",
+    "lotSize": "0.01"
+  }
+]

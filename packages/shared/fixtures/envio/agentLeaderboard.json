@@ -1,0 +1,36 @@
+{
+  "data": {
+    "Agent": [
+      {
+        "id": "1",
+        "executed": 42,
+        "rejected": 7,
+        "shadow": 0,
+        "volumeUsd": "812.50",
+        "realizedPnlUsd": "23.41",
+        "shadowPnlUsd": "0",
+        "maxDrawdownPct": "4.12"
+      },
+      {
+        "id": "2",
+        "executed": 0,
+        "rejected": 0,
+        "shadow": 55,
+        "volumeUsd": "0",
+        "realizedPnlUsd": "0",
+        "shadowPnlUsd": "11.90",
+        "maxDrawdownPct": "2.03"
+      },
+      {
+        "id": "3",
+        "executed": 0,
+        "rejected": 0,
+        "shadow": 38,
+        "volumeUsd": "0",
+        "realizedPnlUsd": "0",
+        "shadowPnlUsd": "6.75",
+        "maxDrawdownPct": "1.44"
+      }
+    ]
+  }
+}
