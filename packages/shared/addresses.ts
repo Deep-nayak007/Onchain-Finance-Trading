@@ -112,8 +112,17 @@ export const PERSONAS = {
  *   address below is the order-book contract the indexer watches.
  */
 export const KURU = {
-  router: null as `0x${string}` | null,
-  monAusdMarket: null as `0x${string}` | null,
+  // Source: https://docs.kuru.io/contracts/Contract-addresses (Mainnet). Bytecode checked on 143 (Brain, Q3).
+  router: '0xd651346d7c789536ebf06dc72aE3C8502cd695CC' as `0x${string}` | null,
+  monAusdMarket: '0x131a2e70a5b31a517a74b8c567149bc294470da9' as `0x${string}` | null,
+} as const;
+
+export const KURU_TESTNET = {
+  // Source: https://docs.kuru.io/contracts/Contract-addresses (Testnet). Bytecode checked on 10143 (Brain, Q3).
+  // No MON/AUSD market on testnet; MON/USDC is the official testnet market.
+  router: '0x7EFbE105Ca7415dE98F96622173458ac1c054630' as `0x${string}` | null,
+  monUsdcMarket: '0xa241896A7Dbe8a550D2E5fF7A914bB1989ceD2D9' as `0x${string}` | null,
+  usdc: '0x3bA3d39AFcf8bb994f7964B3e0171Ea2Ba361570' as `0x${string}` | null,
 } as const;
 
 /** Live service URLs. Filled in as each deploys. */
