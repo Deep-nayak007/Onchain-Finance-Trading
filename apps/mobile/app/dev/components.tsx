@@ -5,7 +5,7 @@ import { ReceiptPaper } from '../../components/ReceiptPaper';
 import { TraderCard } from '../../components/TraderCard';
 import { WhyChip } from '../../components/WhyChip';
 import { PullLeashButton } from '../../components/PullLeashButton';
-import { receiptFixtures, traderFixtures } from '../../demo/fixtures';
+import { receiptFixtures, traderFixtures } from '../../mocks/fixtures';
 import { colors } from '../../theme';
 export default function Components() {
   return (

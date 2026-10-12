@@ -4,7 +4,15 @@ Give your AI trader slack. Never your keys.
 
 The Face lane is an Expo React Native app for iOS, Android, and a browser preview. It includes every screen in the supplied brief, the dark visual system, on-device receipt fingerprints, and an interactive threat-model demo. **The default build uses clearly labelled sample data.** Real Face ID and mainnet acceptance require the team's account domain, shared package, deployments, and services.
 
-Start from the repository root:
+For local testing before Brain/Rails arrive, run from the repository root:
+
+```sh
+npm run mock:ios
+```
+
+This opens the installed development build through **localhost**, forces mock mode, and bypasses real passkey onboarding. Edit [mocks/data.json](apps/mobile/mocks/data.json) for sample values. Tap **DEMO** to reset the sample, renew slack, or test an empty portfolio. Keep the terminal running. `npm run mock:web` runs the same samples in a browser. The old `100.110…` server address is blocked by iOS App Transport Security; use the localhost entry. [Mock testing guide](apps/mobile/mocks/README.md).
+
+Start the regular development server from the repository root:
 
 ```sh
 npm install

@@ -7,13 +7,18 @@ import { colors } from '../../theme';
 import { useSession } from '../../lib/session';
 import { useAction } from '../../lib/useAction';
 import { createAccount, signIn } from '../../lib/mera';
-import { demoAccount } from '../../demo/fixtures';
+import { demoAccount } from '../../mocks/fixtures';
 import { config } from '../../lib/config';
 export default function Welcome() {
   const session = useSession();
   const action = useAction();
   const connect = (restore: boolean) =>
     action.run(async () => {
+      if (config.useMocks) {
+        session.connect(demoAccount, true);
+        router.push('/setup');
+        return;
+      }
       const account = await (restore ? signIn() : createAccount());
       session.connect(account);
       router.push('/setup');
@@ -53,17 +58,17 @@ export default function Welcome() {
         stop it with a touch.
       </Type>
       <Button
-        label="Continue with Face ID"
+        label={config.useMocks ? 'Continue with demo account' : 'Continue with Face ID'}
         icon="face"
         loading={action.busy}
-        disabled={!config.rpId}
+        disabled={!config.useMocks && !config.rpId}
         onPress={() => void connect(false)}
       />
       <View style={{ height: 9 }} />
       <Button
         variant="ghost"
-        label="I already have a passkey"
-        disabled={!config.rpId || action.busy}
+        label={config.useMocks ? 'Restore demo account' : 'I already have a passkey'}
+        disabled={(!config.useMocks && !config.rpId) || action.busy}
         onPress={() => void connect(true)}
       />
       {config.useMocks && (
@@ -82,7 +87,9 @@ export default function Welcome() {
           color={colors.muted}
           style={{ fontSize: 11, lineHeight: 18, marginTop: 14, textAlign: 'center' }}
         >
-          Face ID will be available when the team connects its account domain.
+          {config.useMocks
+            ? 'Demo account ready. No Face ID or backend is needed for testing.'
+            : 'Face ID will be available when the team connects its account domain.'}
         </Type>
       )}
       <Message text={action.error} />

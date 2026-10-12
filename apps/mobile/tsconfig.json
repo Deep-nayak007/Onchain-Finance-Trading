@@ -6,7 +6,7 @@
     "noUncheckedIndexedAccess": true,
     "paths": {
       "@/*": ["./*"],
-      "@leash/shared/canonical": ["./demo/canonical.ts"]
+      "@leash/shared/canonical": ["./mocks/canonical.ts"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx"],

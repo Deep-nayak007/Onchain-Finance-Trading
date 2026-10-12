@@ -20,8 +20,8 @@ import { useAction } from '../../lib/useAction';
 import { config } from '../../lib/config';
 import { requireBindings } from '../../integration/team';
 import { signPrepared } from '../../lib/actions';
-import { demoStore } from '../../demo/store';
-import { bookFixture } from '../../demo/fixtures';
+import { demoStore } from '../../mocks/store';
+import { bookFixture } from '../../mocks/fixtures';
 import { validAmount } from '../../lib/money';
 type Quote = {
   amountOut: string;
@@ -116,7 +116,9 @@ export default function Spot() {
               const next = config.useMocks
                 ? {
                     amountOut: String(
-                      direction === 'BUY' ? Number(amount) / 0.0419 : Number(amount) * 0.0417,
+                      direction === 'BUY'
+                        ? Number(amount) / Number(bookFixture.asks[0]![0])
+                        : Number(amount) * Number(bookFixture.bids[0]![0]),
                     ),
                     expiresAt: Date.now() + 30000,
                     transactions: [],

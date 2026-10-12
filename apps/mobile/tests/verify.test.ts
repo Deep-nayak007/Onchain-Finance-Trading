@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { keccak256, toBytes } from 'viem';
 import { canonicalJSON } from '@leash/shared/canonical';
-import { receiptFixtures } from '../demo/fixtures';
+import { receiptFixtures } from '../mocks/fixtures';
 import { verifyReceipt } from '../lib/verify';
 import { receiptDetailSchema, txRequestSchema } from '../lib/schemas';
 const fixture = receiptFixtures[1]!;

@@ -18,6 +18,10 @@ const config: ExpoConfig = {
     supportsTablet: false,
     ...(rpId ? { associatedDomains: [`webcredentials:${rpId}`] } : {}),
     infoPlist: {
+      NSAppTransportSecurity: {
+        NSAllowsArbitraryLoads: false,
+        NSAllowsLocalNetworking: true,
+      },
       NSFaceIDUsageDescription:
         'Use Face ID to sign your rules, approve slack, and pause your trader.',
     },

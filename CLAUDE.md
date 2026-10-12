@@ -6,7 +6,7 @@ Do not change frozen architecture §7 silently.
 Face owns apps/mobile. Brain owns services/api, guardian, and shared helpers.
 Rails owns contracts, gateway, indexer, shared ABI/address/query files.
 This initial Face build has no shared package or deployed services.
-Bootstrap data stays in apps/mobile/demo and never becomes live proof.
+Bootstrap data stays in apps/mobile/mocks and never becomes live proof.
 Default USE_MOCKS=true. Every screen must visibly distinguish sample data.
 Import the real shared canonical function and sender before live acceptance.
 Never invent deployed addresses, ABIs, enrollment payloads, or indexer fields.

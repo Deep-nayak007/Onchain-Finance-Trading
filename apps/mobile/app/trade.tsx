@@ -11,8 +11,8 @@ import { gateway } from '../lib/gateway';
 import { validAmount } from '../lib/money';
 import { requireBindings } from '../integration/team';
 import { signPrepared } from '../lib/actions';
-import { demoStore } from '../demo/store';
-import { makeReceipt } from '../demo/fixtures';
+import { demoStore } from '../mocks/store';
+import { makeReceipt } from '../mocks/fixtures';
 export default function Trade() {
   const { account } = useSession();
   const action = useAction();

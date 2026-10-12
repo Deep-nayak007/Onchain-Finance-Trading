@@ -1,8 +1,8 @@
 import type { Address, Hex } from 'viem';
 import { config } from './config';
 import { requireBindings } from '../integration/team';
-import { demoStore } from '../demo/store';
-import { pnlFixture, traderFixtures } from '../demo/fixtures';
+import { demoStore } from '../mocks/store';
+import { traderFixtures } from '../mocks/fixtures';
 export const envio = {
   receipts: (account: Address) =>
     config.useMocks
@@ -13,7 +13,7 @@ export const envio = {
       ? Promise.resolve(demoStore.receipts.find((r) => r.reasonHash === hash) ?? null)
       : requireBindings().readReceipt(account, hash),
   pnl: (account: Address) =>
-    config.useMocks ? Promise.resolve(pnlFixture) : requireBindings().readPnl(account),
+    config.useMocks ? Promise.resolve([...demoStore.pnl]) : requireBindings().readPnl(account),
   traderStats: () =>
     config.useMocks ? Promise.resolve(traderFixtures) : requireBindings().readTraderStats(),
   policy: (account: Address) =>

@@ -166,7 +166,17 @@ export function Screen({
             </Row>
           </Pressable>
           <Row>
-            {config.useMocks ? <Pill label="DEMO" color={colors.accent} /> : <Label>MONAD</Label>}
+            {config.useMocks ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Mock data controls"
+                onPress={() => router.push('/dev/mocks')}
+              >
+                <Pill label="DEMO" color={colors.accent} />
+              </Pressable>
+            ) : (
+              <Label>MONAD</Label>
+            )}
             {action}
           </Row>
         </Row>

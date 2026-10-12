@@ -1,5 +1,5 @@
-// Demo-only bootstrap. Metro resolves the real packages/shared/canonical.ts when it arrives.
-// Live builds explicitly fail if that file is absent.
+// Mock-only canonicalizer: local testing is independent of teammates' packages.
+// Live mode resolves packages/shared/canonical.ts and fails if that file is absent.
 export function canonicalJSON(value: unknown): string {
   function canonical(v: unknown): unknown {
     if (v === null || typeof v === 'string' || typeof v === 'boolean') return v;

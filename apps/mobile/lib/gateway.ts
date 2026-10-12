@@ -2,8 +2,8 @@ import { z } from 'zod';
 import { config } from './config';
 import { request } from './http';
 import { riskSchema } from './schemas';
-import { demoStore } from '../demo/store';
-import { bookFixture } from '../demo/fixtures';
+import { demoStore } from '../mocks/store';
+import { bookFixture } from '../mocks/fixtures';
 const level = z.tuple([z.string().regex(/^\d+(?:\.\d+)?$/), z.string().regex(/^\d+(?:\.\d+)?$/)]);
 export const bookSchema = z.object({ bids: z.array(level), asks: z.array(level), ts: z.string() });
 export const gateway = {

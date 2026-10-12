@@ -1,0 +1,216 @@
+{
+  "account": "0x1111111111111111111111111111111111111111",
+  "cashUsd": "1248.62",
+  "monBalance": 100,
+  "policy": {
+    "version": 1,
+    "markets": ["MON-PERP"],
+    "venues": ["PERPL"],
+    "maxLeverage": 3,
+    "maxNotionalUsd": "25",
+    "maxTotalExposureUsd": "100",
+    "maxWeeklyLossPct": 5,
+    "maxTradesPerHour": 4,
+    "cooldownSec": 300,
+    "requireSmartMoneyAgreement": true,
+    "minConfidence": 0.7,
+    "sleeveUsd": "1000"
+  },
+  "traders": [
+    {
+      "persona": {
+        "id": "falcon",
+        "agentId": "demo-falcon",
+        "name": "Falcon",
+        "style": "Momentum. Follows smart money.",
+        "mode": "LIVE",
+        "wallet": "0x1111111111111111111111111111111111111111",
+        "defaultPolicy": {
+          "version": 1,
+          "markets": ["MON-PERP"],
+          "venues": ["PERPL"],
+          "maxLeverage": 3,
+          "maxNotionalUsd": "25",
+          "maxTotalExposureUsd": "100",
+          "maxWeeklyLossPct": 5,
+          "maxTradesPerHour": 4,
+          "cooldownSec": 300,
+          "requireSmartMoneyAgreement": true,
+          "minConfidence": 0.7,
+          "sleeveUsd": "1000"
+        }
+      },
+      "sevenDayPct": 4.1,
+      "receipts": 412,
+      "maxDrawdownPct": 2.3
+    },
+    {
+      "persona": {
+        "id": "otter",
+        "agentId": "demo-otter",
+        "name": "Otter",
+        "style": "Patient entries. Smaller steps.",
+        "mode": "SHADOW",
+        "wallet": "0x1111111111111111111111111111111111111111",
+        "defaultPolicy": {
+          "version": 1,
+          "markets": ["MON-PERP"],
+          "venues": ["PERPL"],
+          "maxLeverage": 2,
+          "maxNotionalUsd": "15",
+          "maxTotalExposureUsd": "100",
+          "maxWeeklyLossPct": 5,
+          "maxTradesPerHour": 4,
+          "cooldownSec": 900,
+          "requireSmartMoneyAgreement": true,
+          "minConfidence": 0.7,
+          "sleeveUsd": "1000"
+        }
+      },
+      "sevenDayPct": 2.6,
+      "receipts": 186,
+      "maxDrawdownPct": 1.1
+    },
+    {
+      "persona": {
+        "id": "owl",
+        "agentId": "demo-owl",
+        "name": "Owl",
+        "style": "Collects funding. Keeps a hedge.",
+        "mode": "SHADOW",
+        "wallet": "0x1111111111111111111111111111111111111111",
+        "defaultPolicy": {
+          "version": 1,
+          "markets": ["MON-PERP", "MON/AUSD"],
+          "venues": ["PERPL", "KURU"],
+          "maxLeverage": 3,
+          "maxNotionalUsd": "25",
+          "maxTotalExposureUsd": "100",
+          "maxWeeklyLossPct": 5,
+          "maxTradesPerHour": 4,
+          "cooldownSec": 300,
+          "requireSmartMoneyAgreement": true,
+          "minConfidence": 0.7,
+          "sleeveUsd": "1000"
+        }
+      },
+      "sevenDayPct": 1.8,
+      "receipts": 204,
+      "maxDrawdownPct": 0.8
+    }
+  ],
+  "risk": {
+    "equityUsd": "1248.62",
+    "collateralUsd": "1200",
+    "marginUsedUsd": "83.33",
+    "weeklyPnlPct": 4.1,
+    "fundingPaidUsd": "1.82",
+    "slackLeftUsd": "19",
+    "positions": [
+      {
+        "market": "MON-PERP",
+        "side": "LONG",
+        "sizeUsd": "250",
+        "entryPrice": "0.0392",
+        "markPrice": "0.0418",
+        "liqPrice": "0.0271",
+        "liqDistancePct": 35.2,
+        "unrealizedPnlUsd": "16.58"
+      }
+    ],
+    "exposureByMarket": {
+      "MON-PERP": "250"
+    }
+  },
+  "receipts": [
+    {
+      "seq": 413,
+      "status": "REJECTED",
+      "persona": "falcon"
+    },
+    {
+      "seq": 412,
+      "status": "EXECUTED",
+      "persona": "falcon"
+    },
+    {
+      "seq": 411,
+      "status": "SHADOW",
+      "persona": "otter"
+    },
+    {
+      "seq": 410,
+      "status": "SHADOW",
+      "persona": "owl"
+    }
+  ],
+  "receiptTemplate": {
+    "sizeUsd": "25",
+    "confidence": 0.84,
+    "rationale": "Smart-money inflows rose while the order book held support. Size stays inside your rules.",
+    "deniedRationale": "Smart money is buying, but 5x is beyond your 3x rule. Asked you for a narrow exception.",
+    "signals": [
+      {
+        "source": "nansen",
+        "key": "Smart-money inflow",
+        "value": "+$1.2M in 1 hour"
+      },
+      {
+        "source": "perpl",
+        "key": "Book imbalance",
+        "value": "Buy side +18%"
+      },
+      {
+        "source": "envio",
+        "key": "Weekly risk used",
+        "value": "$31 of $50"
+      }
+    ],
+    "signalsSnapshot": {
+      "smartMoneyInflowUsd": "1200000",
+      "bookImbalancePct": 18,
+      "weeklyRiskUsd": "31"
+    },
+    "confirmationDelayMs": 900
+  },
+  "slack": {
+    "id": "10000000-0000-4000-8000-000000000001",
+    "persona": "falcon",
+    "rule": "LEVERAGE_EXCEEDS",
+    "requested": {
+      "maxLeverage": 5,
+      "maxNotionalUsd": "25",
+      "extraRiskUsd": "8",
+      "durationSec": 3600
+    },
+    "why": [
+      {
+        "text": "Smart-money inflows are up $1.2M this hour.",
+        "source": "Nansen"
+      },
+      {
+        "text": "Buy-side depth is 18% stronger.",
+        "source": "Perpl"
+      },
+      {
+        "text": "The position stays capped at $25.",
+        "source": "Rules"
+      }
+    ],
+    "status": "PENDING",
+    "requestTtlSec": 600
+  },
+  "pnl": [0, 2, 1, 5, 4, 9, 8, 7, 14, 12, 18, 22, 20, 28, 26, 34, 31, 38, 37, 42, 40, 48.62],
+  "book": {
+    "bids": [
+      ["0.0417", "4200"],
+      ["0.0416", "3100"],
+      ["0.0415", "5700"]
+    ],
+    "asks": [
+      ["0.0419", "3800"],
+      ["0.0420", "2900"],
+      ["0.0421", "4900"]
+    ]
+  }
+}

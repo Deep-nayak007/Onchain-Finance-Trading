@@ -8,6 +8,15 @@ const context = await browser.newContext({
 });
 const page = await context.newPage();
 const errors = [];
+const externalRequests = [];
+page.on('request', (request) => {
+  const url = new URL(request.url());
+  if (
+    ['http:', 'https:'].includes(url.protocol) &&
+    !['localhost', '127.0.0.1', '::1'].includes(url.hostname)
+  )
+    externalRequests.push(request.url());
+});
 page.on('pageerror', (e) => errors.push(e.message));
 page.on('console', (m) => {
   if (m.type() === 'error') errors.push(m.text());
@@ -94,10 +103,42 @@ try {
     .getByText('Demo trade added to receipts. No order was sent.', { exact: true })
     .waitFor();
   console.log('PASS: all routes, swap quote/confirmation, manual trade cap and execution.');
+  await page.goto(`${base}/home`, { waitUntil: 'networkidle' });
+  await page.getByRole('button', { name: 'Mock data controls' }).click();
+  await page.getByRole('button', { name: 'Show an empty portfolio' }).click();
+  await page.getByRole('button', { name: 'Back to Home' }).click();
+  await page.getByText('$0.00', { exact: true }).filter({ visible: true }).first().waitFor();
+  await page.getByRole('tab', { name: 'Receipts', exact: true }).click();
+  await page.getByText('No receipts yet', { exact: true }).filter({ visible: true }).waitFor();
+  await page.getByRole('tab', { name: 'Risk', exact: true }).click();
+  await page.getByText('No open positions', { exact: true }).filter({ visible: true }).waitFor();
+  await page.getByRole('button', { name: 'Mock data controls' }).click();
+  await page.getByRole('button', { name: 'Reset all mock data' }).click();
+  await page.getByText('$1,248.62', { exact: true }).filter({ visible: true }).waitFor();
+  await page.getByRole('button', { name: 'Mock data controls' }).click();
+  await page.getByRole('button', { name: 'Create a fresh slack request' }).click();
+  await page
+    .getByText('A fresh ten-minute request is ready. Open Home to review it.', { exact: true })
+    .waitFor();
+  console.log('PASS: empty portfolio states, full reset, and repeatable slack requests.');
+  await page.getByRole('button', { name: 'Test onboarding' }).click();
+  await page.getByRole('button', { name: 'Continue with demo account' }).click();
+  await page.getByRole('button', { name: 'Prepare demo account' }).click();
+  await page.getByRole('button', { name: 'Set up my trader' }).click();
+  await page.getByRole('button', { name: 'Add demo dollars' }).click();
+  await page.getByRole('button', { name: 'Authorize demo trader' }).click();
+  await page.getByRole('button', { name: 'Write my rules' }).waitFor();
+  await page.getByRole('button', { name: 'Mock data controls' }).click();
+  await page.getByRole('button', { name: 'Reset all mock data' }).click();
+  console.log(
+    'PASS: demo onboarding, gas, deposit and key authorization without passkeys or services.',
+  );
   const desktop = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
   await desktop.goto(`${base}/home`, { waitUntil: 'networkidle' });
   assert.ok((await desktop.getByRole('button', { name: 'LEASH · welcome' }).boundingBox()).x > 400);
   assert.equal(errors.length, 0, errors.join('\n'));
+  assert.equal(externalRequests.length, 0, externalRequests.join('\n'));
+  console.log('PASS: no external API, gateway, indexer, RPC or passkey requests in mock mode.');
   console.log('PASS: desktop framing and no browser console/runtime errors.');
 } finally {
   await browser.close();

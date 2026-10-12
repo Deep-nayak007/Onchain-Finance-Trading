@@ -7,8 +7,8 @@ Ink #0F0D16, surface #1B1825, violet #9585FF, rope #ECA43F.
 Big Shoulders Display 800, IBM Plex Sans 400/600, IBM Plex Mono 400/600.
 Thermal receipts, amber ring, dollars, rules, slack, pull the leash.
 Default demo mode is explicit; demo hashes are not onchain verification.
-Metro imports shared canonical.ts when present; live mode requires it.
-Fixture bootstrap stays inside demo/ until teammates provide shared fixtures.
+Mock mode uses mocks/canonical.ts; live mode requires shared canonical.ts.
+Fixture bootstrap stays inside mocks/ until teammates provide shared fixtures.
 Every live transaction must use the team's sendTx through integration/team.ts.
 No EIP-7702. Monad mainnet 143; testnet proof uses 10143 only.
 Mera 0.2.0 + react-native-passkey 3.6.1; native client on mobile, browser on web.

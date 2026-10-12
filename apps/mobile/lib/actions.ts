@@ -12,7 +12,7 @@ import { requireBindings } from '../integration/team';
 import { withSigner } from './mera';
 import { publicClient } from './chain';
 import { api } from './api';
-import { demoStore } from '../demo/store';
+import { demoStore } from '../mocks/store';
 import { reviewTransaction } from './transactionReview';
 import { ConfirmedActionError, type PendingCallback } from './confirmedAction';
 export async function signPrepared(account: Address, prepared: TxRequest): Promise<Hex> {

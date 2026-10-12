@@ -19,7 +19,7 @@ Only credential ID and transports are stored. Each transaction obtains fresh PRF
 
 ## Shared code and live services
 
-Brain supplies `packages/shared/canonical.ts`, schemas, fixtures, and `sendTx.ts`. Rails supplies actual ABIs, source-backed deployed addresses, and `queries.graphql`. Metro always selects the team's canonical function when it exists and refuses a live bundle if it is missing. The demo canonicalizer is explicitly a bootstrap and must match the team's vectors before live use.
+Brain supplies `packages/shared/canonical.ts`, schemas, fixtures, and `sendTx.ts`. Rails supplies actual ABIs, source-backed deployed addresses, and `queries.graphql`. Mock mode always uses the local mock canonicalizer so incoming teammate code cannot break isolated testing. Live mode selects the team's canonical function and refuses a bundle if it is missing. The mock canonicalizer is explicitly a bootstrap and must match the team's vectors before live use.
 
 Fill the FACE-owned `apps/mobile/integration/team.ts` adapter with imports from the actual delivered files. Its interface maps existing interfaces into app view models; it does not modify architecture §7 or require a new backend endpoint. Use the actual exports rather than renaming or recreating the owners' package.
 

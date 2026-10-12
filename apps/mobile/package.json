@@ -4,8 +4,8 @@
   "private": true,
   "main": "index.ts",
   "scripts": {
-    "start": "expo start --dev-client",
-    "web": "expo start --web",
+    "start": "expo start --dev-client --localhost",
+    "web": "expo start --web --localhost",
     "ios": "expo run:ios",
     "android": "expo run:android",
     "check": "tsc --noEmit",
@@ -17,7 +17,9 @@
     "smoke": "node scripts/smoke.mjs",
     "capture": "node scripts/capture.mjs",
     "format": "prettier --write .",
-    "video": "node scripts/video-preview.mjs"
+    "video": "node scripts/video-preview.mjs",
+    "mock:ios": "node scripts/start-mocks.mjs --ios",
+    "mock:web": "node scripts/start-mocks.mjs --web"
   },
   "dependencies": {
     "@category-labs/mera": "0.2.0",

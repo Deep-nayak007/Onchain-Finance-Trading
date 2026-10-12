@@ -12,8 +12,8 @@ import {
   type Persona,
   type CompileResult,
 } from './schemas';
-import { demoStore } from '../demo/store';
-import { defaultPolicy, personas } from '../demo/fixtures';
+import { demoStore } from '../mocks/store';
+import { defaultPolicy, personas } from '../mocks/fixtures';
 const acknowledgment = z.unknown(); // No response shape was specified for commands in §7.4.
 export const api = {
   status: (account: string) =>

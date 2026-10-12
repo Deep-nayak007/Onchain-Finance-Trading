@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState } from 'react';
 import type { Address } from 'viem';
 import { config } from './config';
-import { demoAccount } from '../demo/fixtures';
+import { demoAccount } from '../mocks/fixtures';
 type Session = {
   account: Address | null;
   isDemo: boolean;

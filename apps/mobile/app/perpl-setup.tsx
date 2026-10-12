@@ -10,7 +10,7 @@ import { config } from '../lib/config';
 import { validAmount } from '../lib/money';
 import { requireBindings } from '../integration/team';
 import { signPrepared } from '../lib/actions';
-import { demoStore } from '../demo/store';
+import { demoStore } from '../mocks/store';
 import { useRisk } from '../lib/queries';
 import type { TxRequest } from '../lib/schemas';
 export default function PerplSetup() {
