@@ -10,7 +10,7 @@ Default demo mode is explicit; demo hashes are not onchain verification.
 Mock mode uses mocks/canonical.ts; live mode requires shared canonical.ts.
 Fixture bootstrap stays inside mocks/ until teammates provide shared fixtures.
 Every live transaction must use the team's sendTx through integration/team.ts.
-No EIP-7702. Monad mainnet 143; testnet proof uses 10143 only.
+No EIP-7702. Accept Monad mainnet 143 and testnet 10143; every request and RPC must match EXPO_PUBLIC_CHAIN_ID.
 Mera 0.2.0 + react-native-passkey 3.6.1; native client on mobile, browser on web.
 RP ID is permanent; do not choose it for the team.
 Prompt per transaction; always end session in finally and clear secret buffers.
@@ -20,5 +20,7 @@ Live receipt hash must be anchored to Envio, not the API's own hash.
 Respect reduced motion; cancel long-press on release, background, unmount.
 No funds are sent while integrations are absent. Live mode never uses demo fallback.
 Record incomplete integration acceptance in ../../docs/LIMITATIONS.md.
+The deployed Brain API is https://leash-brain-api.fly.dev, testnet paper mode. Read ../../docs/FACE_LIVE_HANDOFF.md and FACE_TESTNET_VALIDATION.md.
+The known public receipt can use an independently decoded ReceiptLog transaction proof until Envio arrives. Never use the API's own hash as an anchor.
 Use npm workspaces (npm is installed; pnpm is not). Do not touch home-directory Git.
 Prefix shell commands with rtk per /Users/deepnayak/.codex/RTK.md.

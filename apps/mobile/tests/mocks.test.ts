@@ -6,7 +6,15 @@ import { receiptDetailSchema, riskSchema, slackSchema } from '../lib/schemas';
 import { verifyReceipt } from '../lib/verify';
 test('the single mock dataset yields valid snapshots and honestly checked sample receipts', () => {
   demoStore.reset();
-  assert.ok(riskSchema.safeParse(demoStore.risk).success);
+  const risk = demoStore.risk;
+  assert.deepEqual(
+    riskSchema.parse({
+      ...risk,
+      weeklyPnlPct: String(risk.weeklyPnlPct),
+      positions: risk.positions.map((p) => ({ ...p, liqDistancePct: String(p.liqDistancePct) })),
+    }),
+    risk,
+  );
   assert.ok(slackSchema.safeParse(demoStore.slack).success);
   for (const row of demoStore.receipts) {
     assert.ok(receiptDetailSchema.safeParse(row.detail).success);

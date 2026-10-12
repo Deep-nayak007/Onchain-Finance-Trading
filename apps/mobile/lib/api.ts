@@ -2,11 +2,16 @@ import { z } from 'zod';
 import { keccak256, toBytes } from 'viem';
 import { canonicalJSON } from '@leash/shared/canonical';
 import { config } from './config';
-import { request } from './http';
+import { request, ServiceError } from './http';
+import { requireConfiguredChain } from './config';
+import { rememberPolicy } from './compiledPolicies';
 import {
   agentStatusSchema,
   compileSchema,
-  personaSchema,
+  apiHealthSchema,
+  apiConfigSchema,
+  hashSchema,
+  traderResponseSchema,
   receiptDetailSchema,
   slackSchema,
   type Persona,
@@ -16,6 +21,8 @@ import { demoStore } from '../mocks/store';
 import { defaultPolicy, personas } from '../mocks/fixtures';
 const acknowledgment = z.unknown(); // No response shape was specified for commands in §7.4.
 export const api = {
+  health: () => request(config.apiUrl, '/health', apiHealthSchema),
+  configuration: () => request(config.apiUrl, '/config', apiConfigSchema),
   status: (account: string) =>
     config.useMocks
       ? Promise.resolve({
@@ -24,11 +31,19 @@ export const api = {
           lastTick: new Date().toISOString(),
           lastDecision: null,
         })
-      : request(config.apiUrl, `/agent/status/${encodeURIComponent(account)}`, agentStatusSchema),
+      : request(
+          config.apiUrl,
+          `/agent/status/${encodeURIComponent(account)}`,
+          agentStatusSchema,
+        ).catch((error) => {
+          if (error instanceof ServiceError && error.status === 404)
+            return { state: 'NOT_STARTED', persona: null, lastTick: null, lastDecision: null };
+          throw error;
+        }),
   traders: () =>
     config.useMocks
-      ? Promise.resolve(personas)
-      : request(config.apiUrl, '/traders', z.array(personaSchema)),
+      ? Promise.resolve(personas.map((persona) => ({ ...persona, stats: null })))
+      : request(config.apiUrl, '/traders', z.array(traderResponseSchema)),
   receipt: (hash: string) =>
     config.useMocks
       ? Promise.resolve(demoStore.receipts.find((r) => r.reasonHash === hash)?.detail ?? null)
@@ -50,8 +65,16 @@ export const api = {
     text: string,
     persona: Persona['id'],
   ): Promise<CompileResult> => {
-    if (!config.useMocks)
-      return request(config.apiUrl, '/mandate/compile', compileSchema, { account, text, persona });
+    if (!config.useMocks) {
+      requireConfiguredChain((await api.health()).chainId);
+      const result = await request(config.apiUrl, '/mandate/compile', compileSchema, {
+        account,
+        text,
+        persona,
+      });
+      rememberPolicy(account, result.policyHash, result.policy);
+      return result;
+    }
     // Deliberately a predictable sample card. No AI service is implied in demo mode.
     const policy = { ...(personas.find((p) => p.id === persona)?.defaultPolicy ?? defaultPolicy) };
     const leverage = text.match(/(\d+(?:\.\d+)?)\s*x\b/i)?.[1];
@@ -62,6 +85,9 @@ export const api = {
     if (loss) policy.maxWeeklyLossPct = Math.max(0.1, Math.min(5, Number(loss)));
     return {
       policy,
+      agentId: personas.find((p) => p.id === persona)!.agentId,
+      agentWallet: null,
+      perplKey: null,
       policyHash: keccak256(toBytes(canonicalJSON(policy))),
       leashCard: [
         `Only ${policy.markets.join(' and ')}`,
@@ -74,23 +100,40 @@ export const api = {
       warnings: ['Sample rule card. Review every line; the live AI compiler is not connected.'],
     };
   },
-  drip: (account: string) =>
-    config.useMocks
-      ? Promise.resolve(null)
-      : request(config.apiUrl, '/gas/drip', acknowledgment, { account }),
+  drip: async (account: string) => {
+    if (config.useMocks) return null;
+    requireConfiguredChain((await api.health()).chainId);
+    return request(
+      config.apiUrl,
+      '/gas/drip',
+      z.object({ txHash: hashSchema, amountMon: z.string().regex(/^\d+(?:\.\d+)?$/) }),
+      { account },
+    );
+  },
   registerDevice: (account: string, expoPushToken: string) =>
     config.useMocks
       ? Promise.resolve(null)
       : request(config.apiUrl, '/devices', acknowledgment, { account, expoPushToken }),
-  activate: (body: unknown) => request(config.apiUrl, '/agent/activate', acknowledgment, body),
-  kill: (account: string) => request(config.apiUrl, '/agent/kill', acknowledgment, { account }),
+  activate: (body: { account: string; txHash: string }) =>
+    request(config.apiUrl, '/agent/activate', agentStatusSchema, body),
+  kill: (account: string) => request(config.apiUrl, '/agent/kill', agentStatusSchema, { account }),
   approveSlack: (id: string, txHash: string) =>
-    request(config.apiUrl, `/slack/${encodeURIComponent(id)}/approved`, acknowledgment, { txHash }),
+    request(
+      config.apiUrl,
+      `/slack/${encodeURIComponent(id)}/approved`,
+      z.object({ request: slackSchema, receipt: receiptDetailSchema.optional() }),
+      { txHash },
+    ),
   denySlack: async (id: string) => {
     if (config.useMocks) {
       demoStore.slack.status = 'DENIED';
       return null;
     }
-    return request(config.apiUrl, `/slack/${encodeURIComponent(id)}/denied`, acknowledgment, {});
+    return request(
+      config.apiUrl,
+      `/slack/${encodeURIComponent(id)}/denied`,
+      z.object({ request: slackSchema }),
+      {},
+    );
   },
 };

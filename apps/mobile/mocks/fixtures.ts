@@ -88,7 +88,13 @@ export const createReceiptFixtures = () =>
   );
 export const receiptFixtures = createReceiptFixtures();
 export const createRiskFixture = () =>
-  riskSchema.parse({ ...data.risk, account: demoAccount, ts: new Date().toISOString() });
+  riskSchema.parse({
+    ...data.risk,
+    account: demoAccount,
+    ts: Math.floor(Date.now() / 1000),
+    weeklyPnlPct: String(data.risk.weeklyPnlPct),
+    positions: data.risk.positions.map((p) => ({ ...p, liqDistancePct: String(p.liqDistancePct) })),
+  });
 export const riskFixture = createRiskFixture();
 export function createSlackFixture(receipts: IndexedReceipt[] = receiptFixtures) {
   const now = Date.now();

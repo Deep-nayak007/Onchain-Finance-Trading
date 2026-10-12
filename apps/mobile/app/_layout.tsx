@@ -15,21 +15,22 @@ import { listenForSlack } from '../lib/notifications';
 import { TransactionReview } from '../components/TransactionReview';
 import { useReducedMotion } from '../lib/useReducedMotion';
 import { prepareMockDevClient } from '../mocks/dev-client';
-import { config } from '../lib/config';
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 1500, refetchOnWindowFocus: true } },
 });
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   return (
-    <Screen title="Let’s try again">
-      <Type color={colors.muted}>{error.message}</Type>
-      <Button label="Reload this screen" onPress={retry} />
-    </Screen>
+    <QueryClientProvider client={queryClient}>
+      <Screen title="Let’s try again">
+        <Type color={colors.muted}>{error.message}</Type>
+        <Button label="Reload this screen" onPress={retry} />
+      </Screen>
+    </QueryClientProvider>
   );
 }
 export default function RootLayout() {
   useEffect(() => {
-    if (config.useMocks) void prepareMockDevClient().catch(() => {});
+    void prepareMockDevClient().catch(() => {});
   }, []);
   const reducedMotion = useReducedMotion();
   const [fontsLoaded, fontError] = useFonts({

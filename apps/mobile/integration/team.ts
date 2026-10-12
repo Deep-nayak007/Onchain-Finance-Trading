@@ -1,4 +1,5 @@
 import type { Address, Hex, LocalAccount } from 'viem';
+import { liveBindings } from './live';
 import type {
   Book,
   CompileResult,
@@ -9,7 +10,7 @@ import type {
   TraderStats,
   TxRequest,
 } from '../lib/schemas';
-// FACE-owned adapter: fill with imports from the actual shared package when Brain/Rails deliver it.
+// FACE-owned view adapter over the actual shared package and Brain/Rails services.
 // Do not infer ABI exports, addresses, GraphQL fields, key enrollment, or Kuru routes.
 export interface TeamBindings {
   sendTx: (account: LocalAccount, request: TxRequest) => Promise<Hex>; // must delegate to packages/shared/sendTx.ts
@@ -24,7 +25,11 @@ export interface TeamBindings {
   activateAgent: (account: Address, persona: Persona['id'], txHash: Hex) => Promise<void>; // actual POST /agent/activate body supplied by Brain
   resumeAgent: (account: Address, txHash: Hex) => Promise<void>; // existing /agent/activate flow; restores the policy and exchange enrollment after kill
   readReceipts: (account: Address) => Promise<IndexedReceipt[]>; // actual shared queries.graphql + Envio
-  readReceipt: (account: Address, hash: Hex) => Promise<IndexedReceipt | null>;
+  readReceipt: (
+    account: Address | null,
+    hash: Hex,
+    proofTxHash?: Hex,
+  ) => Promise<IndexedReceipt | null>;
   readPnl: (account: Address) => Promise<number[]>;
   readTraderStats: () => Promise<TraderStats[]>;
   readPolicy: (account: Address) => Promise<Policy | null>;
@@ -43,14 +48,9 @@ export interface TeamBindings {
     account: Address,
     amount: string,
     direction: 'BUY' | 'SELL',
-  ) => Promise<{ amountOut: string; expiresAt: number; transactions: TxRequest[] }>; // Brain's Kuru helper
+  ) => Promise<{ amountOut: string; minOut: string; expiresAt: number; transactions: TxRequest[] }>; // Brain's Kuru helper; amount is USD on both sides
 }
-// Intentionally absent until actual shared code exists. Live actions fail closed with useful messages.
-export const teamBindings: TeamBindings | null = null;
+export const teamBindings: TeamBindings = liveBindings;
 export function requireBindings(): TeamBindings {
-  if (!teamBindings)
-    throw new Error(
-      'Live services are not connected yet. Ask Prem and Yadnesh for the shared package and connect integration/team.ts.',
-    );
   return teamBindings;
 }

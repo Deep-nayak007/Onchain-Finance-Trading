@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { reviewTransaction, finishReview, reviewSnapshot } from '../lib/transactionReview';
 import { requireBindings } from '../integration/team';
+import { defaultPolicy } from '../mocks/fixtures';
 const tx = {
   to: '0x1111111111111111111111111111111111111111',
   data: '0x',
@@ -9,8 +10,24 @@ const tx = {
   gas: '21000',
   chainId: 143,
 } as const;
-test('live operations fail closed while the authoritative shared integration is absent', () =>
-  assert.throws(() => requireBindings(), /shared package/));
+test('live mandate preparation refuses unavailable wallet or key before RPC or signing', async () => {
+  await assert.rejects(
+    requireBindings().prepareMandate(
+      tx.to,
+      {
+        policy: defaultPolicy,
+        policyHash: `0x${'11'.repeat(32)}`,
+        leashCard: [],
+        warnings: [],
+        agentId: '0',
+        agentWallet: null,
+        perplKey: null,
+      },
+      'falcon',
+    ),
+    /unavailable/,
+  );
+});
 test('transaction approval must be explicit and cancellation rejects without signing', async () => {
   const pending = reviewTransaction(tx);
   assert.ok(reviewSnapshot());

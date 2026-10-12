@@ -25,6 +25,7 @@ import { bookFixture } from '../../mocks/fixtures';
 import { validAmount } from '../../lib/money';
 type Quote = {
   amountOut: string;
+  minOut?: string;
   expiresAt: number;
   transactions: import('../../lib/schemas').TxRequest[];
 };
@@ -42,11 +43,11 @@ export default function Spot() {
   });
   const swapDirection = () => {
     setDirection(direction === 'BUY' ? 'SELL' : 'BUY');
-    setAmount(direction === 'BUY' ? '100' : '10');
+    setAmount(config.useMocks && direction === 'BUY' ? '100' : '10');
     setQuote(null);
     action.clear();
   };
-  const valid = validAmount(amount, direction === 'BUY' ? 25 : 500);
+  const valid = validAmount(amount, config.useMocks && direction === 'SELL' ? 500 : 25);
   return (
     <Screen
       title="A simple swap."
@@ -74,7 +75,7 @@ export default function Spot() {
             style={[styles.input, { flex: 1, padding: 10, fontSize: 28 }]}
           />
           <Type kind="display" style={{ fontSize: 23 }}>
-            {direction === 'BUY' ? 'DOLLARS' : 'MON'}
+            {direction === 'BUY' ? 'DOLLARS' : config.useMocks ? 'MON' : 'DOLLARS OF MON'}
           </Type>
         </Row>
         <Pressable
@@ -105,6 +106,16 @@ export default function Spot() {
         <Type color={colors.muted} style={{ fontSize: 10, lineHeight: 17 }}>
           Review a fresh quote before signing. No automatic swaps.
         </Type>
+        {!config.useMocks && direction === 'SELL' && (
+          <Type color={colors.muted} style={{ fontSize: 11 }}>
+            Enter the dollar value of MON to sell. The API converts it to MON.
+          </Type>
+        )}
+        {quote?.minOut && (
+          <Type color={colors.rope} style={{ fontSize: 11 }}>
+            Minimum received: {quote.minOut} {direction === 'BUY' ? 'MON' : 'dollars'}
+          </Type>
+        )}
         <Button
           label="Get a quote"
           variant="secondary"
@@ -178,7 +189,11 @@ export default function Spot() {
           />
         )}
         <Type color={colors.muted} style={{ fontSize: 9, textAlign: 'center' }}>
-          Dollars shown as AUSD · sample price in demo mode
+          {config.useMocks
+            ? 'Dollars shown as AUSD · sample price in demo mode'
+            : config.chainId === 10143
+              ? 'Testnet dollars shown as test USDC · Kuru MON/USDC'
+              : 'Dollars shown as AUSD · Kuru MON/AUSD'}
         </Type>
       </Card>
       <Message text={action.error} />
@@ -186,7 +201,9 @@ export default function Spot() {
       <View style={{ marginTop: 27, gap: 14 }}>
         <Row style={{ justifyContent: 'space-between' }}>
           <Label>Order-book depth</Label>
-          <Label>MON / AUSD</Label>
+          <Label>
+            {!config.useMocks && config.chainId === 10143 ? 'MON / USDC' : 'MON / AUSD'}
+          </Label>
         </Row>
         {book.isPending ? (
           <Loading />

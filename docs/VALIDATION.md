@@ -1,5 +1,7 @@
 # Face validation
 
+October 12 update: the deployed testnet API, public receipt in browser and iOS Simulator, 0.2 test MON drip, cloud rule compilation, unsigned mandate preparation and unsigned Kuru BUY quote have now been checked. Shared sender/hash tests also pass. See [FACE_TESTNET_VALIDATION.md](FACE_TESTNET_VALIDATION.md) for current evidence and remaining blockers. The table below records the earlier sample build, before the live handoff.
+
 Validated October 11, 2026, America/Phoenix, on this Mac with Xcode.
 
 | Check | Result |

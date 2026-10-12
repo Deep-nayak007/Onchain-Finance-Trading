@@ -42,7 +42,8 @@ export default function Home() {
     refetchInterval: 4000,
   });
   const action = useAction();
-  const paused = status.data?.state === 'PAUSED';
+  const paused = status.data?.state === 'PAUSED' || status.data?.state === 'KILLED';
+  const active = status.data?.state === 'RUNNING' || status.data?.state === 'ACTIVE';
   const persona = status.data?.persona ?? 'your trader';
   const budget = policy.data
     ? (Number(policy.data.sleeveUsd) * policy.data.maxWeeklyLossPct) / 100
@@ -74,8 +75,16 @@ export default function Home() {
         )}
         <Row>
           <Pill
-            label={paused ? 'PAUSED' : status.data ? 'ON A LEASH' : 'CONNECTING'}
-            color={paused ? colors.rope : colors.ok}
+            label={
+              paused
+                ? 'PAUSED'
+                : active
+                  ? 'ON A LEASH'
+                  : status.data?.state === 'NOT_STARTED'
+                    ? 'SET RULES'
+                    : 'CONNECTING'
+            }
+            color={paused || !active ? colors.rope : colors.ok}
           />
           <Type color={colors.muted} style={{ fontSize: 11 }}>
             Your keys stay yours.
@@ -97,8 +106,8 @@ export default function Home() {
                 {persona}
               </Type>
               <Pill
-                label={paused ? 'PAUSED' : 'TRADER ACTIVE'}
-                color={paused ? colors.rope : colors.ok}
+                label={paused ? 'PAUSED' : active ? 'TRADER ACTIVE' : 'WAITING'}
+                color={paused || !active ? colors.rope : colors.ok}
               />
               <Type color={colors.muted} style={{ fontSize: 11, lineHeight: 17 }}>
                 {paused

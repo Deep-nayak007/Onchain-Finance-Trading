@@ -104,6 +104,17 @@ the real Perpl gateway, Envio Cloud, mainnet contracts. See [`docs/LIMITATIONS.m
 
 The Face lane is an Expo React Native app for iOS, Android, and a browser preview. It includes every screen in the supplied brief, the dark visual system, on-device receipt fingerprints, and an interactive threat-model demo. **The default build uses clearly labelled sample data.** Real Face ID and mainnet acceptance require the team's account domain, shared package, deployments, and services.
 
+For the deployed Brain API on **Monad testnet (10143), paper mode**:
+
+```sh
+npm install
+npm run testnet:ios
+# or: npm run testnet:web
+npm run testnet:check
+```
+
+Tap **Check the testnet receipt** on Welcome. It opens Brain's deployed receipt, independently verifies the ReceiptLog event, and shows **PAPER**, **used slack**, and **✓ · 0.9 s**. No wallet login is needed for this public check. The profile sets `EXPO_PUBLIC_API_URL=https://leash-brain-api.fly.dev`, chain 10143 and the public testnet RPC; Prem's Mac and `adb reverse` for port 8787 are unnecessary. Metro still needs to run for development builds. Copy `apps/mobile/.env.testnet.example` to `.env` for regular launches. Gateway/Envio URLs and the permanent passkey domain are still required for the remaining wallet flows. See [testnet validation](docs/FACE_TESTNET_VALIDATION.md).
+
 For local testing before Brain/Rails arrive, run from the repository root:
 
 ```sh

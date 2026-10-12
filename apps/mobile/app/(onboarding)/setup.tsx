@@ -9,9 +9,11 @@ import { useAction } from '../../lib/useAction';
 import { coverGas } from '../../lib/gas';
 import { registerPush } from '../../lib/notifications';
 import { config } from '../../lib/config';
+import { useApiHealth } from '../../lib/queries';
 export default function Setup() {
   const { account, isDemo } = useSession();
   const action = useAction();
+  const health = useApiHealth();
   const [funded, setFunded] = useState(false);
   const [pushStatus, setPushStatus] = useState<string | null>(null);
   return (
@@ -55,6 +57,11 @@ export default function Setup() {
         ))}
       </View>
       <View style={{ marginTop: 28 }}>
+        {!config.useMocks && config.chainId === 10143 && (
+          <Type color={colors.muted} style={{ fontSize: 12, marginBottom: 12 }}>
+            New wallets receive 0.2 test MON once. No MON purchase is needed.
+          </Type>
+        )}
         <Button
           label={funded ? 'Gas ready' : config.useMocks ? 'Prepare demo account' : 'Cover my gas'}
           icon="check"
@@ -80,9 +87,17 @@ export default function Setup() {
       {funded && (
         <Button
           variant="secondary"
-          label="Set up my trader"
+          label={
+            !config.useMocks && health.data?.live === false
+              ? 'Set paper-trading rules'
+              : 'Set up my trader'
+          }
           icon="arrow"
-          onPress={() => router.replace('/perpl-setup')}
+          onPress={() =>
+            router.replace(
+              !config.useMocks && health.data?.live === false ? '/rules' : '/perpl-setup',
+            )
+          }
         />
       )}
     </Screen>

@@ -12,7 +12,7 @@ const stampColors: Record<ReceiptStatus, string> = {
   PAUSED: colors.stampPause,
   SHADOW: colors.stampShadow,
 };
-export function Stamp({ status }: { status: ReceiptStatus }) {
+export function Stamp({ status, paper = false }: { status: ReceiptStatus; paper?: boolean }) {
   return (
     <View
       style={{
@@ -29,7 +29,7 @@ export function Stamp({ status }: { status: ReceiptStatus }) {
         color={stampColors[status]}
         style={{ fontSize: 11, fontFamily: fonts.monoBold, letterSpacing: 2 }}
       >
-        {status === 'REJECTED' ? 'DENIED' : status}
+        {paper && status === 'EXECUTED' ? 'PAPER' : status === 'REJECTED' ? 'DENIED' : status}
       </Type>
     </View>
   );
@@ -44,6 +44,7 @@ export function ReceiptPaper({
   compact?: boolean;
 }) {
   const detail = receipt.detail;
+  const paper = !config.useMocks && !!detail && detail.execTxHash === null;
   const verification = detail ? verifyReceipt(detail, receipt, config.useMocks) : null;
   const label =
     receipt.status === 'PAUSED'
@@ -103,8 +104,13 @@ export function ReceiptPaper({
               </Type>
             )}
           </View>
-          <Stamp status={receipt.status} />
+          <Stamp status={receipt.status} paper={paper} />
         </Row>
+        {paper && (
+          <Type kind="mono" color={colors.paperMuted} style={{ fontSize: 9, letterSpacing: 0 }}>
+            PAPER · No trade was executed
+          </Type>
+        )}
         <Type
           kind="mono"
           color={colors.paperMuted}

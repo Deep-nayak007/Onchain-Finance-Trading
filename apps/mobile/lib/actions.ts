@@ -7,7 +7,7 @@ import {
 } from './schemas';
 import type { Address, Hex } from 'viem';
 import * as Haptics from 'expo-haptics';
-import { config, requireMainnet } from './config';
+import { config, requireConfiguredChain } from './config';
 import { requireBindings } from '../integration/team';
 import { withSigner } from './mera';
 import { publicClient } from './chain';
@@ -16,11 +16,11 @@ import { demoStore } from '../mocks/store';
 import { reviewTransaction } from './transactionReview';
 import { ConfirmedActionError, type PendingCallback } from './confirmedAction';
 export async function signPrepared(account: Address, prepared: TxRequest): Promise<Hex> {
-  requireMainnet();
   if (config.useMocks) throw new Error('Demo mode does not sign or send transactions.');
   const request = txRequestSchema.parse(prepared);
+  requireConfiguredChain(request.chainId);
   const bindings = requireBindings();
-  if ((await publicClient.getChainId()) !== 143)
+  if ((await publicClient.getChainId()) !== config.chainId)
     throw new Error(
       'The RPC is serving another network. Check your Monad connection before signing.',
     );

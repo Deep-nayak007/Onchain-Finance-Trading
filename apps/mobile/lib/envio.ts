@@ -8,10 +8,10 @@ export const envio = {
     config.useMocks
       ? Promise.resolve([...demoStore.receipts])
       : requireBindings().readReceipts(account),
-  receipt: (account: Address, hash: Hex) =>
+  receipt: (account: Address | null, hash: Hex, proofTxHash?: Hex) =>
     config.useMocks
       ? Promise.resolve(demoStore.receipts.find((r) => r.reasonHash === hash) ?? null)
-      : requireBindings().readReceipt(account, hash),
+      : requireBindings().readReceipt(account, hash, proofTxHash),
   pnl: (account: Address) =>
     config.useMocks ? Promise.resolve([...demoStore.pnl]) : requireBindings().readPnl(account),
   traderStats: () =>

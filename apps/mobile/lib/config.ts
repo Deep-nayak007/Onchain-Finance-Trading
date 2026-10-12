@@ -1,14 +1,28 @@
+export type MonadChainId = 143 | 10143;
+export function parseChainId(value: string | number): MonadChainId {
+  const id = Number(value);
+  if (id !== 143 && id !== 10143)
+    throw new Error('Choose Monad mainnet (143) or Monad testnet (10143).');
+  return id;
+}
+export const networkName = (id: MonadChainId) => (id === 10143 ? 'Monad testnet' : 'Monad mainnet');
+const chainId = parseChainId(process.env.EXPO_PUBLIC_CHAIN_ID || '143');
 export const config = {
   useMocks: process.env.EXPO_PUBLIC_USE_MOCKS !== 'false',
-  chainId: Number(process.env.EXPO_PUBLIC_CHAIN_ID || '143'),
-  rpcUrl: process.env.EXPO_PUBLIC_RPC_URL || 'https://rpc.monad.xyz',
+  chainId,
+  networkName: networkName(chainId),
+  rpcUrl:
+    process.env.EXPO_PUBLIC_RPC_URL ||
+    (chainId === 10143 ? 'https://testnet-rpc.monad.xyz' : 'https://rpc.monad.xyz'),
   apiUrl: process.env.EXPO_PUBLIC_API_URL || '',
   gatewayUrl: process.env.EXPO_PUBLIC_GATEWAY_URL || '',
   envioUrl: process.env.EXPO_PUBLIC_ENVIO_URL || '',
   rpId: process.env.EXPO_PUBLIC_PASSKEY_RP_ID || '',
   easProjectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID || '',
 };
-export function requireMainnet() {
-  if (config.chainId !== 143)
-    throw new Error('Trading requires Monad chain 143. Use the separate testnet proof for 10143.');
+export function requireConfiguredChain(requestChainId: number = config.chainId) {
+  if (parseChainId(requestChainId) !== config.chainId)
+    throw new Error(
+      `This transaction is for another network. Expected ${config.networkName} (${config.chainId}).`,
+    );
 }

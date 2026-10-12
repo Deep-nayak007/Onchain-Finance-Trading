@@ -9,6 +9,7 @@ import { useAction } from '../../lib/useAction';
 import { createAccount, signIn } from '../../lib/mera';
 import { demoAccount } from '../../mocks/fixtures';
 import { config } from '../../lib/config';
+import { testnetHandoff } from '../../integration/testnet';
 export default function Welcome() {
   const session = useSession();
   const action = useAction();
@@ -80,6 +81,22 @@ export default function Welcome() {
             session.connect(demoAccount, true);
             router.replace('/home');
           }}
+        />
+      )}
+      {!config.useMocks && config.chainId === 10143 && (
+        <Button
+          variant="secondary"
+          label="Check the testnet receipt"
+          icon="receipt"
+          onPress={() =>
+            router.push({
+              pathname: '/receipt/[hash]',
+              params: {
+                hash: testnetHandoff.reasonHash,
+                proofTxHash: testnetHandoff.receiptTxHash,
+              },
+            })
+          }
         />
       )}
       {!config.rpId && (

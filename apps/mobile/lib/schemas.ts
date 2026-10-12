@@ -41,8 +41,22 @@ export const personaSchema = z.object({
   name: z.string(),
   style: z.string(),
   mode: z.enum(['LIVE', 'SHADOW']),
-  wallet: addressSchema,
+  wallet: addressSchema.nullable(),
   defaultPolicy: policySchema,
+});
+export const traderResponseSchema = personaSchema.extend({
+  stats: z
+    .object({
+      executedCount: z.number().int().nonnegative(),
+      rejectedCount: z.number().int().nonnegative(),
+      shadowCount: z.number().int().nonnegative(),
+      volumeUsd: decimal,
+      realizedPnlUsd: decimal,
+      shadowPnlUsd: decimal,
+      maxDrawdownPct: z.number().finite(),
+    })
+    .nullable()
+    .optional(),
 });
 export const intentSchema = z.object({
   id: z.uuid(),
@@ -99,13 +113,13 @@ export const slackSchema = z.object({
   expiresAt: iso,
   status: z.enum(['PENDING', 'APPROVED', 'DENIED', 'EXPIRED']),
 });
-export const riskSchema = z.object({
+export const riskWireSchema = z.object({
   account: addressSchema,
-  ts: iso,
+  ts: z.number().int().nonnegative(),
   equityUsd: decimal,
   collateralUsd: decimal,
   marginUsedUsd: decimal,
-  weeklyPnlPct: z.number().finite(),
+  weeklyPnlPct: decimal.refine((v) => Number.isFinite(Number(v))),
   fundingPaidUsd: decimal,
   slackLeftUsd: positiveDecimal,
   positions: z.array(
@@ -116,24 +130,36 @@ export const riskSchema = z.object({
       entryPrice: positiveDecimal,
       markPrice: positiveDecimal,
       liqPrice: positiveDecimal,
-      liqDistancePct: z.number().finite(),
+      liqDistancePct: decimal.refine((v) => Number.isFinite(Number(v))),
       unrealizedPnlUsd: decimal,
     }),
   ),
   exposureByMarket: z.record(z.string(), positiveDecimal),
 });
+// Normalize only the percentages used by the UI; retain the exact gateway wire contract above.
+export const riskSchema = riskWireSchema.transform((risk) => ({
+  ...risk,
+  weeklyPnlPct: Number(risk.weeklyPnlPct),
+  positions: risk.positions.map((position) => ({
+    ...position,
+    liqDistancePct: Number(position.liqDistancePct),
+  })),
+}));
 export const txRequestSchema = z.object({
   to: addressSchema,
   data: z.string().regex(/^0x(?:[0-9a-fA-F]{2})*$/),
   value: z.string().regex(/^\d+$/),
   gas: z.string().regex(/^[1-9]\d*$/),
-  chainId: z.literal(143),
+  chainId: z.union([z.literal(143), z.literal(10143)]),
 });
 export const compileSchema = z.object({
   policy: policySchema,
   policyHash: hashSchema,
   leashCard: z.array(z.string()),
   warnings: z.array(z.string()),
+  agentId: z.string().regex(/^\d+$/),
+  agentWallet: addressSchema.nullable(),
+  perplKey: addressSchema.nullable(),
 });
 export const agentStatusSchema = z.object({
   state: z.string(),
@@ -154,6 +180,11 @@ export type CompileResult = z.infer<typeof compileSchema>;
 export type ReceiptStatus = 'EXECUTED' | 'REJECTED' | 'FAILED' | 'SHADOW' | 'PAUSED';
 export type IndexedReceipt = {
   id: string;
+  account?: string;
+  proofTxHash?: string;
+  anchorSource?: 'envio' | 'rpc';
+  usedSlack?: boolean;
+  execTxHash?: string | null;
   seq: number;
   persona: Persona['id'];
   status: ReceiptStatus;
@@ -166,8 +197,30 @@ export type IndexedReceipt = {
 export type TraderStats = {
   persona: Persona;
   sevenDayPct: number | null;
-  receipts: number;
+  receipts: number | null;
   maxDrawdownPct: number | null;
   identityUrl?: string;
 };
 export type Book = { bids: [string, string][]; asks: [string, string][]; ts: string };
+export const apiHealthSchema = z.object({
+  ok: z.boolean(),
+  chainId: z.union([z.literal(143), z.literal(10143)]),
+  live: z.boolean(),
+  gateway: z.string(),
+  contracts: z.boolean(),
+});
+export const apiConfigSchema = z.object({
+  chainId: z.union([z.literal(143), z.literal(10143)]),
+  addresses: z.object({ mandateRegistry: addressSchema, receiptLog: addressSchema }).nullable(),
+  personas: z.array(personaSchema),
+  live: z.boolean(),
+});
+export const spotPrepareSchema = z
+  .object({
+    txs: z.array(txRequestSchema).min(1),
+    estimatedOut: z.number().finite().positive(),
+    minOut: z.number().finite().positive(),
+  })
+  .refine((value) => value.minOut <= value.estimatedOut, {
+    message: 'Minimum output exceeds the quote.',
+  });
