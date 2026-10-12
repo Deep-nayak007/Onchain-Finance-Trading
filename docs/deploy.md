@@ -1,5 +1,10 @@
 # Deploying the Brain API (and the Referee executor)
 
+**Live:** `API_URL=https://leash-brain-api.fly.dev` (Fly.io, app `leash-brain-api`, region lax, 1 GB volume `leash_data`,
+chain 10143, `LIVE=false`). Deployed 2026-10-12. Redeploy from the repo root:
+`fly deploy . --config services/api/fly.toml --remote-only`. Secrets: `fly secrets list --app leash-brain-api` (names only).
+When Rails' URLs exist: `fly secrets set GATEWAY_URL=... ENVIO_URL=... --app leash-brain-api`.
+
 The API needs a **persistent disk** (SQLite at `DATABASE_PATH`) and **public HTTPS** (the app calls it).
 Any of Railway, Fly.io or Render works. Secrets go in the host's env settings, never in the image.
 
