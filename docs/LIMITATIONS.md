@@ -63,7 +63,16 @@ Updated 2026-10-12. Everything below sits behind an interface, so the real thing
   (static marks, so the LLM mostly HOLDs). Live Falcon trades need the real gateway + `LIVE=true` (Prem's call).
 - **Envio**: `ENVIO_URL` unset → `/traders` has no stats; Referee watches `REFEREE_WATCH` instead of all active mandates.
 - **ERC-8004 agentIds**: personas use `agentId = "0"` until Rails registers them (`PERSONAS` in `addresses.ts`).
-- **Mainnet**: LEASH contracts are testnet-only today; everything runs on 10143.
+- **Mainnet**: the demo runs on **Monad testnet (10143) by choice** (no mainnet MON budget). Mainnet is a **config-only switch**:
+  `CHAIN_ID=143` + mainnet RPC in `services/api/.env`, `guardian/.env` and the Fly app; Rails deploys `MandateRegistry`/`ReceiptLog`
+  to 143 and fills `LEASH.mainnet` in `addresses.ts`; re-point persona-wallet Privy policies to chain 143; fund agent/persona/
+  referee/gas-tank wallets; gateway with `CHAIN_ID=143`; Face sets `EXPO_PUBLIC_CHAIN_ID=143`. No code changes. Proven on mainnet so
+  far: Kuru market params read live on 143; Perpl mainnet exchange/collateral + ERC-8004 bytecode checked (Rails).
+- **Live Perpl orders on testnet**: need ≥ 100 testnet AUSD (no public faucet found) in an account owned by the agent trade key, plus
+  Rails' gateway. Perpl's real "can't withdraw" mechanism is its API keys (mainnet design); the gateway path uses an owned demo account.
+- **Kuru on testnet**: only the BUY side has liquidity and Kuru's testnet USDC has no public faucet → quotes/tx-building only.
+- **`POST /demo/intent`** (token-guarded, paper-only) exists for filming the slack flow on a flat testnet market; receipts are labelled
+  `manual-paper-test`.
 
 ## Stubs / honest gaps
 - **Paper mode receipts**: with `LIVE=false`, allowed intents are receipted `EXECUTED` with `execTxHash = 0x0`

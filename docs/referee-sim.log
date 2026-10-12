@@ -20,3 +20,13 @@
 {"ts":"2026-10-12T09:54:45.845Z","chainId":10143,"event":"round","referee":"0xFad2FFf6024214711Dc3A6521F40e5871A779a44","users":1,"gateway":"set"}
 {"ts":"2026-10-12T09:54:46.211Z","chainId":10143,"user":"0xE7f1FFcC13C1384a2a1d7eaC19edF0F69e85f4FD","verdict":"BREACH","rule":"weekly_loss","detail":"weekly PnL -12.4% ≤ −5%"}
 {"ts":"2026-10-12T09:54:47.488Z","chainId":10143,"user":"0xE7f1FFcC13C1384a2a1d7eaC19edF0F69e85f4FD","verdict":"PAUSED","reason":"referee:weekly_loss","txHash":"0x7413c660f14157fccd47f0fc63a6319f851d89968c5b7a9f1b2c79cba704115a","gas":"49614","block":"70366981"}
+
+# Run 2 — against the deployed API's live user (2026-10-12T21:09:09Z), mandate 5% weekly limit, demo gateway −12.4%
+## CRE workflow simulation (cron trigger)
+2026-10-12T14:09:16Z [USER LOG] BREACH user=0xE7f1FFcC13C1384a2a1d7eaC19edF0F69e85f4FD rule=weekly_loss → pause(user,"referee:weekly_loss") — weekly PnL -12.4% ≤ −5%
+✓ Workflow Simulation Result:
+"[{\"user\":\"0xE7f1FFcC13C1384a2a1d7eaC19edF0F69e85f4FD\",\"action\":\"pause\",\"rule\":\"weekly_loss\",\"reason\":\"referee:weekly_loss\",\"staleCount\":0,\"detail\":\"weekly PnL -12.4% ≤ −5%\"}]"
+## Executor pause from the referee key
+{"ts":"2026-10-12T21:09:18.064Z","chainId":10143,"event":"round","referee":"0xFad2FFf6024214711Dc3A6521F40e5871A779a44","users":1,"gateway":"set"}
+{"ts":"2026-10-12T21:09:18.511Z","chainId":10143,"user":"0xE7f1FFcC13C1384a2a1d7eaC19edF0F69e85f4FD","verdict":"BREACH","rule":"weekly_loss","detail":"weekly PnL -12.4% ≤ −5%"}
+{"ts":"2026-10-12T21:09:19.826Z","chainId":10143,"user":"0xE7f1FFcC13C1384a2a1d7eaC19edF0F69e85f4FD","verdict":"PAUSED","reason":"referee:weekly_loss","txHash":"0x9c96ad18b4f4be9b2de27311e313a14d289b4b0d082bbb1c4f0d87a2bc5d3960","gas":"49614","block":"70501007"}

@@ -7,6 +7,28 @@ code decides; five independent knots can stop it.
 > Monad Metropolis hackathon · Onchain Finance & Trading. Lanes: **Brain** (agent, API, Referee), **Rails** (contracts,
 > Perpl gateway, Envio), **Face** (mobile app, video). Source of truth: [`ARCHITECTURE.md`](ARCHITECTURE.md).
 
+## ▶ Live demo runs on Monad testnet (10143)
+
+| What | Where |
+|---|---|
+| Brain API | **https://leash-brain-api.fly.dev** (`/health`, `/config`, `/traders`, `/receipts/:reasonHash`; spec `services/api/openapi.yaml`) |
+| MandateRegistry | [`0x81bbeaf263eeae41cfd4be137427af3ba7248467`](https://testnet.monadvision.com/address/0x81bbeaf263eeae41cfd4be137427af3ba7248467) |
+| ReceiptLog | [`0x21b168148e7c47ca0f1fab8bf9f69faff3aed6b3`](https://testnet.monadvision.com/address/0x21b168148e7c47ca0f1fab8bf9f69faff3aed6b3) |
+| Referee key | [`0xFad2FFf6024214711Dc3A6521F40e5871A779a44`](https://testnet.monadvision.com/address/0xFad2FFf6024214711Dc3A6521F40e5871A779a44) |
+| Perpl exchange (live market data) | [`0x1964C32f0bE608E7D29302AFF5E61268E72080cc`](https://testnet.monadvision.com/address/0x1964C32f0bE608E7D29302AFF5E61268E72080cc) · AUSD [`0xa9012a…22dC`](https://testnet.monadvision.com/address/0xa9012a055bd4e0eDfF8Ce09f960291C09D5322dC) |
+| Kuru MON/USDC | [`0xa241896A7Dbe8a550D2E5fF7A914bB1989ceD2D9`](https://testnet.monadvision.com/address/0xa241896A7Dbe8a550D2E5fF7A914bB1989ceD2D9) |
+| ERC-8004 identity | [`0x8004A818BFB912233c491871b3d84c89A494BD9e`](https://testnet.monadvision.com/address/0x8004A818BFB912233c491871b3d84c89A494BD9e) |
+| Persona wallets (Privy, `logShadow` only) | Falcon [`0x2477…1994`](https://testnet.monadvision.com/address/0x2477150BBA80a4E9127151eB863892f346211994) · Otter [`0x1780…0FB6`](https://testnet.monadvision.com/address/0x1780E260D175e975c6FFD31ed1FfaE9b6e7D0FB6) · Owl [`0x3858…d22C`](https://testnet.monadvision.com/address/0x38581aaaf757d195e2343651Ada5E7cE58F9d22C) |
+| Perpl gateway / Envio | *(Rails, deploying to testnet; until then the API reads Perpl markets onchain and mocks account risk)* |
+
+**Proven on testnet** (tx links in [`docs/testnet-evidence.md`](docs/testnet-evidence.md)): rules compiled by Qwen → policy-locked Privy wallet
+→ `setMandate` → agent runs on live Perpl prices → receipts onchain (REJECTED, EXECUTED with `usedSlack`, SHADOW) → slack request →
+`grantSlack` → approve → kill/resume → Referee breach pauses onchain. Execution is **paper** (`LIVE=false`): a live Perpl order needs
+testnet collateral (see [`docs/testnet-feasibility.md`](docs/testnet-feasibility.md)).
+
+**Mainnet is a config switch, not a code change:** `CHAIN_ID=143` + mainnet RPC, Rails' 143 addresses in `addresses.ts`, funded wallets
+(`docs/deploy.md` → "Going live"). On mainnet we've proven only reads: Kuru MON/AUSD market params, Perpl + ERC-8004 bytecode.
+
 ## The five knots
 Any single knot can stop the trader without trusting the others.
 

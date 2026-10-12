@@ -29,3 +29,26 @@ Also proven:
 - **Docker**: `services/api/Dockerfile` builds and serves `/health` (smoke-tested 2026-10-12).
 
 Reproduce: `services/api/scripts/paper-intent.ts`, `services/api/scripts/persona-wallets.ts`, `guardian/scripts/demo-gateway.ts` + `guardian/src/executor.ts --once`.
+
+## Run 2: against the deployed API `https://leash-brain-api.fly.dev` (2026-10-12, testnet, paper)
+Live Perpl testnet prices read onchain (MON mark $0.02486 in the signals). Falcon policy: 1x, $20/trade, no smart-money rule.
+Agent wallet (Privy, created by the deployed API): `0xA3edb9Cb824721B128c8762a68d55ab56b8Ce680`.
+
+| # | Step | Tx |
+|---|---|---|
+| 1 | Owl persona re-funded (its first drip had reverted; drip now confirms by receipt) | [https://testnet.monadvision.com/tx/0xbeccf26f…98cd](https://testnet.monadvision.com/tx/0xbeccf26f4892a8674d8d8055f56c33a5e48e057ea1a1faee330f1f89c04398cd) |
+| 2 | User signs `setMandate` (deployed agentWallet; clears the earlier Referee pause) | [https://testnet.monadvision.com/tx/0x7bdb742c…64a9](https://testnet.monadvision.com/tx/0x7bdb742c40437f36a21d39f5b4dadf3ceec24e95d2d6bc02d0ded6aff46264a9) |
+| 3 | `POST /gas/drip` (deployed) → agent wallet, Face's `{account}` body | [https://testnet.monadvision.com/tx/0x22262d41…66e3](https://testnet.monadvision.com/tx/0x22262d4102707c8fbf140cf9f7d09e70a8d05aa82611e72417810b6d6a3266e3) |
+| 4 | 5x on $15 vs 1x limit → **REJECTED `LEVERAGE_EXCEEDS`** + slack request · reasonHash `0x1aa52fe3…56ec` · 1010 ms | [https://testnet.monadvision.com/tx/0xd109ef3d…8883](https://testnet.monadvision.com/tx/0xd109ef3dbafc5d22399260951f3ce517e17372f6f74fbb9ddf7f6d3c72a48883) |
+| 5 | User signs `grantSlack(5x, $20, $1.50, 1h)` | [https://testnet.monadvision.com/tx/0xcf8a1d6c…6b1f](https://testnet.monadvision.com/tx/0xcf8a1d6c0a13ce83607ae4708480f186beef001f35fc93d0771baf696c2d6b1f) |
+| 6 | `/slack/:id/approved` → re-check → **EXECUTED (paper), `usedSlack = true`** · reasonHash `0x86e8ca27…75c1` · **886 ms** | [https://testnet.monadvision.com/tx/0x8d35d96b…69e4](https://testnet.monadvision.com/tx/0x8d35d96b72148be12f25514366f98fc63c26970ad310ad24bee0dfd0f30869e4) |
+| 7 | Pull the leash: `pause(user,"user")` → `/agent/kill` → KILLED; ticks stop; intent refused ("not running") | [https://testnet.monadvision.com/tx/0x0465b5f8…80e6](https://testnet.monadvision.com/tx/0x0465b5f820d6c5bb555f3dfd086758e4cbf96d62444f4ca71425b87066da80e6) |
+| 8 | `resume()` → `/agent/activate` → RUNNING (Privy policy restored) | [https://testnet.monadvision.com/tx/0xa3b64e76…c726](https://testnet.monadvision.com/tx/0xa3b64e76393a0bd67208b946cf38ba245b08be294c0be8426703264c5f36c726) |
+| 9 | **Referee**: CRE sim (BREACH −12.4% vs −5%) → executor `pause(user,"referee:weekly_loss")` from the referee key; engine sees PAUSED | [https://testnet.monadvision.com/tx/0x9c96ad18…3960](https://testnet.monadvision.com/tx/0x9c96ad18b4f4be9b2de27311e313a14d289b4b0d082bbb1c4f0d87a2bc5d3960) |
+| 10 | `resume()` + activate → demo user left RUNNING on the deployed API | [https://testnet.monadvision.com/tx/0x1e5487f0…1f51](https://testnet.monadvision.com/tx/0x1e5487f02249eca439fc1bd7ea714e7f6836e1e721f3565cb95228d2efcb1f51) |
+
+Phone check: both receipts fetched from the deployed `GET /receipts/:reasonHash` recompute with `@leash/shared/canonical` → ✓.
+Steps 4 and 6 used the token-guarded paper `POST /demo/intent` (`model = "manual-paper-test"`) because MON is flat on Perpl testnet
+and the LLM (correctly) holds; the checker, receipt, slack and execution path is identical to an LLM decision.
+Not done (blocked): live Perpl order (`LIVE=true`) needs ≥ 100 testnet AUSD + Rails' gateway; real Kuru swap needs Kuru's testnet USDC
+(see docs/testnet-feasibility.md).
