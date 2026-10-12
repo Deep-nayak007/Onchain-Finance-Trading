@@ -8,3 +8,4 @@ dist/
 apps/mobile/ios/
 apps/mobile/android/
 artifacts/raw/
+artifacts/*.zip
