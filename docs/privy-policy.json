@@ -1,0 +1,384 @@
+{
+  "_note": "Generated from services/api/src/wallet/policies.ts for chain 10143 (example user 0x…a11ce). Privy is default-deny: anything no rule ALLOWs is refused. Proven live by services/api/test/privy.integration.test.ts.",
+  "userTraderWallet": {
+    "version": "1.0",
+    "name": "leash falcon 0x0000000000000000000000000000000000",
+    "chain_type": "ethereum",
+    "rules": [
+      {
+        "name": "Allow ReceiptLog.logReceipt",
+        "method": "eth_signTransaction",
+        "action": "ALLOW",
+        "conditions": [
+          {
+            "field_source": "ethereum_transaction",
+            "field": "chain_id",
+            "operator": "eq",
+            "value": "10143"
+          },
+          {
+            "field_source": "ethereum_transaction",
+            "field": "value",
+            "operator": "eq",
+            "value": "0x0"
+          },
+          {
+            "field_source": "ethereum_transaction",
+            "field": "to",
+            "operator": "eq",
+            "value": "0x21b168148e7c47ca0f1fab8bf9f69faff3aed6b3"
+          },
+          {
+            "field_source": "ethereum_calldata",
+            "field": "function_name",
+            "abi": [
+              {
+                "type": "function",
+                "name": "logReceipt",
+                "inputs": [
+                  {
+                    "name": "r",
+                    "type": "tuple",
+                    "internalType": "struct IReceiptLog.ReceiptInput",
+                    "components": [
+                      {
+                        "name": "user",
+                        "type": "address",
+                        "internalType": "address"
+                      },
+                      {
+                        "name": "venue",
+                        "type": "uint8",
+                        "internalType": "enum IReceiptLog.Venue"
+                      },
+                      {
+                        "name": "market",
+                        "type": "bytes32",
+                        "internalType": "bytes32"
+                      },
+                      {
+                        "name": "side",
+                        "type": "int8",
+                        "internalType": "int8"
+                      },
+                      {
+                        "name": "sizeUsd6",
+                        "type": "uint128",
+                        "internalType": "uint128"
+                      },
+                      {
+                        "name": "price1e18",
+                        "type": "uint256",
+                        "internalType": "uint256"
+                      },
+                      {
+                        "name": "status",
+                        "type": "uint8",
+                        "internalType": "enum IReceiptLog.Status"
+                      },
+                      {
+                        "name": "usedSlack",
+                        "type": "bool",
+                        "internalType": "bool"
+                      },
+                      {
+                        "name": "reasonHash",
+                        "type": "bytes32",
+                        "internalType": "bytes32"
+                      },
+                      {
+                        "name": "signalHash",
+                        "type": "bytes32",
+                        "internalType": "bytes32"
+                      },
+                      {
+                        "name": "execTxHash",
+                        "type": "bytes32",
+                        "internalType": "bytes32"
+                      }
+                    ]
+                  }
+                ],
+                "outputs": [],
+                "stateMutability": "nonpayable"
+              }
+            ],
+            "operator": "eq",
+            "value": "logReceipt"
+          }
+        ]
+      },
+      {
+        "name": "Allow Kuru market 0xa241…d2d9",
+        "method": "eth_signTransaction",
+        "action": "ALLOW",
+        "conditions": [
+          {
+            "field_source": "ethereum_transaction",
+            "field": "chain_id",
+            "operator": "eq",
+            "value": "10143"
+          },
+          {
+            "field_source": "ethereum_transaction",
+            "field": "to",
+            "operator": "eq",
+            "value": "0xa241896a7dbe8a550d2e5ff7a914bb1989ced2d9"
+          },
+          {
+            "field_source": "ethereum_transaction",
+            "field": "value",
+            "operator": "lte",
+            "value": "0x2b5e3af16b1880000"
+          }
+        ]
+      },
+      {
+        "name": "Allow approve 0x3ba3…1570 to Kuru 0xa241…d2d9",
+        "method": "eth_signTransaction",
+        "action": "ALLOW",
+        "conditions": [
+          {
+            "field_source": "ethereum_transaction",
+            "field": "chain_id",
+            "operator": "eq",
+            "value": "10143"
+          },
+          {
+            "field_source": "ethereum_transaction",
+            "field": "value",
+            "operator": "eq",
+            "value": "0x0"
+          },
+          {
+            "field_source": "ethereum_transaction",
+            "field": "to",
+            "operator": "eq",
+            "value": "0x3ba3d39afcf8bb994f7964b3e0171ea2ba361570"
+          },
+          {
+            "field_source": "ethereum_calldata",
+            "field": "approve.spender",
+            "abi": [
+              {
+                "type": "function",
+                "name": "approve",
+                "stateMutability": "nonpayable",
+                "inputs": [
+                  {
+                    "name": "spender",
+                    "type": "address"
+                  },
+                  {
+                    "name": "amount",
+                    "type": "uint256"
+                  }
+                ],
+                "outputs": [
+                  {
+                    "name": "",
+                    "type": "bool"
+                  }
+                ]
+              }
+            ],
+            "operator": "eq",
+            "value": "0xa241896a7dbe8a550d2e5ff7a914bb1989ced2d9"
+          }
+        ]
+      },
+      {
+        "name": "Allow 0x3ba3…1570 transfer to user only",
+        "method": "eth_signTransaction",
+        "action": "ALLOW",
+        "conditions": [
+          {
+            "field_source": "ethereum_transaction",
+            "field": "chain_id",
+            "operator": "eq",
+            "value": "10143"
+          },
+          {
+            "field_source": "ethereum_transaction",
+            "field": "value",
+            "operator": "eq",
+            "value": "0x0"
+          },
+          {
+            "field_source": "ethereum_transaction",
+            "field": "to",
+            "operator": "eq",
+            "value": "0x3ba3d39afcf8bb994f7964b3e0171ea2ba361570"
+          },
+          {
+            "field_source": "ethereum_calldata",
+            "field": "transfer.to",
+            "abi": [
+              {
+                "type": "function",
+                "name": "transfer",
+                "stateMutability": "nonpayable",
+                "inputs": [
+                  {
+                    "name": "to",
+                    "type": "address"
+                  },
+                  {
+                    "name": "amount",
+                    "type": "uint256"
+                  }
+                ],
+                "outputs": [
+                  {
+                    "name": "",
+                    "type": "bool"
+                  }
+                ]
+              }
+            ],
+            "operator": "eq",
+            "value": "0x00000000000000000000000000000000000a11ce"
+          }
+        ]
+      }
+    ]
+  },
+  "personaWallet": {
+    "version": "1.0",
+    "name": "leash persona otter",
+    "chain_type": "ethereum",
+    "rules": [
+      {
+        "name": "Allow ReceiptLog.logShadow",
+        "method": "eth_signTransaction",
+        "action": "ALLOW",
+        "conditions": [
+          {
+            "field_source": "ethereum_transaction",
+            "field": "chain_id",
+            "operator": "eq",
+            "value": "10143"
+          },
+          {
+            "field_source": "ethereum_transaction",
+            "field": "value",
+            "operator": "eq",
+            "value": "0x0"
+          },
+          {
+            "field_source": "ethereum_transaction",
+            "field": "to",
+            "operator": "eq",
+            "value": "0x21b168148e7c47ca0f1fab8bf9f69faff3aed6b3"
+          },
+          {
+            "field_source": "ethereum_calldata",
+            "field": "function_name",
+            "abi": [
+              {
+                "type": "function",
+                "name": "logShadow",
+                "inputs": [
+                  {
+                    "name": "agentId",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                  },
+                  {
+                    "name": "r",
+                    "type": "tuple",
+                    "internalType": "struct IReceiptLog.ReceiptInput",
+                    "components": [
+                      {
+                        "name": "user",
+                        "type": "address",
+                        "internalType": "address"
+                      },
+                      {
+                        "name": "venue",
+                        "type": "uint8",
+                        "internalType": "enum IReceiptLog.Venue"
+                      },
+                      {
+                        "name": "market",
+                        "type": "bytes32",
+                        "internalType": "bytes32"
+                      },
+                      {
+                        "name": "side",
+                        "type": "int8",
+                        "internalType": "int8"
+                      },
+                      {
+                        "name": "sizeUsd6",
+                        "type": "uint128",
+                        "internalType": "uint128"
+                      },
+                      {
+                        "name": "price1e18",
+                        "type": "uint256",
+                        "internalType": "uint256"
+                      },
+                      {
+                        "name": "status",
+                        "type": "uint8",
+                        "internalType": "enum IReceiptLog.Status"
+                      },
+                      {
+                        "name": "usedSlack",
+                        "type": "bool",
+                        "internalType": "bool"
+                      },
+                      {
+                        "name": "reasonHash",
+                        "type": "bytes32",
+                        "internalType": "bytes32"
+                      },
+                      {
+                        "name": "signalHash",
+                        "type": "bytes32",
+                        "internalType": "bytes32"
+                      },
+                      {
+                        "name": "execTxHash",
+                        "type": "bytes32",
+                        "internalType": "bytes32"
+                      }
+                    ]
+                  }
+                ],
+                "outputs": [],
+                "stateMutability": "nonpayable"
+              }
+            ],
+            "operator": "eq",
+            "value": "logShadow"
+          }
+        ]
+      }
+    ]
+  },
+  "killSwitchDenyAll": {
+    "version": "1.0",
+    "name": "leash deny-all <wallet-id>",
+    "chain_type": "ethereum",
+    "rules": [
+      {
+        "name": "Deny every transaction",
+        "method": "eth_signTransaction",
+        "action": "DENY",
+        "conditions": [
+          {
+            "field_source": "ethereum_transaction",
+            "field": "chain_id",
+            "operator": "in",
+            "value": [
+              "143",
+              "10143"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
