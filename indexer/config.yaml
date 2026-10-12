@@ -1,13 +1,19 @@
-# LEASH Envio HyperIndex config — MandateRegistry + ReceiptLog on Monad
-# mainnet (chain 143). Start block + addresses filled in from
-# packages/shared/addresses.ts after the CP1 deploy.
+# yaml-language-server: $schema=./node_modules/envio/evm.schema.json
 #
-# Scaffold originally from:
+# LEASH Envio HyperIndex (V3) config — MandateRegistry + ReceiptLog.
+# Currently points at the Monad TESTNET (10143) deploy from
+# packages/shared/addresses.ts (LEASH.testnet). Switch to mainnet (143) once
+# the CP1 mainnet deploy lands.
+#
+# Scaffold origin:
 #   pnpx envio@3.0.0-rc.0 init template -t erc20 -l typescript -d ./indexer --api-token ""
-# then the erc20 template contracts were replaced with ours.
+# then the erc20 contracts were replaced with ours.
+#
+# V3 notes: `chains:` (not `networks:`); `preload_handlers` is removed (always
+# on in V3). The Kuru contract is commented out until its MON/AUSD order-book
+# address is known (Q3, from Brain) — a contract with no address on any chain
+# is rejected by codegen.
 name: leash-monad
-preload_handlers: true
-unordered_multichain_mode: true
 
 contracts:
   - name: MandateRegistry
@@ -24,23 +30,27 @@ contracts:
     handler: src/EventHandlers.ts
     events:
       - event: TradeReceipt(address indexed user, uint256 indexed agentId, uint64 indexed seq, uint8 venue, bytes32 market, int8 side, uint128 sizeUsd6, uint256 price1e18, uint8 status, bool usedSlack, bytes32 reasonHash, bytes32 signalHash, bytes32 execTxHash)
-  # Kuru spot order book — the Trade event is the fill (CP3). Signature from the
+  # Kuru spot order book — Trade event is the fill (CP3). Signature from the
   # Monad kuru-terminal reference indexer
-  # (https://github.com/monad-developers/kuru-terminal, envio/config.yaml).
-  # The MON/AUSD order-book address is Q3 (from Brain); fill it in below.
-  - name: KuruOrderBook
-    handler: src/EventHandlers.ts
-    events:
-      - event: Trade(uint40 orderId, address makerAddress, bool isBuy, uint256 price, uint96 updatedSize, address takerAddress, address txOrigin, uint96 filledSize)
+  # (https://github.com/monad-developers/kuru-terminal). Uncomment this block
+  # AND the chain-level KuruOrderBook address once Q3 (MON/AUSD order book) is
+  # known, then run `pnpm codegen`.
+  # - name: KuruOrderBook
+  #   handler: src/EventHandlers.ts
+  #   events:
+  #     - event: Trade(uint40 orderId, address makerAddress, bool isBuy, uint256 price, uint96 updatedSize, address takerAddress, address txOrigin, uint96 filledSize)
 
+# Global field selection: expose the tx hash to handlers (used for entity ids).
 field_selection:
   transaction_fields:
     - hash
 
-networks:
-  # Testnet (10143) — live deploy, from addresses.ts LEASH.testnet. Index this
-  # now; switch to the mainnet block below once the 143 deploy lands at CP1.
+chains:
+  # Monad testnet (10143) — not a HyperSync chain, so an RPC data source is
+  # required. Uses the public testnet RPC; swap for a dedicated URL if it
+  # rate-limits during backfill.
   - id: 10143
+    rpc: https://testnet-rpc.monad.xyz
     start_block: 70331260
     contracts:
       - name: MandateRegistry
@@ -50,15 +60,18 @@ networks:
         address:
           - "0x21b168148e7c47ca0f1fab8bf9f69faff3aed6b3"
       # - name: KuruOrderBook
-      #   address: ["0x..."]  # Kuru MON/AUSD order book on testnet — Q3 from Brain
+      #   address:
+      #     - "0x..."  # Kuru MON/AUSD order book on testnet — Q3 from Brain
 
-  # Mainnet (143) — fill in from addresses.ts LEASH.mainnet after the CP1 deploy.
+  # Mainnet (143) — fill in from addresses.ts LEASH.mainnet after the CP1
+  # deploy, then switch the indexer to this chain.
   # - id: 143
+  #   rpc: https://rpc.monad.xyz
   #   start_block: <mainnet deploy block>
   #   contracts:
   #     - name: MandateRegistry
-  #       address: ["0x..."]
+  #       address:
+  #         - "0x..."
   #     - name: ReceiptLog
-  #       address: ["0x..."]
-  #     - name: KuruOrderBook
-  #       address: ["0x..."]  # Kuru MON/AUSD order book — Q3 from Brain
+  #       address:
+  #         - "0x..."

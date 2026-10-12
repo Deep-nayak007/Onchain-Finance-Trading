@@ -26,7 +26,7 @@ type Mandate {
 
 type SlackGrant {
   id: ID! # txHash-logIndex
-  user: User!
+  user: User! @index # queried by user in the Paused/SlackRevoked handlers
   maxLeverageX10: Int!
   maxNotionalUsd6: BigInt!
   extraRiskUsd6: BigInt!
