@@ -70,9 +70,19 @@ export const LEASH = {
     referee: null as `0x${string}` | null,
   },
   testnet: {
-    mandateRegistry: { address: null, deployBlock: null, explorer: null } as Deployment,
-    receiptLog: { address: null, deployBlock: null, explorer: null } as Deployment,
-    referee: null as `0x${string}` | null,
+    // Deployed by Deploy.s.sol on Monad testnet (10143), block 70331260.
+    mandateRegistry: {
+      address: '0x81bbeaf263eeae41cfd4be137427af3ba7248467',
+      deployBlock: 70331260,
+      explorer: 'https://testnet.monadexplorer.com/address/0x81bbeaf263eeae41cfd4be137427af3ba7248467',
+    } as Deployment,
+    receiptLog: {
+      address: '0x21b168148e7c47ca0f1fab8bf9f69faff3aed6b3',
+      deployBlock: 70331260,
+      explorer: 'https://testnet.monadexplorer.com/address/0x21b168148e7c47ca0f1fab8bf9f69faff3aed6b3',
+    } as Deployment,
+    // Referee key from Brain (REFEREE_ADDRESS).
+    referee: '0xFad2FFf6024214711Dc3A6521F40e5871A779a44' as `0x${string}` | null,
   },
 } as const;
 

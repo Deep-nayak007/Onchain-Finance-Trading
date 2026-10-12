@@ -38,16 +38,27 @@ field_selection:
     - hash
 
 networks:
-  - id: 143 # Monad mainnet
-    # Replace with the real deploy block from packages/shared/addresses.ts (CP1).
-    start_block: 54773010
+  # Testnet (10143) — live deploy, from addresses.ts LEASH.testnet. Index this
+  # now; switch to the mainnet block below once the 143 deploy lands at CP1.
+  - id: 10143
+    start_block: 70331260
     contracts:
       - name: MandateRegistry
-        # address: "0x..."  # from addresses.ts LEASH.mainnet.mandateRegistry
-        address: []
+        address:
+          - "0x81bbeaf263eeae41cfd4be137427af3ba7248467"
       - name: ReceiptLog
-        # address: "0x..."  # from addresses.ts LEASH.mainnet.receiptLog
-        address: []
-      - name: KuruOrderBook
-        # address: "0x..."  # Kuru MON/AUSD order book — Q3 from Brain
-        address: []
+        address:
+          - "0x21b168148e7c47ca0f1fab8bf9f69faff3aed6b3"
+      # - name: KuruOrderBook
+      #   address: ["0x..."]  # Kuru MON/AUSD order book on testnet — Q3 from Brain
+
+  # Mainnet (143) — fill in from addresses.ts LEASH.mainnet after the CP1 deploy.
+  # - id: 143
+  #   start_block: <mainnet deploy block>
+  #   contracts:
+  #     - name: MandateRegistry
+  #       address: ["0x..."]
+  #     - name: ReceiptLog
+  #       address: ["0x..."]
+  #     - name: KuruOrderBook
+  #       address: ["0x..."]  # Kuru MON/AUSD order book — Q3 from Brain
