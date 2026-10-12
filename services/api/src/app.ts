@@ -5,6 +5,8 @@ import { privateKeyToAccount } from "viem/accounts";
 import { leashAddresses, makePublicClient, OnchainRegistry } from "./chain/contracts";
 import { rpcUrl, type Config } from "./config";
 import { makeGateway } from "./exec/gateway";
+import { ChainMarketsGateway, perplChainConfig } from "./exec/perpl-chain";
+import { MarkHistory } from "./signals/momentum";
 import { Kuru } from "./exec/kuru";
 import { makeChat } from "./llm/client";
 import { Engine } from "./loop/engine";
@@ -44,7 +46,10 @@ export function buildApp(cfg: Config, opts: { store?: Store; startLoops?: boolea
     }
   }
 
-  const gateway = makeGateway(cfg);
+  // No gateway yet → mock account/execute, but REAL Perpl markets read onchain when the chain has them (testnet).
+  const perplCfg = perplChainConfig(cfg.CHAIN_ID);
+  const gateway = !cfg.GATEWAY_URL && perplCfg ? new ChainMarketsGateway(publicClient, perplCfg, { maxOrderUsd: cfg.MAX_ORDER_USD }) : makeGateway(cfg);
+  const marks = new MarkHistory();
   const nansen = new Nansen(store, { apiKey: cfg.NANSEN_API_KEY, cacheSeconds: cfg.NANSEN_CACHE_SECONDS, dailyBudget: cfg.NANSEN_DAILY_CALLS });
   const envio = new Envio(cfg.ENVIO_URL);
   const chat = makeChat(cfg);
@@ -58,7 +63,7 @@ export function buildApp(cfg: Config, opts: { store?: Store; startLoops?: boolea
   };
   const kuru = kuruMarket && url ? new Kuru({ market: kuruMarket, rpcUrl: url, chainId: cfg.CHAIN_ID, publicClient, wallets: wallets.configured ? wallets : null, monPriceUsd }) : null;
 
-  const engine = new Engine({ live: cfg.LIVE, modelTick: cfg.LLM_MODEL_TICK, store, gateway, nansen, envio, chat, registry, sink, pusher, spot: kuru, log });
+  const engine = new Engine({ live: cfg.LIVE, modelTick: cfg.LLM_MODEL_TICK, store, gateway, nansen, envio, marks, chat, registry, sink, pusher, spot: kuru, log });
   const scheduler = new Scheduler(engine, store, { tickSeconds: cfg.TICK_SECONDS, shadowTickSeconds: cfg.SHADOW_TICK_SECONDS, shadowPersonas: ["otter", "owl"], log });
 
   const gasTank = cfg.GAS_TANK_PRIVATE_KEY
@@ -91,7 +96,7 @@ export function buildApp(cfg: Config, opts: { store?: Store; startLoops?: boolea
     `chain=${cfg.CHAIN_ID}`,
     `live=${cfg.LIVE}`,
     `contracts=${addresses ? "yes" : "NO"}`,
-    `gateway=${gateway.kind}`,
+    `gateway=${gateway.kind}${gateway instanceof ChainMarketsGateway ? "+perpl-onchain-markets" : ""}`,
     `llm=${chat ? "yes" : "fallback-only"}`,
     `privy=${privy ? "yes" : "NO"}`,
     `receipts=${sink.onchain ? "onchain" : "local"}`,

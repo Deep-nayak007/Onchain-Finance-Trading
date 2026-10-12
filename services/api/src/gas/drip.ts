@@ -1,5 +1,5 @@
 // Gas drip: one small MON transfer per address from the gas tank (no 7702 on user wallets, §5.2).
-import { sendTx } from "@leash/shared";
+import { sendTxAndWait } from "@leash/shared";
 import { parseEther, type Account, type Address, type Chain, type PublicClient, type Transport, type WalletClient } from "viem";
 import type { Store } from "../store/db";
 
@@ -27,7 +27,8 @@ export async function drip(d: DripDeps, address: Address): Promise<{ txHash: `0x
   if (d.store.dripsSince(Date.now() - 3_600_000) >= (d.maxPerHour ?? 30)) throw new DripError(429, "drip rate limit, try again later");
   if (!d.store.claimDrip(address)) throw new DripError(409, "already dripped to this address");
   try {
-    const { hash } = await sendTx(d.wallet, d.publicClient, { to: address, value: parseEther(d.amountMon), gas: 21_000n }, { chainId: d.chainId });
+    // Confirm by receipt (no mempool on Monad): a reverted drip must not be reported as sent.
+    const { hash } = await sendTxAndWait(d.wallet, d.publicClient, { to: address, value: parseEther(d.amountMon), gas: 21_000n }, { chainId: d.chainId });
     d.store.setDripTx(address, hash);
     return { txHash: hash, amountMon: d.amountMon };
   } catch (e) {

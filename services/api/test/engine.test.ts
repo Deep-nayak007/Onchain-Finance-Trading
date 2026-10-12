@@ -157,7 +157,7 @@ describe("engine.tickShadow", () => {
 });
 
 describe("changedMeaningfully", () => {
-  const base = { ts: "t", smartMoneyScore: 0.5, nansen: null, perpl: { market: "MON-PERP", mark: "2.000", index: "2", fundingRate: "0" }, risk: null, envio: null };
+  const base = { ts: "t", smartMoneyScore: 0.5, nansen: null, perpl: { market: "MON-PERP", mark: "2.000", index: "2", fundingRate: "0", markChangePct: null, changeWindowMin: null }, risk: null, envio: null };
   it("only > 0.5% mark moves count", () => {
     expect(changedMeaningfully(base, { ...base, perpl: { ...base.perpl, mark: "2.009" } })).toBe(false);
     expect(changedMeaningfully(base, { ...base, perpl: { ...base.perpl, mark: "2.011" } })).toBe(true);

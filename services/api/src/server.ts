@@ -75,7 +75,7 @@ export function createApp(d: AppDeps) {
     return c.json({ error: "internal error" }, 500);
   });
 
-  app.get("/health", (c) => c.json({ ok: true, chainId: d.chainId, live: d.live, gateway: d.gateway.kind, llm: !!d.chat, privy: d.wallets.configured, contracts: !!d.addresses }));
+  app.get("/health", (c) => c.json({ ok: true, chainId: d.chainId, live: d.live, gateway: d.gateway.kind, markets: "marketsSource" in d.gateway ? d.gateway.marketsSource : d.gateway.kind, llm: !!d.chat, privy: d.wallets.configured, contracts: !!d.addresses }));
 
   // ---- mandate ----
   app.post("/mandate/compile", async (c) => {

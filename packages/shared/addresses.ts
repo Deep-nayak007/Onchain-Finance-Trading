@@ -36,6 +36,19 @@ export const PERPL = {
 } as const;
 
 /**
+ * Perpl on Monad testnet (10143), the live demo network.
+ * Source: perpl-sdk `Chain::testnet()` (https://github.com/PerplFoundation/dex-sdk crates/sdk/src/lib.rs @78ce8a06)
+ * and docs.perpl.xyz/resources/for-developers/networks-and-configuration. Bytecode checked on 10143 (Brain, 2026-10-12);
+ * `getExchangeInfo()` confirms the collateral. Market ids from GET https://testnet.perpl.xyz/api/v1/pub/context.
+ */
+export const PERPL_TESTNET = {
+  exchange: '0x1964C32f0bE608E7D29302AFF5E61268E72080cc',
+  collateralToken: '0xa9012a055bd4e0eDfF8Ce09f960291C09D5322dC', // AUSD, 6 decimals; min account open 100 AUSD
+  deployedAtBlock: 62953,
+  perpIds: { 'MON-PERP': 64, 'BTC-PERP': 16, 'ETH-PERP': 32, 'SOL-PERP': 48 } as Record<string, number>,
+} as const;
+
+/**
  * ERC-8004 registries on Monad mainnet (chain 143).
  * Source: https://github.com/erc-8004/erc-8004-contracts README "Monad Mainnet".
  * Verified: bytecode present on chain 143. (Q5)

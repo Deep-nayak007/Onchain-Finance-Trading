@@ -95,17 +95,17 @@ describe("rules compiler", () => {
   });
 });
 
-const snap = (score: number | null): Snapshot => ({
+const snap = (score: number | null, mom: number | null = null): Snapshot => ({
   ts: "2026-10-12T12:00:00.000Z",
   smartMoneyScore: score,
   nansen: null,
-  perpl: { market: "MON-PERP", mark: "2.43", index: "2.43", fundingRate: "0.00001" },
+  perpl: { market: "MON-PERP", mark: "2.43", index: "2.43", fundingRate: "0.00001", markChangePct: mom, changeWindowMin: mom === null ? null : 20 },
   risk: null,
   envio: null,
 });
-const input = (score: number | null) => {
+const input = (score: number | null, mom: number | null = null) => {
   const policy = PERSONA_DEFS.falcon.defaultPolicy;
-  return { persona: "falcon" as const, policy, limits: effectiveLimits(policy, null, { now: 0 }), snapshot: snap(score), now: Date.parse("2026-10-12T12:00:00.000Z") };
+  return { persona: "falcon" as const, policy, limits: effectiveLimits(policy, null, { now: 0 }), snapshot: snap(score, mom), now: Date.parse("2026-10-12T12:00:00.000Z") };
 };
 
 describe("intent proposal", () => {
@@ -134,6 +134,13 @@ describe("intent proposal", () => {
     expect(p.model).toBe("m");
     expect(p.intent).toMatchObject({ action: "HOLD", venue: "PERPL", market: "MON-PERP", sizeUsd: "0" });
     expect(IntentProposal.safeParse({ action: "OPEN", sizeUsd: "5", leverage: 1, confidence: 0.9, rationale: "x" }).success).toBe(false);
+  });
+
+  it("fallback: with no smart-money data, follows Perpl momentum ≥ 0.5%", () => {
+    expect(fallbackIntent(input(null, 0.8))).toMatchObject({ action: "OPEN", side: "LONG", sizeUsd: "10", leverage: 2 });
+    expect(fallbackIntent(input(null, -1.2))).toMatchObject({ action: "OPEN", side: "SHORT" });
+    expect(fallbackIntent(input(null, 0.2)).action).toBe("HOLD");
+    expect(fallbackIntent(input(null, 0.8)).signals[0]).toEqual({ source: "perpl", key: "markChangePct", value: "0.8" });
   });
 
   it("IntentProposal rejects out-of-range confidence", () => {

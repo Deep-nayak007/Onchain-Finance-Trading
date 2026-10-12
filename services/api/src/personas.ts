@@ -12,10 +12,12 @@ const base: Policy = {
   maxWeeklyLossPct: 10,
   maxTradesPerHour: 4,
   cooldownSec: 300,
-  requireSmartMoneyAgreement: true,
+  requireSmartMoneyAgreement: false,
   minConfidence: 0.6,
   sleeveUsd: "0",
 };
+// requireSmartMoneyAgreement is false by default: Nansen has no Monad smart-money data yet (ARCHITECTURE Q7),
+// so requiring it would deny every open. Users can still turn it on in plain English.
 
 export const PERSONA_DEFS: Record<PersonaId, Omit<Persona, "agentId" | "wallet">> = {
   falcon: {

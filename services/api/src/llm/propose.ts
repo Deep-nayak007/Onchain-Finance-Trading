@@ -83,29 +83,53 @@ export function userPrompt(input: ProposeInput): string {
   });
 }
 
-/** Deterministic strategy: follow smartMoneyScore sign, 2x, $10, only when |score| ≥ 0.5. */
+/** Momentum needed for the fallback to act on price alone (no smart-money data). */
+export const FALLBACK_MOMENTUM_PCT = 0.5;
+
+/**
+ * Deterministic strategy: follow smartMoneyScore sign when |score| ≥ 0.5; when Nansen has no data, follow
+ * Perpl price momentum when |change| ≥ 0.5% over the window. 2x, $10. Otherwise HOLD.
+ */
 export function fallbackIntent(input: ProposeInput): Intent {
   const s = input.snapshot.smartMoneyScore;
+  const mom = input.snapshot.perpl?.markChangePct ?? null;
   const market = input.policy.markets.find((m) => m.endsWith("-PERP")) ?? input.policy.markets[0] ?? "MON-PERP";
-  const base = { venue: "PERPL" as const, market, signals: s === null ? [] : [{ source: "nansen" as const, key: "smartMoneyScore", value: String(s) }] };
-  if (s === null || Math.abs(s) < 0.5) {
+  const base = { venue: "PERPL" as const, market };
+  const hold = (why: string) =>
+    toIntent({ ...base, action: "HOLD", side: "LONG", sizeUsd: "0", leverage: 0, confidence: 0, rationale: `Fallback rules: ${why}; holding.`, signals: [] }, input);
+
+  if (s !== null && Math.abs(s) >= 0.5) {
     return toIntent(
-      { ...base, action: "HOLD", side: "LONG", sizeUsd: "0", leverage: 0, confidence: 0, rationale: "Fallback rules: smart-money signal too weak to act; holding." },
+      {
+        ...base,
+        action: "OPEN",
+        side: s > 0 ? "LONG" : "SHORT",
+        sizeUsd: "10",
+        leverage: 2,
+        confidence: Math.min(1, Math.abs(s)),
+        rationale: `Fallback rules: smart money is net ${s > 0 ? "buying" : "selling"} (score ${s.toFixed(2)}), so a small ${s > 0 ? "long" : "short"} at 2x.`,
+        signals: [{ source: "nansen", key: "smartMoneyScore", value: String(s) }],
+      },
       input,
     );
   }
-  return toIntent(
-    {
-      ...base,
-      action: "OPEN",
-      side: s > 0 ? "LONG" : "SHORT",
-      sizeUsd: "10",
-      leverage: 2,
-      confidence: Math.min(1, Math.abs(s)),
-      rationale: `Fallback rules: smart money is net ${s > 0 ? "buying" : "selling"} (score ${s.toFixed(2)}), so a small ${s > 0 ? "long" : "short"} at 2x.`,
-    },
-    input,
-  );
+  if (s === null && mom !== null && Math.abs(mom) >= FALLBACK_MOMENTUM_PCT) {
+    const up = mom > 0;
+    return toIntent(
+      {
+        ...base,
+        action: "OPEN",
+        side: up ? "LONG" : "SHORT",
+        sizeUsd: "10",
+        leverage: 2,
+        confidence: Math.min(0.9, 0.6 + Math.abs(mom) / 10),
+        rationale: `Fallback rules: no smart-money data; MON is ${up ? "up" : "down"} ${Math.abs(mom)}% in ${input.snapshot.perpl?.changeWindowMin} min on Perpl, so a small ${up ? "long" : "short"} at 2x.`,
+        signals: [{ source: "perpl", key: "markChangePct", value: String(mom) }],
+      },
+      input,
+    );
+  }
+  return hold(s === null ? (mom === null ? "not enough price history yet and no smart-money data" : `momentum ${mom}% below ${FALLBACK_MOMENTUM_PCT}%`) : "smart-money signal too weak to act");
 }
 
 export async function proposeIntent(chat: ChatJson | null, model: string, input: ProposeInput): Promise<Proposal> {

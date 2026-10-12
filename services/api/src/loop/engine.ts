@@ -23,6 +23,7 @@ import { proposeIntent } from "../llm/propose";
 import { persona as personaOf } from "../personas";
 import type { Pusher } from "../push/expo";
 import type { Envio } from "../signals/envio";
+import type { MarkHistory } from "../signals/momentum";
 import type { Nansen } from "../signals/nansen";
 import { changedMeaningfully, gatherSnapshot, whyChips, type Snapshot } from "../signals/snapshot";
 import { createSlackRequest, humanAsk, INTENT_FRESH_MS, livePending, shouldAskForSlack } from "../slack/requests";
@@ -36,6 +37,8 @@ export type EngineDeps = {
   gateway: Gateway;
   nansen: Nansen;
   envio: Envio;
+  /** Shared rolling mark history (momentum signal). */
+  marks?: MarkHistory;
   chat: ChatJson | null;
   registry: Registry | null;
   sink: ReceiptSink;

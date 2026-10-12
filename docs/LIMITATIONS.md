@@ -68,9 +68,12 @@ Updated 2026-10-12. Everything below sits behind an interface, so the real thing
 ## Stubs / honest gaps
 - **Paper mode receipts**: with `LIVE=false`, allowed intents are receipted `EXECUTED` with `execTxHash = 0x0`
   (`ReceiptDetail.execTxHash = null`): no venue order was placed. The app should label these "paper".
-- **Nansen (Q7)**: the netflow endpoint returns 0 rows for Monad today, so `smartMoneyScore = null` and policies with
-  `requireSmartMoneyAgreement` deny opens (`NO_SMART_MONEY_AGREEMENT`). Fail-safe, but Falcon can't open until Nansen covers
-  Monad or the user turns the rule off.
+- **Nansen (Q7)**: the netflow endpoint returns 0 rows for Monad today, so `smartMoneyScore = null`. **Demo choice:** every
+  persona's default policy (and the compiler default) now has `requireSmartMoneyAgreement: false`, otherwise every open would be
+  denied. Users can still ask for it in plain English. Falcon's signal in the demo is **Perpl price momentum** (see next item).
+- **Live market data without the gateway**: until Rails' gateway is deployed, `/markets` is read **onchain from Perpl testnet**
+  (`getPerpetualInfoV2`, ABI fragment copied verbatim from dex-sdk @78ce8a06), and Brain tracks a 30-min rolling mark history →
+  `markChangePct`. Account risk + execution still use the mock gateway (`/risk` values are sample data).
 - **Simulation (Q6)**: Alchemy simulation is unsupported on Monad and Tenderly is unavailable → no pre-trade simulation.
 - **Referee write path (Q4)**: CRE detects (cron + HTTP, simulated on monad-testnet); the executor process signs `pause` with
   the referee key, because CRE writes need a receiver contract and the deployed registry's referee is an EOA. Fully-onchain
