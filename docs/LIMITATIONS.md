@@ -56,23 +56,35 @@ the real implementation can drop in without a shape change.
 
 # LIMITATIONS — BRAIN lane
 
-Owner of each line in brackets. Updated at every checkpoint.
+Updated 2026-10-12. Everything below sits behind an interface, so the real thing drops in without a shape change.
 
-## Missing addresses (never invented; `packages/shared/src/addresses.ts` stays null until Rails commits verified ones)
-- [Rails] `MandateRegistry` and `ReceiptLog` (testnet 10143 and mainnet 143)
-- [Rails] Perpl exchange contract and collateral token (Q2: AUSD?)
-- [Rails] ERC-8004 identity registry (Q5) and the three trader `agentId`s
-- [Brain] Kuru router + MON/AUSD market (Q3)
-- [Brain] Persona wallets (Falcon / Otter / Owl) — created at CP1 via Privy
-- Known and not yet in `addresses.ts`: Referee `0xFad2FFf6024214711Dc3A6521F40e5871A779a44` (Rails to add with source)
+## Not live yet (waiting on other lanes)
+- **Perpl gateway**: `GATEWAY_URL` unset → `MockGateway` serves Rails' `services/perpl-gateway/mock/*.json` in-process
+  (static marks, so the LLM mostly HOLDs). Live Falcon trades need the real gateway + `LIVE=true` (Prem's call).
+- **Envio**: `ENVIO_URL` unset → `/traders` has no stats; Referee watches `REFEREE_WATCH` instead of all active mandates.
+- **ERC-8004 agentIds**: personas use `agentId = "0"` until Rails registers them (`PERSONAS` in `addresses.ts`).
+- **Mainnet**: LEASH contracts are testnet-only today; everything runs on 10143.
 
-## Stubs at CP0
-- `packages/shared/abis/index.ts`: empty `as const` ABIs, typed for viem. [Rails replaces with exported ABIs]
-- Fixtures (`packages/shared/fixtures/`): every address (`0x000…`), `agentId` (1/2/3), tx hash and price is a
-  PLACEHOLDER. Hashes (`reasonHash`, `signalHash`, `policyHash`) are real and recompute with `canonical.ts`.
-- `TxRequest.chainId` accepts 10143 (testnet) as well as 143 while we build on testnet.
+## Stubs / honest gaps
+- **Paper mode receipts**: with `LIVE=false`, allowed intents are receipted `EXECUTED` with `execTxHash = 0x0`
+  (`ReceiptDetail.execTxHash = null`): no venue order was placed. The app should label these "paper".
+- **Nansen (Q7)**: the netflow endpoint returns 0 rows for Monad today, so `smartMoneyScore = null` and policies with
+  `requireSmartMoneyAgreement` deny opens (`NO_SMART_MONEY_AGREEMENT`). Fail-safe, but Falcon can't open until Nansen covers
+  Monad or the user turns the rule off.
+- **Simulation (Q6)**: Alchemy simulation is unsupported on Monad and Tenderly is unavailable → no pre-trade simulation.
+- **Referee write path (Q4)**: CRE detects (cron + HTTP, simulated on monad-testnet); the executor process signs `pause` with
+  the referee key, because CRE writes need a receiver contract and the deployed registry's referee is an EOA. Fully-onchain
+  path: deploy a `RefereeReceiver` (ReceiverTemplate) and set it as `referee` (registry redeploy, Rails).
+  CRE runs are stateless, so "3× stale" is counted by the executor; each CRE run reports one stale observation.
+- **Privy per-day caps**: Privy policies have no daily window; per-tx value cap + `MAX_ORDER_USD` + checker rate limits instead.
+- **Kuru**: testnet has MON/USDC only (no MON/AUSD) and no bids → SELL quotes are refused rather than sent with `minOut = 0`.
+  No real swap executed yet (needs a funded sleeve).
+- **Alchemy Notify**: `/webhooks/alchemy` verifies `X-Alchemy-Signature` with `ALCHEMY_WEBHOOK_SIGNING_KEY` (not yet set).
+- **Persona wallets** must be passed via `PERSONA_WALLETS` on each deploy, or new ones get created per database.
+- `dripsSince` rate limit is per API instance (SQLite), fine for one instance.
 
-## External services
-- Tenderly: not available; simulation is skipped when `TENDERLY_ACCESS_KEY` is empty.
-- Alchemy simulation on Monad: unknown (Q6); no simulation unless confirmed.
-- LLM: Qwen via OpenAI-compatible API, JSON mode only (no tool calling); deterministic fallback on failure.
+## Test-only artefacts (clearly labelled)
+- `services/api/scripts/paper-intent.ts`: submits a hand-written intent through the real checker/receipt path with
+  `model = "manual-paper-test"` (used to prove the onchain receipt + slack flow while the LLM correctly HOLDs on static data).
+- `guardian/scripts/demo-gateway.ts`: serves a breaching `/risk` to film the Referee before the real gateway is live.
+- Fixture addresses in `packages/shared/fixtures/` are placeholders (`0x000…`); their hashes are real.

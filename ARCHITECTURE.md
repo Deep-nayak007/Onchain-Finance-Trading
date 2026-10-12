@@ -49,7 +49,7 @@ Any single knot can stop the trader without trusting the others.
 | Trader identities ×3 | `contracts/script/` | ERC-8004 via Agent0 SDK | Rails |
 | Perpl gateway | `services/perpl-gateway/` | Rust, `perpl-sdk`, alloy, axum | Rails |
 | Indexer | `indexer/` | Envio HyperIndex v3, Envio Cloud | Rails |
-| Agent engine + API | `services/api/` | Node 20, TypeScript, Hono, Claude API | Brain |
+| Agent engine + API | `services/api/` | Node 22, TypeScript, Hono, Qwen (OpenAI-compatible API, JSON mode) | Brain |
 | Signals, wallet, spot | `services/api/` | Nansen, Privy server wallets, Kuru, Alchemy | Brain |
 | Referee | `guardian/` | Chainlink CRE (TypeScript) | Brain |
 | Shared package | `packages/shared/` | zod schemas, canonical JSON, sendTx, checker | Brain (Rails owns `abis/`, `addresses.ts`) |
@@ -75,7 +75,7 @@ flowchart TB
     RL[ReceiptLog]
     ID[ERC-8004 identities]
   end
-  PX[Perpl] ; KU[Kuru] ; NS[Nansen] ; LLM[Claude]
+  PX[Perpl] ; KU[Kuru] ; NS[Nansen] ; LLM[Qwen]
   UI -- setMandate / grantSlack / pause --> MR
   UI -- prepare unsigned tx --> GW
   UI -- compile rules, slack, receipts JSON --> API
@@ -99,7 +99,7 @@ flowchart TB
 **One tick (~30s, Brain):**
 1. Read mandate + `activeSlack` (RPC latest). Stop if paused.
 2. Gather: gateway `/risk`, Envio recent receipts/fills, Nansen signals.
-3. Claude → `Intent` (zod). Invalid → HOLD.
+3. Qwen (JSON mode) → `Intent` (zod, one retry). Still invalid / LLM down → deterministic fallback (`fallback-rules-v1`).
 4. `checkIntent(policy, slack, state, intent)` → `Decision`.
 5. Allowed → (Alchemy simulate if available) → gateway `/orders/execute` or Privy → Kuru.
 6. Store `ReceiptDetail` → `logReceipt` from the Privy wallet. Record `decidedAtMs`, `confirmedAtMs`.
@@ -222,7 +222,7 @@ Fixtures for every type in `packages/shared/fixtures/` at CP0 (include one EXECU
 ### 7.4 Backend API (Brain; `API_URL`; spec: `services/api/openapi.yaml`)
 | Method | Path | Purpose |
 |---|---|---|
-| POST | `/mandate/compile` | `{account,text,persona}` → `{policy, policyHash, leashCard[], warnings[], agentId, agentWallet, perplKey}` (agentId/agentWallet/perplKey added at CP0 so the app can sign `setMandate` in one go; `perplKey` = `keyAddress` from gateway `/keys/prepare`) |
+| POST | `/mandate/compile` | `{account,text,persona}` → `{policy, policyHash, leashCard[], warnings[], agentId, agentWallet, perplKey}` (agentId/agentWallet/perplKey added at CP0 so the app can sign `setMandate` in one go; `perplKey` = `tradeKey` from gateway `/keys/prepare`; `agentWallet`/`perplKey` are `null` + a warning if Privy/gateway are unavailable) |
 | POST | `/agent/activate` · `/agent/kill` | start after onchain mandate · stop + deny-all + disable key |
 | GET | `/agent/status/:account` | `{state, persona, lastTick, lastDecision}` |
 | GET | `/traders` | `Persona[]` with live stats from Envio |
@@ -232,6 +232,8 @@ Fixtures for every type in `packages/shared/fixtures/` at CP0 (include one EXECU
 | POST | `/gas/drip` | once per address |
 | GET | `/config` | addresses, personas, referee, chain |
 | POST | `/webhooks/alchemy` | AUSD deposit → push |
+| POST | `/spot/prepare` | *(additive, CP3)* `{account, side, sizeUsd}` → `{txs: TxRequest[], estimatedOut, minOut}` unsigned Kuru approve + market order for Face's spot screen |
+| GET | `/health` | *(additive)* which integrations are wired |
 
 ### 7.5 Envio entities (Rails)
 `User`, `Mandate`, `SlackGrant`, `Agent` (id = agentId; executed/rejected/shadow counts, volumeUsd, realizedPnlUsd, shadowPnlUsd, maxDrawdownPct), `Receipt`, `PauseEvent`, `PerplFill`, `KuruTrade`, `PnlSnapshot` (agent × day). Example queries in `packages/shared/queries.graphql` + JSON fixtures at CP0.
@@ -258,17 +260,17 @@ Fixtures for every type in `packages/shared/fixtures/` at CP0 (include one EXECU
 - `LIVE=false` by default; `MAX_ORDER_USD=25` until demo.
 
 ## 10. Open questions (owner writes the answer here)
-| # | Question | Owner |
-|---|---|---|
-| Q1 | How do Perpl trade-only API keys work; can our app sign the enrollment? | Rails |
-| Q2 | Perpl collateral token (AUSD?) | Rails |
-| Q3 | Kuru TS SDK, router, MON/AUSD market on 143 | Brain |
-| Q4 | CRE support for Monad EVM write, or simulate only? | Brain |
-| Q5 | ERC-8004 registry addresses on 143 | Rails |
-| Q6 | Alchemy simulation on Monad? | Brain |
-| Q7 | Nansen endpoints with Monad smart-money coverage | Brain |
-| Q8 | Privy policy: restrict ERC-20 transfer recipient on 143? | Brain |
-| Q9 | Exact submission cutoff + form fields | Face |
+| # | Question | Owner | Answer |
+|---|---|---|---|
+| Q1 | How do Perpl trade-only API keys work; can our app sign the enrollment? | Rails | *(owner to fill)* |
+| Q2 | Perpl collateral token (AUSD?) | Rails | *(owner to fill)* |
+| Q3 | Kuru TS SDK, router, MON/AUSD market on 143 | Brain | **Answered.** SDK `@kuru-labs/kuru-sdk` (ethers v5; used read-only for market params + cost estimates; calldata encoded from its `OrderBook.json` ABI and signed by Privy). Addresses from docs.kuru.io/contracts/Contract-addresses, bytecode checked: 143 Router `0xd651…95CC`, MON-AUSD market `0x131a…0da9`; 10143 Router `0x7EFb…4630`, MON-USDC market `0xa241…D2D9` (no MON/AUSD on testnet). In `addresses.ts` (`KURU`, `KURU_TESTNET`). |
+| Q4 | CRE support for Monad EVM write, or simulate only? | Brain | **Answered.** `cre workflow supported-chains` lists `monad-testnet` and `monad-mainnet` with forwarders, and simulation reads Monad state. But CRE writes go forwarder → receiver contract `onReport()`; the deployed MandateRegistry only accepts `pause()` from the referee EOA. So: CRE workflow detects (cron + HTTP), `guardian/src/executor.ts` signs `pause` with the referee key. Fully-onchain option: a `RefereeReceiver` set as `referee` (needs a registry redeploy, Rails). Evidence: `docs/referee-sim.log`. |
+| Q5 | ERC-8004 registry addresses on 143 | Rails | *(owner to fill)* |
+| Q6 | Alchemy simulation on Monad? | Brain | **No.** `alchemy_simulateAssetChanges` / `alchemy_simulateExecution` return "Unsupported method … on monad" (probed 2026-10-12). Tenderly unavailable. No pre-trade simulation; the gateway's own estimate + checks are the pre-flight. |
+| Q7 | Nansen endpoints with Monad smart-money coverage | Brain | **Partially.** `POST /api/v1/smart-money/netflow` accepts `chains:["monad"]` but returned **0 rows** for Monad on 2026-10-12 (5 credits/call). Brain caches 15 min, ≤ 10 calls/day; `smartMoneyScore = null` when empty, so `requireSmartMoneyAgreement` policies deny opens (fail safe). Ask the Nansen team for Monad coverage. |
+| Q8 | Privy policy: restrict ERC-20 transfer recipient on 143? | Brain | **Yes.** `ethereum_calldata` condition `transfer.to == user` (+ `to`, `chain_id`, `value`) on `eth_signTransaction`; Privy is default-deny. Proven against live Privy in `services/api/test/privy.integration.test.ts` (transfer to a stranger, unknown contract, wrong chain and post-kill calls are refused). Policy JSON: `docs/privy-policy.json`. |
+| Q9 | Exact submission cutoff + form fields | Face | *(owner to fill)* |
 
 ## 11. Sponsor → feature map
 | Bounty | Feature | Owner |

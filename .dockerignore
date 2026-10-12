@@ -1,0 +1,12 @@
+**/node_modules
+**/.env
+**/.env.*
+!**/.env.example
+**/data
+**/*.db
+contracts/lib
+contracts/out
+contracts/cache
+services/perpl-gateway/target
+indexer/generated
+.git
