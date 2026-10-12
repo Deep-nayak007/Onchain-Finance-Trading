@@ -1,0 +1,18 @@
+{
+  "name": "@leash/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared ABIs, addresses, queries and fixtures for LEASH. Rails owns abis/ and addresses.ts; Brain owns schemas/canonical/sendTx.",
+  "exports": {
+    "./abis": "./abis/index.ts",
+    "./addresses": "./addresses.ts"
+  },
+  "files": [
+    "abis",
+    "addresses.ts",
+    "queries.graphql",
+    "gateway.openapi.yaml",
+    "fixtures"
+  ]
+}

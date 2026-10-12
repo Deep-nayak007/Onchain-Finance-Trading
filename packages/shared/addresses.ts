@@ -1,0 +1,106 @@
+// LEASH shared addresses — the single source of truth (ARCHITECTURE §9).
+//
+// RULES:
+// - Every address here is either (a) deployed by us, or (b) read from an
+//   authoritative source and verified to have bytecode on chain 143 with
+//   `cast code <addr> --rpc-url $MONAD_RPC`.
+// - Each externally-sourced address carries a comment linking its source.
+// - Never invent an address. If it is not yet known, leave it `null` and fill
+//   it in once the deploy/registration lands.
+
+export const CHAIN_ID = 143 as const;
+export const CHAIN_ID_TESTNET = 10143 as const;
+
+export const RPC = {
+  mainnet: 'https://rpc.monad.xyz',
+  testnet: 'https://testnet-rpc.monad.xyz',
+} as const;
+
+export const EXPLORER = {
+  // MonadVision (BlockVision) + Monadscan.
+  monadVision: 'https://monadvision.io',
+  monadscan: 'https://monadscan.com',
+} as const;
+
+/**
+ * Perpl perpetual DEX on Monad mainnet.
+ * Source: perpl-sdk `Chain::mainnet()` in
+ * https://github.com/PerplFoundation/dex-sdk `crates/sdk/src/lib.rs`.
+ * Verified: bytecode present on chain 143.
+ */
+export const PERPL = {
+  exchange: '0x34B6552d57a35a1D042CcAe1951BD1C370112a6F',
+  // Collateral token (Q2 — see docs/perpl-notes.md). 6-decimal AUSD-class token.
+  collateralToken: '0x00000000eFE302BEAA2b3e6e1b18d08D69a9012a',
+  deployedAtBlock: 54773010,
+} as const;
+
+/**
+ * ERC-8004 registries on Monad mainnet (chain 143).
+ * Source: https://github.com/erc-8004/erc-8004-contracts README "Monad Mainnet".
+ * Verified: bytecode present on chain 143. (Q5)
+ */
+export const ERC8004 = {
+  identityRegistry: '0x8004A169FB4a3325136EB29fA0ceB6D2e539a432',
+  reputationRegistry: '0x8004BAa17C55a88189AE136b182e5fdA19dE9b63',
+} as const;
+
+export const ERC8004_TESTNET = {
+  // Source: erc-8004-contracts README "Monad Testnet".
+  identityRegistry: '0x8004A818BFB912233c491871b3d84c89A494BD9e',
+  reputationRegistry: '0x8004B663056A597Dffe9eCcC1965A193B7388713',
+} as const;
+
+type Deployment = {
+  address: `0x${string}` | null;
+  deployBlock: number | null;
+  explorer: string | null;
+};
+
+/**
+ * LEASH contracts we deploy. Filled in at CP1 after `forge script Deploy`
+ * (testnet first, then mainnet). Each entry gets its MonadVision/Monadscan
+ * link once verified.
+ */
+export const LEASH = {
+  mainnet: {
+    mandateRegistry: { address: null, deployBlock: null, explorer: null } as Deployment,
+    receiptLog: { address: null, deployBlock: null, explorer: null } as Deployment,
+    // Referee key supplied by Brain via REFEREE_ADDRESS at CP0.
+    referee: null as `0x${string}` | null,
+  },
+  testnet: {
+    mandateRegistry: { address: null, deployBlock: null, explorer: null } as Deployment,
+    receiptLog: { address: null, deployBlock: null, explorer: null } as Deployment,
+    referee: null as `0x${string}` | null,
+  },
+} as const;
+
+/**
+ * Trader persona identities. `agentId` filled in at CP3 after ERC-8004
+ * registration via the Agent0 SDK; `wallet` comes from Brain at CP1.
+ * Envio counts a shadow receipt only when msg.sender matches one of these
+ * persona wallets.
+ */
+export const PERSONAS = {
+  falcon: { agentId: null as string | null, wallet: null as `0x${string}` | null, mode: 'LIVE' },
+  otter: { agentId: null as string | null, wallet: null as `0x${string}` | null, mode: 'SHADOW' },
+  owl: { agentId: null as string | null, wallet: null as `0x${string}` | null, mode: 'SHADOW' },
+} as const;
+
+/**
+ * Kuru spot order book — router + MON/AUSD market. Supplied by Brain (Q3) at
+ * CP2. Left null until sourced and bytecode-checked on chain 143.
+ */
+export const KURU = {
+  router: null as `0x${string}` | null,
+  monAusdMarket: null as `0x${string}` | null,
+} as const;
+
+/** Live service URLs. Filled in as each deploys. */
+export const SERVICES = {
+  // Public HTTPS Perpl gateway (CP1).
+  gatewayUrl: null as string | null,
+  // Envio Cloud GraphQL endpoint (CP2).
+  envioUrl: null as string | null,
+} as const;

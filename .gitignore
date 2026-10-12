@@ -1,0 +1,36 @@
+# Node
+node_modules/
+dist/
+.pnpm-store/
+*.tsbuildinfo
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+*.key
+keystore/
+*.keystore
+
+# Foundry
+contracts/out/
+contracts/cache/
+contracts/broadcast/**/dry-run/
+contracts/.gas-snapshot
+
+# Rust
+services/perpl-gateway/target/
+target/
+**/*.rs.bk
+
+# Envio
+indexer/generated/
+indexer/.envio/
+indexer/node_modules/
+indexer/db/
+
+# OS / editor
+.DS_Store
+*.log
+*.sqlite
+*.sqlite-journal

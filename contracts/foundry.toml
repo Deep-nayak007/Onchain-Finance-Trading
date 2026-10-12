@@ -1,0 +1,32 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+test = "test"
+script = "script"
+solc_version = "0.8.28"
+optimizer = true
+optimizer_runs = 200
+via_ir = true
+
+# Monad verification requirements (ARCHITECTURE §5.7, RAILS contract notes).
+# RAILS brief asks for metadata=true, metadata_hash="none", use_literal_content.
+# Foundry >= 1.8 spells these as the keys below:
+bytecode_hash = "none"       # == metadata_hash = "none" (no ipfs hash in bytecode)
+cbor_metadata = true         # == metadata = true (keep the CBOR metadata)
+use_literal_content = true   # embed source for Sourcify/Monadscan
+
+[profile.default.fmt]
+line_length = 100
+tab_width = 4
+bracket_spacing = false
+
+# Monad mainnet (chain 143).
+[rpc_endpoints]
+monad = "${MONAD_RPC}"
+monad_testnet = "${MONAD_TESTNET_RPC}"
+
+[etherscan]
+monad = { key = "${MONADSCAN_KEY}", chain = 143, url = "https://api.monadscan.com/api" }
+
+# See https://github.com/foundry-rs/foundry for all options.

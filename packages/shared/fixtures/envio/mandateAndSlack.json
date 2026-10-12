@@ -1,0 +1,29 @@
+{
+  "data": {
+    "Mandate": [
+      {
+        "id": "0x1111111111111111111111111111111111111111",
+        "agentId": "1",
+        "policyHash": "0x9999999999999999999999999999999999999999999999999999999999999999",
+        "maxNotionalUsd6": "100000000",
+        "maxLeverageX10": 50,
+        "maxWeeklyLossBps": 1000,
+        "agentWallet": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "perplKey": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "paused": false,
+        "updatedAt": "1759990000"
+      }
+    ],
+    "SlackGrant": [
+      {
+        "id": "0xcccc000000000000000000000000000000000000000000000000000000000001-0",
+        "maxLeverageX10": 50,
+        "maxNotionalUsd6": "150000000",
+        "extraRiskUsd6": "8000000",
+        "expiresAt": "1760003600",
+        "grantedAt": "1760000000",
+        "active": true
+      }
+    ]
+  }
+}

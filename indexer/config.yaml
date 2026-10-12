@@ -1,0 +1,38 @@
+# LEASH Envio HyperIndex config — MandateRegistry + ReceiptLog on Monad
+# mainnet (chain 143). Start block + addresses filled in from
+# packages/shared/addresses.ts after the CP1 deploy.
+#
+# Scaffold originally from:
+#   pnpx envio@3.0.0-rc.0 init template -t erc20 -l typescript -d ./indexer --api-token ""
+# then the erc20 template contracts were replaced with ours.
+name: leash-monad
+preload_handlers: true
+unordered_multichain_mode: true
+
+contracts:
+  - name: MandateRegistry
+    abi_file_path: ../packages/shared/abis/MandateRegistry.json
+    handler: src/EventHandlers.ts
+    events:
+      - event: MandateSet(address indexed user, uint256 indexed agentId, bytes32 policyHash, uint64 maxNotionalUsd6, uint16 maxLeverageX10, uint16 maxWeeklyLossBps, address agentWallet, address perplKey)
+      - event: SlackGranted(address indexed user, uint16 maxLeverageX10, uint64 maxNotionalUsd6, uint64 extraRiskUsd6, uint64 expiresAt)
+      - event: SlackRevoked(address indexed user)
+      - event: Paused(address indexed user, address indexed by, string reason)
+      - event: Resumed(address indexed user)
+  - name: ReceiptLog
+    abi_file_path: ../packages/shared/abis/ReceiptLog.json
+    handler: src/EventHandlers.ts
+    events:
+      - event: TradeReceipt(address indexed user, uint256 indexed agentId, uint64 indexed seq, uint8 venue, bytes32 market, int8 side, uint128 sizeUsd6, uint256 price1e18, uint8 status, bool usedSlack, bytes32 reasonHash, bytes32 signalHash, bytes32 execTxHash)
+
+networks:
+  - id: 143 # Monad mainnet
+    # Replace with the real deploy block from packages/shared/addresses.ts (CP1).
+    start_block: 54773010
+    contracts:
+      - name: MandateRegistry
+        # address: "0x..."  # from addresses.ts LEASH.mainnet.mandateRegistry
+        address: []
+      - name: ReceiptLog
+        # address: "0x..."  # from addresses.ts LEASH.mainnet.receiptLog
+        address: []

@@ -1,0 +1,123 @@
+# LEASH Envio queries — the data every screen reads (ARCHITECTURE §7.5).
+# Fixtures of the expected response shape live in fixtures/envio/.
+
+# Receipts feed for a user, newest first.
+query FeedByUser($user: String!, $limit: Int = 50) {
+  Receipt(
+    where: { user_id: { _eq: $user } }
+    order_by: { seq: desc }
+    limit: $limit
+  ) {
+    id
+    seq
+    agentId
+    venue
+    market
+    marketName
+    side
+    sizeUsd6
+    price1e18
+    status
+    usedSlack
+    reasonHash
+    signalHash
+    execTxHash
+    blockTimestamp
+    txHash
+  }
+}
+
+# A single receipt by its reasonHash (the app recomputes and compares).
+query ReceiptByReasonHash($reasonHash: String!) {
+  Receipt(where: { reasonHash: { _eq: $reasonHash } }, limit: 1) {
+    id
+    user_id
+    agentId
+    seq
+    venue
+    market
+    side
+    sizeUsd6
+    price1e18
+    status
+    usedSlack
+    reasonHash
+    signalHash
+    execTxHash
+    blockTimestamp
+    txHash
+  }
+}
+
+# A user's mandate plus any active slack grant.
+query MandateAndSlack($user: String!) {
+  Mandate(where: { id: { _eq: $user } }) {
+    id
+    agentId
+    policyHash
+    maxNotionalUsd6
+    maxLeverageX10
+    maxWeeklyLossBps
+    agentWallet
+    perplKey
+    paused
+    updatedAt
+  }
+  SlackGrant(
+    where: { user_id: { _eq: $user }, active: { _eq: true } }
+    order_by: { grantedAt: desc }
+    limit: 1
+  ) {
+    id
+    maxLeverageX10
+    maxNotionalUsd6
+    extraRiskUsd6
+    expiresAt
+    grantedAt
+    active
+  }
+}
+
+# Agent leaderboard.
+query AgentLeaderboard {
+  Agent(order_by: { realizedPnlUsd: desc }) {
+    id
+    executed
+    rejected
+    shadow
+    volumeUsd
+    realizedPnlUsd
+    shadowPnlUsd
+    maxDrawdownPct
+  }
+}
+
+# Daily PnL series for one agent.
+query PnlByDay($agentId: numeric!) {
+  PnlSnapshot(
+    where: { agentId: { _eq: $agentId } }
+    order_by: { day: asc }
+  ) {
+    id
+    day
+    realizedPnlUsd
+    shadowPnlUsd
+    cumulativeRealizedUsd
+    equityUsd
+  }
+}
+
+# Pauses for a user (shows PAUSED chips + who pulled the leash).
+query PausesByUser($user: String!, $limit: Int = 20) {
+  PauseEvent(
+    where: { user_id: { _eq: $user } }
+    order_by: { blockTimestamp: desc }
+    limit: $limit
+  ) {
+    id
+    by
+    reason
+    blockTimestamp
+    txHash
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "leash-indexer",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "codegen": "envio codegen",
+    "dev": "envio dev",
+    "start": "envio start",
+    "test": "envio test"
+  },
+  "dependencies": {
+    "envio": "3.0.0-rc.0"
+  }
+}

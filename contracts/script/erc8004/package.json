@@ -1,0 +1,17 @@
+{
+  "name": "leash-erc8004-register",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "register": "tsx register.ts"
+  },
+  "dependencies": {
+    "agent0-sdk": "latest",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}
