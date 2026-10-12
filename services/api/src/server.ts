@@ -39,6 +39,7 @@ export type AppDeps = {
   kuru: Kuru | null;
   alchemyNotifyToken?: string;
   demoToken?: string;
+  passkey?: { appleTeamIds: string[]; androidCertSha256: string[]; appId: string };
   corsOrigins?: string[];
   log?: (m: string) => void;
 };
@@ -74,6 +75,37 @@ export function createApp(d: AppDeps) {
     if (err instanceof DripError) return c.json({ error: err.message }, err.status);
     log(`[api] ${c.req.method} ${c.req.path} failed: ${err.message}`);
     return c.json({ error: "internal error" }, 500);
+  });
+
+  // ---- landing page (judges open the bare URL) ----
+  app.get("/", (c) =>
+    c.json({
+      name: "LEASH Brain API",
+      tagline: "Give your AI trader slack. Never your keys.",
+      network: d.chainId === 10143 ? "Monad testnet (10143)" : "Monad mainnet (143)",
+      mode: d.live ? "LIVE" : "paper",
+      spec: "https://github.com/Deep-nayak007/Onchain-Finance-Trading/blob/main/services/api/openapi.yaml",
+      try: ["/health", "/config", "/traders", "/agent/status/:account", "/receipts/:reasonHash", "/slack/pending/:account"],
+      example: "/receipts/0x86e8ca275306825cbd9aed2c7d4dd40bc4a71f055823dd712cec166e70bb75c1",
+    }),
+  );
+
+  // ---- passkey associations: this host is the permanent RP ID (EXPO_PUBLIC_PASSKEY_RP_ID) ----
+  // Served as JSON at the exact path, no redirects. Same shape as apps/mobile/scripts/associations.mjs.
+  app.get("/.well-known/apple-app-site-association", (c) => {
+    const ids = d.passkey?.appleTeamIds ?? [];
+    if (!ids.length) throw new HttpError(404, "not configured");
+    return c.json({ webcredentials: { apps: ids.map((t) => `${t}.${d.passkey!.appId}`) } });
+  });
+  app.get("/.well-known/assetlinks.json", (c) => {
+    const certs = d.passkey?.androidCertSha256 ?? [];
+    if (!certs.length) throw new HttpError(404, "not configured");
+    return c.json([
+      {
+        relation: ["delegate_permission/common.get_login_creds", "delegate_permission/common.handle_all_urls"],
+        target: { namespace: "android_app", package_name: d.passkey!.appId, sha256_cert_fingerprints: certs },
+      },
+    ]);
   });
 
   app.get("/health", (c) => c.json({ ok: true, chainId: d.chainId, live: d.live, gateway: d.gateway.kind, markets: "marketsSource" in d.gateway ? d.gateway.marketsSource : d.gateway.kind, llm: !!d.chat, privy: d.wallets.configured, contracts: !!d.addresses }));

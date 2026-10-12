@@ -35,3 +35,13 @@ adb reverse tcp:8081 tcp:8081 && adb reverse tcp:8787 tcp:8787
 First live check: open receipt `0x215df7fe724810a97a5d2863bb4fc83271b44069c662febc73bfc9445b2841e4`; expect ✓, `usedSlack`, ~1.0 s.
 
 Blockers outside Face: passkey RP domain (team decision; then `assetlinks.json` with the debug SHA-256), live gateway + Envio (Yadnesh), deployed `API_URL` (Prem).
+
+## Passkeys (decided 2026-10-12)
+- **Permanent RP ID: `leash-brain-api.fly.dev`** → `EXPO_PUBLIC_PASSKEY_RP_ID=leash-brain-api.fly.dev`. Never change it after accounts exist.
+- The Brain API serves the association files (JSON, no redirects), same shape as `scripts/associations.mjs`:
+  - `https://leash-brain-api.fly.dev/.well-known/assetlinks.json` (package `app.leash.mobile`, relations `get_login_creds` + `handle_all_urls`)
+  - `https://leash-brain-api.fly.dev/.well-known/apple-app-site-association` (`webcredentials` → `<TEAM_ID>.app.leash.mobile`)
+  They return 404 until Deep sends: **Android signing SHA-256** (`cd apps/mobile/android && ./gradlew signingReport`, debug is fine for the
+  emulator; colon-separated) and, for iPhone, the **Apple Team ID** (paid Apple Developer account). Prem sets them on Fly
+  (`ANDROID_CERT_SHA256`, `APPLE_TEAM_ID`: public identifiers) and they go live after a restart.
+- Then rebuild the native app (associated domains are baked in at build time).

@@ -42,6 +42,7 @@ function setup(replies: string[] = []) {
     kuru: null,
     alchemyNotifyToken: "whsec",
     demoToken: "demo-secret",
+    passkey: { appleTeamIds: ["ABCDE12345"], androidCertSha256: [`${"AB:".repeat(31)}AB`], appId: "app.leash.mobile" },
     log: () => {},
   };
   const app = createApp(deps);
@@ -145,6 +146,17 @@ describe("API routes", () => {
     expect(j.decision.reasons).toEqual(["LEVERAGE_EXCEEDS"]);
     expect(j.slackRequestId).toBeTruthy();
     expect(e.store.getReceipt(j.reasonHash)?.model).toBe("manual-paper-test");
+  });
+
+  it("landing page + passkey association files (JSON, exact paths)", async () => {
+    const { app } = setup();
+    expect(await (await app.request("/")).json()).toMatchObject({ network: "Monad testnet (10143)", mode: "paper" });
+    const aasa = await app.request("/.well-known/apple-app-site-association");
+    expect(aasa.headers.get("content-type")).toMatch(/application\/json/);
+    expect(await aasa.json()).toEqual({ webcredentials: { apps: ["ABCDE12345.app.leash.mobile"] } });
+    const al = (await (await app.request("/.well-known/assetlinks.json")).json()) as { target: { package_name: string; sha256_cert_fingerprints: string[] } }[];
+    expect(al[0]!.target.package_name).toBe("app.leash.mobile");
+    expect(al[0]!.target.sha256_cert_fingerprints).toHaveLength(1);
   });
 
   it("alchemy webhook requires a valid HMAC signature and pushes deposits", async () => {
