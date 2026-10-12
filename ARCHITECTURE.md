@@ -201,7 +201,7 @@ RiskSnapshot = { account, ts, equityUsd, collateralUsd, marginUsedUsd, weeklyPnl
   exposureByMarket:Record<string,string> }
 ReceiptDetail = { reasonHash, signalHash, intent:Intent, decision:Decision, signalsSnapshot:object,
   model:string, decidedAtMs:number, confirmedAtMs:number|null, execTxHash:string|null }
-TxRequest = { to:address, data:hex, value:string, gas:string, chainId:143 }
+TxRequest = { to:address, data:hex, value:string, gas:string, chainId:143|10143 }  // 10143 = testnet while building
 ```
 Fixtures for every type in `packages/shared/fixtures/` at CP0 (include one EXECUTED, one REJECTED with slack request, one SHADOW).
 
@@ -219,10 +219,10 @@ Fixtures for every type in `packages/shared/fixtures/` at CP0 (include one EXECU
 | POST | `/keys/prepare` | enrollment payload for the user (per Q1) |
 | POST | `/keys/disable` | disables the user's key locally |
 
-### 7.4 Backend API (Brain; `API_URL`)
+### 7.4 Backend API (Brain; `API_URL`; spec: `services/api/openapi.yaml`)
 | Method | Path | Purpose |
 |---|---|---|
-| POST | `/mandate/compile` | `{account,text,persona}` → `{policy, policyHash, leashCard[], warnings[]}` |
+| POST | `/mandate/compile` | `{account,text,persona}` → `{policy, policyHash, leashCard[], warnings[], agentId, agentWallet, perplKey}` (agentId/agentWallet/perplKey added at CP0 so the app can sign `setMandate` in one go; `perplKey` = `keyAddress` from gateway `/keys/prepare`) |
 | POST | `/agent/activate` · `/agent/kill` | start after onchain mandate · stop + deny-all + disable key |
 | GET | `/agent/status/:account` | `{state, persona, lastTick, lastDecision}` |
 | GET | `/traders` | `Persona[]` with live stats from Envio |
