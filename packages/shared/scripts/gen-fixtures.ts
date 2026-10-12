@@ -193,11 +193,11 @@ const slackRequest: SlackRequest = {
 
 const riskSnapshot: RiskSnapshot = {
   account: USER,
-  ts: iso(t0 + 30_000),
+  ts: Math.floor((t0 + 30_000) / 1000),
   equityUsd: "101.25",
   collateralUsd: "100",
   marginUsedUsd: "12.5",
-  weeklyPnlPct: 1.25,
+  weeklyPnlPct: "1.25",
   fundingPaidUsd: "0.03",
   slackLeftUsd: "0",
   positions: [
@@ -208,7 +208,7 @@ const riskSnapshot: RiskSnapshot = {
       entryPrice: "0.0412",
       markPrice: "0.0414",
       liqPrice: "0.0215",
-      liqDistancePct: 48.07,
+      liqDistancePct: "48.07",
       unrealizedPnlUsd: "0.121359",
     },
   ],

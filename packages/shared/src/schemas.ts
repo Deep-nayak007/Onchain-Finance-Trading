@@ -121,24 +121,28 @@ export const SlackRequest = z.object({
 });
 
 // ---------- Risk (gateway /risk/:address) ----------
+/** Signed decimal string (percentages from the gateway). */
+export const DecimalString = z.string().regex(/^-?\d+(\.\d+)?$/, "expected decimal string");
+
+// Shape follows Rails' gateway.openapi.yaml (the producer): ts is unix seconds, percentages are strings.
 export const RiskPosition = z.object({
   market: z.string().min(1),
-  side: Side,
+  side: z.enum(["LONG", "SHORT"]),
   sizeUsd: PositiveUsdString,
   entryPrice: PriceString,
   markPrice: PriceString,
   liqPrice: PriceString,
-  liqDistancePct: z.number(),
+  liqDistancePct: DecimalString,
   unrealizedPnlUsd: UsdString,
 });
 
 export const RiskSnapshot = z.object({
   account: Address,
-  ts: IsoDateTime,
+  ts: z.number().int().nonnegative(),
   equityUsd: UsdString,
   collateralUsd: UsdString,
   marginUsedUsd: UsdString,
-  weeklyPnlPct: z.number(),
+  weeklyPnlPct: DecimalString,
   fundingPaidUsd: UsdString,
   slackLeftUsd: UsdString,
   positions: z.array(RiskPosition),
