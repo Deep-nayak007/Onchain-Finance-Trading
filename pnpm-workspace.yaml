@@ -1,0 +1,8 @@
+packages:
+  - "apps/*"
+  - "services/*"
+  - "packages/*"
+  - "indexer"
+  - "guardian"
+minimumReleaseAgeExclude:
+  - zod@4.6.6
