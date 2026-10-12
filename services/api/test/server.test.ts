@@ -127,6 +127,8 @@ describe("API routes", () => {
       ["owl", "SHADOW"],
     ]);
     expect((await post("/gas/drip", { address: USER })).status).toBe(503);
+    expect((await post("/gas/drip", { account: USER })).status).toBe(503); // Face's body shape is accepted too
+    expect((await post("/gas/drip", {})).status).toBe(400);
   });
 
   it("alchemy webhook requires a valid HMAC signature and pushes deposits", async () => {

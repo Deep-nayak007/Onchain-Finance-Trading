@@ -238,8 +238,12 @@ export function createApp(d: AppDeps) {
   });
 
   app.post("/gas/drip", async (c) => {
-    const req = await body(c, z.object({ address: Address }));
-    return c.json(await drip({ ...d.drip, store: d.store }, req.address as ViemAddress));
+    // Accepts {address} (OpenAPI) or {account} (what the Face app sends); same meaning.
+    const req = await body(
+      c,
+      z.object({ address: Address.optional(), account: Address.optional() }).refine((b) => b.address || b.account, { message: "address (or account) is required" }),
+    );
+    return c.json(await drip({ ...d.drip, store: d.store }, (req.address ?? req.account) as ViemAddress));
   });
 
   // ---- spot (Kuru helper for Face's spot screen; additive) ----

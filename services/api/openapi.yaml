@@ -275,9 +275,10 @@ paths:
           application/json:
             schema:
               type: object
-              required: [address]
+              description: "Send `address`; `account` is accepted as an alias (the Face app sends it)."
               properties:
                 address: { $ref: "#/components/schemas/Address" }
+                account: { $ref: "#/components/schemas/Address" }
       responses:
         "200":
           description: Drip sent
