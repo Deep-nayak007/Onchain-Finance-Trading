@@ -1,0 +1,566 @@
+openapi: 3.1.0
+info:
+  title: LEASH Brain API
+  version: 0.1.0-cp0
+  description: |
+    Backend API for the LEASH mobile app (ARCHITECTURE.md §7.4). Owner: Brain.
+    Shared types mirror packages/shared/src/schemas.ts (zod is the source of truth; these are stubs).
+    Fixtures: packages/shared/fixtures/*.json.
+    Units (§6): USD and prices are decimal strings; leverage is a number (3 = 3.0x).
+    Errors: every non-2xx response returns `Error`.
+servers:
+  - url: "{API_URL}"
+    variables:
+      API_URL:
+        default: http://localhost:8787
+
+tags:
+  - name: mandate
+  - name: agent
+  - name: traders
+  - name: receipts
+  - name: slack
+  - name: devices
+  - name: gas
+  - name: config
+  - name: webhooks
+
+paths:
+  /mandate/compile:
+    post:
+      tags: [mandate]
+      summary: Compile plain-English rules into a Policy + Leash Card
+      description: |
+        The LLM produces a Policy (JSON mode, zod-validated), clamped to demo maxima
+        (leverage ≤ 5, notional ≤ $100, weekly loss ≤ 20%); each clamp adds a warning.
+        ADDITIVE (CP0): also returns agentId, agentWallet and perplKey so the app can sign
+        `setMandate` in one go. agentWallet = Privy server wallet for this user×trader;
+        perplKey = keyAddress from the gateway's /keys/prepare.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [account, text, persona]
+              properties:
+                account: { $ref: "#/components/schemas/Address" }
+                text: { type: string, minLength: 1, maxLength: 2000 }
+                persona: { $ref: "#/components/schemas/PersonaId" }
+      responses:
+        "200":
+          description: Compiled policy
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [policy, policyHash, leashCard, warnings, agentId, agentWallet, perplKey]
+                properties:
+                  policy: { $ref: "#/components/schemas/Policy" }
+                  policyHash: { $ref: "#/components/schemas/Hash32" }
+                  leashCard:
+                    type: array
+                    minItems: 4
+                    maxItems: 6
+                    items: { type: string }
+                  warnings: { type: array, items: { type: string } }
+                  agentId: { $ref: "#/components/schemas/Uint256String" }
+                  agentWallet: { $ref: "#/components/schemas/Address" }
+                  perplKey: { $ref: "#/components/schemas/Address" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "502": { $ref: "#/components/responses/Upstream" }
+
+  /agent/activate:
+    post:
+      tags: [agent]
+      summary: Start the trader after the user signed setMandate onchain
+      description: Brain confirms the mandate onchain (MandateRegistry.getMandate) before starting the loop.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [account]
+              properties:
+                account: { $ref: "#/components/schemas/Address" }
+                txHash: { $ref: "#/components/schemas/Hash32" }
+      responses:
+        "200":
+          description: Agent started
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AgentStatus" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "409":
+          description: No active mandate onchain for this account
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /agent/kill:
+    post:
+      tags: [agent]
+      summary: Stop the loop, set the Privy wallet policy to deny-all, disable the Perpl key
+      description: The onchain pause(user,"user") is signed by the user in the app.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [account]
+              properties:
+                account: { $ref: "#/components/schemas/Address" }
+                txHash: { $ref: "#/components/schemas/Hash32" }
+      responses:
+        "200":
+          description: Agent stopped
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AgentStatus" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /agent/status/{account}:
+    get:
+      tags: [agent]
+      summary: Current agent state for an account
+      parameters:
+        - { $ref: "#/components/parameters/Account" }
+      responses:
+        "200":
+          description: Status
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AgentStatus" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /traders:
+    get:
+      tags: [traders]
+      summary: The three personas with live stats from Envio
+      responses:
+        "200":
+          description: "Personas (fixture: packages/shared/fixtures/traders.json)"
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Trader" }
+
+  /receipts/{reasonHash}:
+    get:
+      tags: [receipts]
+      summary: Full receipt JSON; the app recomputes reasonHash and shows ✓ only on match
+      parameters:
+        - name: reasonHash
+          in: path
+          required: true
+          schema: { $ref: "#/components/schemas/Hash32" }
+      responses:
+        "200":
+          description: "Receipt detail (fixtures: receipt-executed/rejected/shadow.json)"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ReceiptDetail" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /slack/pending/{account}:
+    get:
+      tags: [slack]
+      summary: Pending slack requests (at most one per user)
+      parameters:
+        - { $ref: "#/components/parameters/Account" }
+      responses:
+        "200":
+          description: "Pending requests (fixture: slack-request.json)"
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/SlackRequest" }
+
+  /slack/{id}/approved:
+    post:
+      tags: [slack]
+      summary: User signed grantSlack; Brain confirms onchain, re-checks the intent (≤ 2 min old) and executes
+      parameters:
+        - { $ref: "#/components/parameters/SlackId" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [txHash]
+              properties:
+                txHash: { $ref: "#/components/schemas/Hash32" }
+      responses:
+        "200":
+          description: Updated request; `receipt` is set when the re-check executed the intent
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [request]
+                properties:
+                  request: { $ref: "#/components/schemas/SlackRequest" }
+                  receipt:
+                    oneOf:
+                      - { $ref: "#/components/schemas/ReceiptDetail" }
+                      - { type: "null" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: Request expired / not pending, or slack not active onchain
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /slack/{id}/denied:
+    post:
+      tags: [slack]
+      summary: User declined the slack request
+      parameters:
+        - { $ref: "#/components/parameters/SlackId" }
+      responses:
+        "200":
+          description: Updated request
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [request]
+                properties:
+                  request: { $ref: "#/components/schemas/SlackRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /devices:
+    post:
+      tags: [devices]
+      summary: Register an Expo push token. Push payloads are `{type:"slack", id}` and `{type:"deposit", ...}`
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [account, expoPushToken]
+              properties:
+                account: { $ref: "#/components/schemas/Address" }
+                expoPushToken: { type: string, pattern: "^Expo(nent)?PushToken\\[.+\\]$" }
+      responses:
+        "200":
+          description: Registered
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Ok" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /gas/drip:
+    post:
+      tags: [gas]
+      summary: One MON drip per address from the gas tank (explicit gas 21000)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [address]
+              properties:
+                address: { $ref: "#/components/schemas/Address" }
+      responses:
+        "200":
+          description: Drip sent
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [txHash, amountMon]
+                properties:
+                  txHash: { $ref: "#/components/schemas/Hash32" }
+                  amountMon: { type: string }
+        "409":
+          description: Already dripped to this address
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "429":
+          description: Rate limited
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /config:
+    get:
+      tags: [config]
+      summary: Chain, contract addresses, referee and personas for the app
+      responses:
+        "200":
+          description: Config
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [chainId, addresses, referee, personas, live]
+                properties:
+                  chainId: { $ref: "#/components/schemas/ChainId" }
+                  addresses:
+                    type: object
+                    description: From packages/shared/addresses.ts (Rails). null until deployed.
+                    additionalProperties:
+                      oneOf:
+                        - { $ref: "#/components/schemas/Address" }
+                        - { type: "null" }
+                  referee:
+                    oneOf:
+                      - { $ref: "#/components/schemas/Address" }
+                      - { type: "null" }
+                  personas:
+                    type: array
+                    items: { $ref: "#/components/schemas/Persona" }
+                  live: { type: boolean, description: "LIVE flag; false = paper mode" }
+
+  /webhooks/alchemy:
+    post:
+      tags: [webhooks]
+      summary: Alchemy Notify (address activity) → AUSD deposit push
+      description: Signature verified with ALCHEMY_NOTIFY_TOKEN (X-Alchemy-Signature header).
+      parameters:
+        - name: X-Alchemy-Signature
+          in: header
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        "200":
+          description: Accepted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Ok" }
+        "401":
+          description: Bad signature
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+components:
+  parameters:
+    Account:
+      name: account
+      in: path
+      required: true
+      schema: { $ref: "#/components/schemas/Address" }
+    SlackId:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+  responses:
+    BadRequest:
+      description: Request failed validation
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Upstream:
+      description: Upstream dependency (LLM, Privy, gateway) failed
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }
+        details: {}
+    Ok:
+      type: object
+      required: [ok]
+      properties:
+        ok: { type: boolean, const: true }
+
+    Address: { type: string, pattern: "^0x[0-9a-fA-F]{40}$" }
+    Hash32: { type: string, pattern: "^0x[0-9a-fA-F]{64}$" }
+    Hex: { type: string, pattern: "^0x([0-9a-fA-F]{2})*$" }
+    Uint256String: { type: string, pattern: "^\\d+$" }
+    UsdString: { type: string, pattern: "^-?\\d+(\\.\\d{1,6})?$" }
+    PositiveUsdString: { type: string, pattern: "^\\d+(\\.\\d{1,6})?$" }
+    PriceString: { type: string, pattern: "^\\d+(\\.\\d{1,18})?$" }
+    IsoDateTime: { type: string, format: date-time }
+    ChainId:
+      type: integer
+      enum: [143, 10143]
+      description: 143 = Monad mainnet; 10143 = testnet (used while building).
+    Venue: { type: string, enum: [PERPL, KURU] }
+    Side: { type: string, enum: [LONG, SHORT, BUY, SELL] }
+    PersonaId: { type: string, enum: [falcon, otter, owl] }
+    RuleCode:
+      type: string
+      enum:
+        [OK, PAUSED, INVALID_INTENT, VENUE_NOT_ALLOWED, MARKET_NOT_ALLOWED, LOW_CONFIDENCE,
+         NO_SMART_MONEY_AGREEMENT, LEVERAGE_EXCEEDS, NOTIONAL_EXCEEDS, EXPOSURE_EXCEEDS,
+         WEEKLY_LOSS_LIMIT, RATE_LIMIT, COOLDOWN, CANNOT_WITHDRAW]
+
+    Policy:
+      type: object
+      required: [version, markets, venues, maxLeverage, maxNotionalUsd, maxTotalExposureUsd, maxWeeklyLossPct,
+                 maxTradesPerHour, cooldownSec, requireSmartMoneyAgreement, minConfidence, sleeveUsd]
+      properties:
+        version: { type: integer, const: 1 }
+        markets: { type: array, minItems: 1, items: { type: string } }
+        venues: { type: array, minItems: 1, items: { $ref: "#/components/schemas/Venue" } }
+        maxLeverage: { type: number, exclusiveMinimum: 0 }
+        maxNotionalUsd: { $ref: "#/components/schemas/PositiveUsdString" }
+        maxTotalExposureUsd: { $ref: "#/components/schemas/PositiveUsdString" }
+        maxWeeklyLossPct: { type: number, minimum: 0, maximum: 100 }
+        maxTradesPerHour: { type: integer, minimum: 0 }
+        cooldownSec: { type: integer, minimum: 0 }
+        requireSmartMoneyAgreement: { type: boolean }
+        minConfidence: { type: number, minimum: 0, maximum: 1 }
+        sleeveUsd: { $ref: "#/components/schemas/PositiveUsdString" }
+
+    Persona:
+      type: object
+      required: [id, agentId, name, style, mode, wallet, defaultPolicy]
+      properties:
+        id: { $ref: "#/components/schemas/PersonaId" }
+        agentId: { $ref: "#/components/schemas/Uint256String" }
+        name: { type: string }
+        style: { type: string }
+        mode: { type: string, enum: [LIVE, SHADOW] }
+        wallet: { $ref: "#/components/schemas/Address" }
+        defaultPolicy: { $ref: "#/components/schemas/Policy" }
+
+    TraderStats:
+      type: object
+      description: Computed by Envio (Agent entity). Optional until the indexer is live.
+      properties:
+        executedCount: { type: integer }
+        rejectedCount: { type: integer }
+        shadowCount: { type: integer }
+        volumeUsd: { $ref: "#/components/schemas/UsdString" }
+        realizedPnlUsd: { $ref: "#/components/schemas/UsdString" }
+        shadowPnlUsd: { $ref: "#/components/schemas/UsdString" }
+        maxDrawdownPct: { type: number }
+
+    Trader:
+      allOf:
+        - { $ref: "#/components/schemas/Persona" }
+        - type: object
+          properties:
+            stats:
+              oneOf:
+                - { $ref: "#/components/schemas/TraderStats" }
+                - { type: "null" }
+
+    Signal:
+      type: object
+      required: [source, key, value]
+      properties:
+        source: { type: string, enum: [nansen, envio, perpl] }
+        key: { type: string }
+        value: { type: string }
+
+    Intent:
+      type: object
+      required: [id, ts, persona, action, venue, market, side, sizeUsd, leverage, confidence, rationale, signals]
+      properties:
+        id: { type: string, format: uuid }
+        ts: { $ref: "#/components/schemas/IsoDateTime" }
+        persona: { $ref: "#/components/schemas/PersonaId" }
+        action: { type: string, enum: [OPEN, CLOSE, REDUCE, SWAP, HOLD] }
+        venue: { $ref: "#/components/schemas/Venue" }
+        market: { type: string }
+        side: { $ref: "#/components/schemas/Side" }
+        sizeUsd: { $ref: "#/components/schemas/PositiveUsdString" }
+        leverage: { type: number, minimum: 0 }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        rationale: { type: string, maxLength: 500 }
+        signals: { type: array, items: { $ref: "#/components/schemas/Signal" } }
+
+    Decision:
+      type: object
+      required: [intentId, allowed, reasons, usedSlack, checkedAt]
+      properties:
+        intentId: { type: string, format: uuid }
+        allowed: { type: boolean }
+        reasons: { type: array, minItems: 1, items: { $ref: "#/components/schemas/RuleCode" } }
+        usedSlack: { type: boolean }
+        checkedAt: { $ref: "#/components/schemas/IsoDateTime" }
+
+    ReceiptDetail:
+      type: object
+      description: reasonHash = keccak256(utf8(canonicalJSON({intent, decision}))); signalHash = keccak256(utf8(canonicalJSON(signalsSnapshot))).
+      required: [reasonHash, signalHash, intent, decision, signalsSnapshot, model, decidedAtMs, confirmedAtMs, execTxHash]
+      properties:
+        reasonHash: { $ref: "#/components/schemas/Hash32" }
+        signalHash: { $ref: "#/components/schemas/Hash32" }
+        intent: { $ref: "#/components/schemas/Intent" }
+        decision: { $ref: "#/components/schemas/Decision" }
+        signalsSnapshot: { type: object, additionalProperties: true }
+        model: { type: string }
+        decidedAtMs: { type: integer }
+        confirmedAtMs: { type: [integer, "null"] }
+        execTxHash:
+          oneOf:
+            - { $ref: "#/components/schemas/Hash32" }
+            - { type: "null" }
+
+    SlackRequest:
+      type: object
+      required: [id, account, persona, intentId, rule, requested, why, createdAt, expiresAt, status]
+      properties:
+        id: { type: string, format: uuid }
+        account: { $ref: "#/components/schemas/Address" }
+        persona: { type: string }
+        intentId: { type: string, format: uuid }
+        rule: { $ref: "#/components/schemas/RuleCode" }
+        requested:
+          type: object
+          required: [maxLeverage, maxNotionalUsd, extraRiskUsd, durationSec]
+          properties:
+            maxLeverage: { type: number }
+            maxNotionalUsd: { $ref: "#/components/schemas/PositiveUsdString" }
+            extraRiskUsd: { $ref: "#/components/schemas/PositiveUsdString" }
+            durationSec: { type: integer, minimum: 1 }
+        why:
+          type: array
+          items:
+            type: object
+            required: [text, source]
+            properties:
+              text: { type: string }
+              source: { type: string }
+        createdAt: { $ref: "#/components/schemas/IsoDateTime" }
+        expiresAt: { $ref: "#/components/schemas/IsoDateTime" }
+        status: { type: string, enum: [PENDING, APPROVED, DENIED, EXPIRED] }
+
+    AgentStatus:
+      type: object
+      required: [state, persona, lastTick, lastDecision]
+      properties:
+        state: { type: string, enum: [IDLE, RUNNING, PAUSED, KILLED] }
+        persona:
+          oneOf:
+            - { $ref: "#/components/schemas/PersonaId" }
+            - { type: "null" }
+        lastTick:
+          oneOf:
+            - { $ref: "#/components/schemas/IsoDateTime" }
+            - { type: "null" }
+        lastDecision:
+          oneOf:
+            - { $ref: "#/components/schemas/Decision" }
+            - { type: "null" }
