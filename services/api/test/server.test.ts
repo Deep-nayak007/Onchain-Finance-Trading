@@ -41,6 +41,7 @@ function setup(replies: string[] = []) {
     drip: { wallet: null, publicClient: fakePublicClient, amountMon: "0.2", chainId: 10143 },
     kuru: null,
     alchemyNotifyToken: "whsec",
+    demoToken: "demo-secret",
     log: () => {},
   };
   const app = createApp(deps);
@@ -129,6 +130,21 @@ describe("API routes", () => {
     expect((await post("/gas/drip", { address: USER })).status).toBe(503);
     expect((await post("/gas/drip", { account: USER })).status).toBe(503); // Face's body shape is accepted too
     expect((await post("/gas/drip", {})).status).toBe(400);
+  });
+
+  it("/demo/intent: token-guarded, paper-only, same checker → receipt → slack path, labelled manual", async () => {
+    const { post, e } = setup();
+    e.store.upsertUser({ account: USER, persona: "falcon", policy: policyJson as Policy, policyHash: "0x01", state: "RUNNING" });
+    const body = { account: USER, side: "LONG", sizeUsd: "15", leverage: 5, confidence: 0.9 };
+    expect((await post("/demo/intent", body)).status).toBe(401);
+    expect((await post("/demo/intent", body, { "x-demo-token": "nope-nope-n" })).status).toBe(401);
+    const res = await post("/demo/intent", body, { "x-demo-token": "demo-secret" });
+    expect(res.status).toBe(200);
+    const j = (await res.json()) as { status: string; decision: { reasons: string[] }; slackRequestId: string | null; reasonHash: string };
+    expect(j.status).toBe("REJECTED");
+    expect(j.decision.reasons).toEqual(["LEVERAGE_EXCEEDS"]);
+    expect(j.slackRequestId).toBeTruthy();
+    expect(e.store.getReceipt(j.reasonHash)?.model).toBe("manual-paper-test");
   });
 
   it("alchemy webhook requires a valid HMAC signature and pushes deposits", async () => {

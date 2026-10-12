@@ -60,8 +60,12 @@ export function mergeMandate(policy: Policy, m: MandateView | null): Policy {
   return { ...policy, maxLeverage: m.maxLeverage, maxNotionalUsd: m.maxNotionalUsd, maxWeeklyLossPct: m.maxWeeklyLossPct };
 }
 
+/** Re-ask the LLM at least this often even when inputs barely moved (flat markets still drift). */
+export const LLM_REFRESH_MS = 5 * 60_000;
+
 export class Engine {
   private readonly lastSnapshot = new Map<string, Snapshot>();
+  private readonly lastAsked = new Map<string, number>();
   private readonly now: () => number;
   private readonly log: (msg: string) => void;
 
@@ -107,16 +111,24 @@ export class Engine {
     return { ctx: { user, policy, slack, snapshot, state, now } };
   }
 
+  /** LLM call budget: only on meaningful change, or every LLM_REFRESH_MS. Records the snapshot when asking. */
+  private shouldAsk(key: string, snapshot: Snapshot, now: number): boolean {
+    const due = now - (this.lastAsked.get(key) ?? 0) >= LLM_REFRESH_MS;
+    if (!due && !changedMeaningfully(this.lastSnapshot.get(key), snapshot)) return false;
+    this.lastSnapshot.set(key, snapshot);
+    this.lastAsked.set(key, now);
+    return true;
+  }
+
   async tickUser(account: Address): Promise<TickResult> {
     const c = await this.context(account);
     if (!c.ctx) return c.stop;
     const { user, policy, slack, snapshot, state, now } = c.ctx;
     const key = `user:${account.toLowerCase()}`;
-    if (!changedMeaningfully(this.lastSnapshot.get(key), snapshot)) {
+    if (!this.shouldAsk(key, snapshot, now)) {
       this.d.store.recordTick(account, undefined);
       return { kind: "skipped", reason: "no meaningful change" };
     }
-    this.lastSnapshot.set(key, snapshot);
 
     const limits = effectiveLimits(policy, slack, state);
     const proposal = await proposeIntent(this.d.chat, this.d.modelTick, { persona: user.persona, policy, limits, snapshot, now });
@@ -228,8 +240,7 @@ export class Engine {
     const now = this.now();
     const { snapshot } = await gatherSnapshot(this.d, { account: null, market, now });
     const key = `persona:${persona}`;
-    if (!changedMeaningfully(this.lastSnapshot.get(key), snapshot)) return { kind: "skipped", reason: "no meaningful change" };
-    this.lastSnapshot.set(key, snapshot);
+    if (!this.shouldAsk(key, snapshot, now)) return { kind: "skipped", reason: "no meaningful change" };
 
     const state = this.shadowState(persona, now, snapshot);
     const proposal = await proposeIntent(this.d.chat, this.d.modelTick, { persona, policy, limits: effectiveLimits(policy, null, state), snapshot, now });

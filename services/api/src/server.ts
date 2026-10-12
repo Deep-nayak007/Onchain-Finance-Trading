@@ -1,6 +1,6 @@
 // REST API for the app (ARCHITECTURE §7.4, services/api/openapi.yaml). Every body/param validated with zod.
-import { createHmac, timingSafeEqual } from "node:crypto";
-import { Address, Hash32, PersonaId, type ChainId } from "@leash/shared";
+import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
+import { Address, Hash32, Intent, PersonaId, type ChainId } from "@leash/shared";
 import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
 import type { Address as ViemAddress, PublicClient } from "viem";
@@ -38,6 +38,7 @@ export type AppDeps = {
   drip: Omit<DripDeps, "store">;
   kuru: Kuru | null;
   alchemyNotifyToken?: string;
+  demoToken?: string;
   corsOrigins?: string[];
   log?: (m: string) => void;
 };
@@ -251,6 +252,48 @@ export function createApp(d: AppDeps) {
     if (!d.kuru) throw new HttpError(503, "Kuru not configured on this chain");
     const req = await body(c, z.object({ account: Address, side: z.enum(["BUY", "SELL"]), sizeUsd: z.coerce.number().positive().max(100) }));
     return c.json(await d.kuru.prepare(req.account as ViemAddress, req.side, req.sizeUsd));
+  });
+
+  // ---- demo (filming only) ----
+  // A hand-written intent through the exact same checker → receipt → slack path. Paper mode only, token-guarded,
+  // and labelled model "manual-paper-test" so it can never pass as an LLM decision.
+  app.post("/demo/intent", async (c) => {
+    if (!d.demoToken) throw new HttpError(404, "not found");
+    const tok = Buffer.from(c.req.header("x-demo-token") ?? "");
+    const want = Buffer.from(d.demoToken);
+    if (tok.length !== want.length || !timingSafeEqual(tok, want)) throw new HttpError(401, "bad demo token");
+    if (d.live) throw new HttpError(409, "demo intents are paper-only (LIVE=true)");
+    const req = await body(
+      c,
+      z.object({
+        account: Address,
+        action: z.enum(["OPEN", "CLOSE", "REDUCE"]).default("OPEN"),
+        side: z.enum(["LONG", "SHORT"]),
+        sizeUsd: z.string().regex(/^\d+(\.\d{1,6})?$/),
+        leverage: z.number().positive().max(10),
+        confidence: z.number().min(0).max(1),
+        market: z.string().default("MON-PERP"),
+      }),
+    );
+    const user = d.store.getUser(req.account);
+    if (!user) throw new HttpError(404, "unknown account");
+    const intent = Intent.parse({
+      id: randomUUID(),
+      ts: new Date().toISOString(),
+      persona: user.persona,
+      action: req.action,
+      venue: "PERPL",
+      market: req.market,
+      side: req.side,
+      sizeUsd: req.sizeUsd,
+      leverage: req.leverage,
+      confidence: req.confidence,
+      rationale: "Demo intent submitted by the LEASH operator for filming (paper mode).",
+      signals: [],
+    });
+    const r = await d.engine.submitIntent(req.account as ViemAddress, intent, "manual-paper-test");
+    if (r.kind !== "decided") return c.json({ kind: r.kind, ...("reason" in r ? { reason: r.reason } : {}) });
+    return c.json({ kind: r.kind, status: r.status, decision: r.detail.decision, reasonHash: r.detail.reasonHash, slackRequestId: r.slackRequestId ?? null });
   });
 
   // ---- config ----

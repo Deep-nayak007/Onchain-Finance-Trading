@@ -22,6 +22,8 @@ const LlmPolicy = Policy.extend({
   cooldownSec: z.number().transform((n) => Math.max(0, Math.round(n))),
 });
 
+const SMART_MONEY_ASK = /smart[\s-]?money|nansen|whale/i;
+
 export type CompileResult = { policy: Policy; policyHash: `0x${string}`; leashCard: string[]; warnings: string[]; model: string };
 
 const minUsd = (a: string, b: string) => (toUsd6(a) <= toUsd6(b) ? a : b);
@@ -105,6 +107,8 @@ export async function compilePolicy(chat: ChatJson | null, model: string, text: 
     usedModel = "fallback-default-policy-v1";
     warnings.push(`Couldn't read your rules (${e instanceof LlmError ? e.kind : "error"}); using ${PERSONA_DEFS[persona].name}'s safe defaults.`);
   }
+  // Nansen has no Monad data: only require smart-money agreement when the person actually asks for it.
+  if (raw.requireSmartMoneyAgreement && !SMART_MONEY_ASK.test(text)) raw = { ...raw, requireSmartMoneyAgreement: false };
   const { policy, warnings: clampWarnings } = clampPolicy(raw);
   return { policy, policyHash: policyHash(policy), leashCard: leashCard(policy, persona), warnings: [...warnings, ...clampWarnings], model: usedModel };
 }

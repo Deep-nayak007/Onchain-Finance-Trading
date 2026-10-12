@@ -88,6 +88,7 @@ export function buildApp(cfg: Config, opts: { store?: Store; startLoops?: boolea
     drip: { wallet: gasTank, publicClient, amountMon: cfg.DRIP_MON, chainId: cfg.CHAIN_ID },
     kuru,
     alchemyNotifyToken: cfg.ALCHEMY_WEBHOOK_SIGNING_KEY,
+    demoToken: cfg.DEMO_TOKEN,
     corsOrigins: cfg.CORS_ORIGINS?.split(",").map((s) => s.trim()),
     log,
   };

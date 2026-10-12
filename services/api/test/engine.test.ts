@@ -132,6 +132,17 @@ describe("engine.tickUser (paper)", () => {
     expect(await engine.tickUser(USER)).toEqual({ kind: "skipped", reason: "no meaningful change" });
   });
 
+  it("re-asks the LLM every 5 min even when nothing moved", async () => {
+    const hold = intentJson({ action: "HOLD", sizeUsd: "0", leverage: 0 });
+    const { engine, store, advance } = makeEngine({ replies: [hold, hold] });
+    running(store);
+    expect((await engine.tickUser(USER)).kind).toBe("hold");
+    advance(60_000);
+    expect((await engine.tickUser(USER)).kind).toBe("skipped");
+    advance(5 * 60_000);
+    expect((await engine.tickUser(USER)).kind).toBe("hold");
+  });
+
   it("LLM down → fallback strategy still produces a checked, receipted decision", async () => {
     const { engine, store } = makeEngine({ replies: [new Error("timeout")] });
     running(store);

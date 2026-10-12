@@ -23,7 +23,7 @@ export const PERSONA_DEFS: Record<PersonaId, Omit<Persona, "agentId" | "wallet">
   falcon: {
     id: "falcon",
     name: "Falcon",
-    style: "Momentum. Follows smart money (Nansen) into strength.",
+    style: "Momentum. Rides Perpl price trends; can also follow smart money (Nansen) when you ask.",
     mode: "LIVE",
     defaultPolicy: base,
   },

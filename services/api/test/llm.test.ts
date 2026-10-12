@@ -88,6 +88,12 @@ describe("rules compiler", () => {
     expect(chat.calls[0]!.system).toMatch(/JSON/);
   });
 
+  it("requires smart money only when the person asks for it", async () => {
+    const llm = JSON.stringify({ ...goodPolicy, requireSmartMoneyAgreement: true });
+    expect((await compilePolicy(new FakeChat([llm]), "m", "max 2x, $20 a trade", "falcon")).policy.requireSmartMoneyAgreement).toBe(false);
+    expect((await compilePolicy(new FakeChat([llm]), "m", "only trade when smart money agrees", "falcon")).policy.requireSmartMoneyAgreement).toBe(true);
+  });
+
   it("falls back to the persona's safe defaults with a warning", async () => {
     const r = await compilePolicy(new FakeChat(["nope", "still nope"]), "m", "whatever", "otter");
     expect(r.policy).toEqual(clampPolicy(PERSONA_DEFS.otter.defaultPolicy).policy);
