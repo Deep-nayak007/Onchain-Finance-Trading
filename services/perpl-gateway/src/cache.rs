@@ -7,10 +7,33 @@
 
 use std::{pin::pin, sync::Arc, time::Duration};
 
-use alloy::providers::{Provider, ProviderBuilder};
+use alloy::{
+    providers::{Provider, ProviderBuilder},
+    rpc::client::RpcClient,
+    transports::layers::{RetryBackoffLayer, ThrottleLayer},
+};
 use futures::StreamExt;
 use perpl_sdk::{Chain, state::Exchange, state::SnapshotBuilder, stream};
 use tokio::sync::RwLock;
+
+/// Max requests/sec to the RPC. QuickNode's free tier caps at 50/s, so we stay
+/// comfortably under it to leave headroom for the event-stream polling that
+/// runs alongside the snapshot burst.
+const RPC_MAX_RPS: u32 = 20;
+
+/// Build a throttled + retrying provider so the Perpl snapshot's burst of calls
+/// stays under the RPC's rate limit (otherwise it 429s forever and never
+/// completes — see the ThrottleLayer / RetryBackoffLayer).
+async fn build_provider(rpc: &str) -> anyhow::Result<impl Provider + Clone> {
+    let client = RpcClient::builder()
+        // Retry transient failures (incl. any 429s that slip through) with backoff.
+        .layer(RetryBackoffLayer::new(10, 200, 300))
+        // Cap outbound request rate.
+        .layer(ThrottleLayer::new(RPC_MAX_RPS))
+        .connect(rpc)
+        .await?;
+    Ok(ProviderBuilder::new().connect_client(client))
+}
 
 /// Shared, concurrently-readable exchange snapshot plus the block it is at.
 #[derive(Clone)]
@@ -58,7 +81,7 @@ impl Cache {
 
     async fn run_once(&self) -> anyhow::Result<()> {
         let chain = self.chain();
-        let provider = ProviderBuilder::new().connect(&self.rpc).await?;
+        let provider = build_provider(&self.rpc).await?;
 
         // Discover every listed perpetual, tracking all open positions so any
         // account's exposure is available without naming it in advance.
@@ -89,7 +112,7 @@ impl Cache {
 
 /// Current chain tip, independent of the cache, for computing lag.
 pub async fn chain_tip(rpc: &str) -> anyhow::Result<u64> {
-    let provider = ProviderBuilder::new().connect(rpc).await?;
+    let provider = build_provider(rpc).await?;
     Ok(provider.get_block_number().await?)
 }
 

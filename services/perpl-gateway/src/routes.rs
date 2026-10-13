@@ -203,7 +203,12 @@ pub async fn keys_prepare(
     // Re-enable a previously-disabled key on fresh enrollment.
     st.store.set_disabled(&req.account, false)?;
     let enrollment = perpl::prepare_key_enrollment(&st, &req.account, trade_key)?;
-    Ok(Json(KeyPrepareResult { trade_key: format!("{trade_key:#x}"), enrollment }))
+    let addr = format!("{trade_key:#x}");
+    Ok(Json(KeyPrepareResult {
+        key_address: addr.clone(),
+        trade_key: addr,
+        enrollment,
+    }))
 }
 
 // ---- /keys/disable ----
