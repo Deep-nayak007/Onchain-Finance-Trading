@@ -40,6 +40,8 @@ export type AppDeps = {
   kuru: Kuru | null;
   alchemyNotifyToken?: string;
   demoToken?: string;
+  /** Delay between gateway retries (tests set 0). */
+  retryDelayMs?: number;
   /** Per-IP requests/minute on compile/drip (spot gets 2x). Default 12. */
   rateLimitPerMin?: number;
   passkey?: { appleTeamIds: string[]; androidCertSha256: string[]; appId: string };
@@ -180,12 +182,16 @@ export function createApp(d: AppDeps) {
       }
     } else warnings.push("Trader wallet service isn't configured on this server.");
     let perplKey: string | null = null;
-    try {
-      perplKey = (await d.gateway.keysPrepare(req.account)).tradeKey;
-    } catch (e) {
-      warnings.push("Perpl trade key isn't available yet.");
-      log(`[compile] keys/prepare: ${(e as Error).message}`);
+    // The free-tier gateway restarts/cold-starts now and then: retry before giving up.
+    for (let attempt = 1; attempt <= 3 && !perplKey; attempt++) {
+      try {
+        perplKey = (await d.gateway.keysPrepare(req.account)).tradeKey;
+      } catch (e) {
+        log(`[compile] keys/prepare attempt ${attempt}: ${(e as Error).message}`);
+        if (attempt < 3) await new Promise((r) => setTimeout(r, d.retryDelayMs ?? 3000));
+      }
     }
+    if (!perplKey) warnings.push("Perpl trade key isn't available yet.");
     return c.json({
       policy: result.policy,
       policyHash: result.policyHash,

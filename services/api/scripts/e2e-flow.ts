@@ -7,7 +7,8 @@ import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { monadTestnet } from "viem/chains";
 import { mandateRegistryAbi } from "@leash/shared/abis";
 import { sendTxAndWait } from "@leash/shared/sendTx";
-import { policyHash } from "@leash/shared";
+import { policyHash, reasonHash, signalHash } from "@leash/shared";
+const POINTER = "https://raw.githubusercontent.com/yashpy/Onchain-Finance-Trading/main/deploy/envio-url.txt";
 
 const API = process.env.API_URL ?? "https://leash-brain-api.onrender.com";
 const RPC = "https://testnet-rpc.monad.xyz";
@@ -83,6 +84,32 @@ async function main() {
   check("status RUNNING", st.json?.state === "RUNNING", st.json);
   const pol = await api("GET", `/policy/${user}`);
   check("policy served", pol.status === 200, pol.status);
+  // Fresh verifiable receipt (needs DEMO_TOKEN): paper intent → onchain logReceipt → API reasoning ↔ Envio record.
+  if (process.env.DEMO_TOKEN) {
+    const r = await fetch(`${API}/demo/intent`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-demo-token": process.env.DEMO_TOKEN },
+      body: JSON.stringify({ account: user, side: "LONG", sizeUsd: "5", leverage: 1, confidence: 0.9 }),
+      signal: AbortSignal.timeout(120_000),
+    });
+    const dj = (await r.json()) as { kind?: string; status?: string; reasonHash?: string };
+    check("demo intent decided + receipted", r.status === 200 && dj.kind === "decided" && !!dj.reasonHash, dj);
+    if (dj.reasonHash) {
+      const det = await api("GET", `/receipts/${dj.reasonHash}`);
+      const d = det.json as { intent: unknown; decision: unknown; signalsSnapshot: unknown; reasonHash: string; signalHash: string } | null;
+      check("API reasoning recomputes to reasonHash (✓)", det.status === 200 && !!d && reasonHash({ intent: d.intent, decision: d.decision }) === dj.reasonHash && signalHash(d.signalsSnapshot) === d.signalHash, det.status);
+      const envio = (await (await fetch(POINTER)).text()).trim();
+      let rec: unknown = null;
+      for (let i = 0; i < 18 && !rec; i++) {
+        await new Promise((res) => setTimeout(res, 5000));
+        const q = await fetch(envio, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ query: "query($h:String!){ Receipt(where:{reasonHash:{_eq:$h}},limit:1){ id seq } }", variables: { h: dj.reasonHash.toLowerCase() } }) });
+        rec = ((await q.json()) as { data?: { Receipt?: unknown[] } }).data?.Receipt?.[0] ?? null;
+      }
+      check("receipt indexed onchain (Envio)", !!rec, rec);
+      console.log(`FRESH RECEIPT ${dj.reasonHash}`);
+    }
+  }
+
   // The trader must actually tick: an LLM (or fallback) decision, checked by the rules, receipted onchain.
   let last: Record<string, unknown> | null = null;
   for (let i = 0; i < 40 && !last?.lastDecision; i++) {

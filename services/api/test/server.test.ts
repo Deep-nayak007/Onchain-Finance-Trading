@@ -45,6 +45,7 @@ function setup(replies: string[] = []) {
     passkey: { appleTeamIds: ["ABCDE12345"], androidCertSha256: [`${"AB:".repeat(31)}AB`], appId: "app.leash.mobile" },
     log: () => {},
     rateLimitPerMin: 1000,
+    retryDelayMs: 0,
   };
   const app = createApp(deps);
   const post = (path: string, body: unknown, headers: Record<string, string> = {}) =>

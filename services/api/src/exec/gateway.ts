@@ -65,12 +65,12 @@ export class HttpGateway implements Gateway {
     private readonly token?: string,
   ) {}
 
-  private async call<S extends z.ZodType>(schema: S, path: string, body?: unknown): Promise<z.infer<S>> {
+  private async call<S extends z.ZodType>(schema: S, path: string, body?: unknown, timeoutMs = this.timeoutMs): Promise<z.infer<S>> {
     const res = await fetch(new URL(path, this.baseUrl.endsWith("/") ? this.baseUrl : `${this.baseUrl}/`), {
       method: body === undefined ? "GET" : "POST",
       headers: { ...(body === undefined ? {} : { "content-type": "application/json" }), ...(this.token ? { "x-gateway-token": this.token } : {}) },
       body: body === undefined ? undefined : JSON.stringify(body),
-      signal: AbortSignal.timeout(this.timeoutMs),
+      signal: AbortSignal.timeout(timeoutMs),
     });
     const json: unknown = await res.json().catch(() => null);
     if (!res.ok) {
@@ -95,7 +95,7 @@ export class HttpGateway implements Gateway {
     return this.call(ExecuteResult, "orders/execute", order);
   }
   keysPrepare(account: string) {
-    return this.call(KeyPrepareResult, "keys/prepare", { account });
+    return this.call(KeyPrepareResult, "keys/prepare", { account }, 20_000); // keystore encryption is slow on a cold box
   }
   keysDisable(account: string) {
     return this.call(z.object({ ok: z.boolean() }), "keys/disable", { account });
