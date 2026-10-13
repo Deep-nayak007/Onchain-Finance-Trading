@@ -8,6 +8,8 @@ Brain status: API live at `https://leash-brain-api.fly.dev` (chain 10143, paper)
   Wired into the Brain API (`GATEWAY_URL`). Health ok, 15 perps, deep MON book, real `/risk`.
 - ✅ **Indexer is Envio-Cloud-ready** on branch `envio` (c0450de): ABIs inside `indexer/`, Kuru testnet market, persona wallets,
   BigDecimal fix; verified locally against testnet.
+- ✅ **ENVIO_URL live (self-hosted fallback)**: https://add-bush-herbal-raid.trycloudflare.com/v1/graphql, synced to head; all receipts/pauses/slack/mandates
+  indexed; wired into the Brain API (`/traders`) and the Referee (watches all active mandates). Envio Cloud is stuck (see LIMITATIONS).
 - ✅ **Envio Cloud source repo (fallback)**: https://github.com/prempagare07/leash-indexer (Prem-owned, `git subtree split` of `indexer/`,
   history kept, pnpm 10.32.0 lockfile). The monorepo's transferred ownership blocked the Envio GitHub app for collaborators.
   Envio Cloud: root `./`, config `config.yaml`, branch `envio`. Re-sync after indexer changes (from the monorepo root):

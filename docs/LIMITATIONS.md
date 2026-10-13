@@ -68,6 +68,10 @@ Updated 2026-10-12. Everything below sits behind an interface, so the real thing
   to 143 and fills `LEASH.mainnet` in `addresses.ts`; re-point persona-wallet Privy policies to chain 143; fund agent/persona/
   referee/gas-tank wallets; gateway with `CHAIN_ID=143`; Face sets `EXPO_PUBLIC_CHAIN_ID=143`. No code changes. Proven on mainnet so
   far: Kuru market params read live on 143; Perpl mainnet exchange/collateral + ERC-8004 bytecode checked (Rails).
+- **Envio Cloud blocked**: the indexer `leash-monad` exists on Envio Cloud (org prempagare07, repo `prempagare07/leash-indexer`)
+  but Envio never receives the repo's push events (dashboard shows "GitHub app removed" even after reinstall; 0 commits). Until Envio
+  support fixes it, the indexer is **self-hosted on Prem's Mac** behind a read-only proxy + Cloudflare quick tunnel (`scripts/envio-local`):
+  same schema and queries; the URL is temporary and only up while the Mac is on.
 - **Envio (indexer)**: deployed from a standalone mirror `prempagare07/leash-indexer` (the transferred monorepo couldn't be granted to the Envio GitHub app by collaborators); code is Envio-Cloud-ready (branch `envio`, verified locally); not yet hosted. Envio Cloud needs (1) the repo owner to grant the Envio Deployments GitHub app on the transferred
   repo `yashpy/Onchain-Finance-Trading` and (2) keep all indexer imports inside `indexer/` (config.yaml reads `../packages/shared/abis`).
   Self-hosting on Fly was prepared (`indexer/deploy/`) but the Fly trial blocks more apps. Until then `/traders` has no stats and the

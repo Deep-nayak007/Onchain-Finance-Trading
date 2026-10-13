@@ -20,7 +20,7 @@ code decides; five independent knots can stop it.
 | ERC-8004 identity | [`0x8004A818BFB912233c491871b3d84c89A494BD9e`](https://testnet.monadvision.com/address/0x8004A818BFB912233c491871b3d84c89A494BD9e): Falcon **#2227**, Otter **#2228**, Owl **#2229** (cards: `https://leash-brain-api.fly.dev/agents/falcon.json`) |
 | Persona wallets (Privy, `logShadow` only) | Falcon [`0x2477…1994`](https://testnet.monadvision.com/address/0x2477150BBA80a4E9127151eB863892f346211994) · Otter [`0x1780…0FB6`](https://testnet.monadvision.com/address/0x1780E260D175e975c6FFD31ed1FfaE9b6e7D0FB6) · Owl [`0x3858…d22C`](https://testnet.monadvision.com/address/0x38581aaaf757d195e2343651Ada5E7cE58F9d22C) |
 | Perpl gateway | **https://leash-perpl-gateway.fly.dev** (`/health`, `/markets`, `/book/MON-PERP`, `/risk/:address`): Rails' Rust gateway, 15 live testnet perps |
-| Envio GraphQL | *(Envio Cloud: indexer ready on branch `envio`; waiting on the GitHub-app grant)* · mainnet gateway (Rails, Render): https://leash-gateway.onrender.com |
+| Envio GraphQL | **https://add-bush-herbal-raid.trycloudflare.com/v1/graphql** (read-only; self-hosted fallback via `scripts/envio-local`, temporary tunnel URL) · mainnet gateway (Rails, Render): https://leash-gateway.onrender.com |
 
 **Proven on testnet** (tx links in [`docs/testnet-evidence.md`](docs/testnet-evidence.md)): rules compiled by Qwen → policy-locked Privy wallet
 → `setMandate` → agent runs on live Perpl prices → receipts onchain (REJECTED, EXECUTED with `usedSlack`, SHADOW) → slack request →
