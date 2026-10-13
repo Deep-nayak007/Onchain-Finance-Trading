@@ -29,19 +29,50 @@ export type LeaderboardRow = z.infer<typeof LeaderboardRow>;
 
 const FeedRow = z.object({ seq: z.union([z.string(), z.number()]), status: z.string(), blockTimestamp: z.union([z.string(), z.number()]) }).passthrough();
 
+/** A valid Envio GraphQL URL: https, path ending in /v1/graphql. */
+export const isEnvioUrl = (u: string) => /^https:\/\/[a-z0-9.-]+\/v1\/graphql$/i.test(u.trim());
+
 export class Envio {
+  private pointed: { url: string; at: number } | null = null;
+
+  /**
+   * @param url     static ENVIO_URL (fallback)
+   * @param pointer optional URL of a one-line text file holding the CURRENT Envio URL (deploy/envio-url.txt on main), so a
+   *                restarted tunnel can be rotated by a commit, without editing the host's env. Cached for 60s.
+   */
   constructor(
     private readonly url: string | undefined,
     private readonly fetchImpl: typeof fetch = fetch,
+    private readonly pointer?: string,
   ) {}
 
   get configured() {
-    return !!this.url;
+    return !!this.url || !!this.pointer;
+  }
+
+  /** Current endpoint: the pointer file if it holds a valid URL, else the static ENVIO_URL. */
+  async endpoint(): Promise<string | undefined> {
+    if (this.pointer) {
+      if (this.pointed && Date.now() - this.pointed.at < 60_000) return this.pointed.url;
+      try {
+        const r = await this.fetchImpl(this.pointer, { signal: AbortSignal.timeout(5000) });
+        const u = (await r.text()).trim();
+        if (r.ok && isEnvioUrl(u)) {
+          this.pointed = { url: u, at: Date.now() };
+          return u;
+        }
+      } catch {
+        // fall through to the last good / static URL
+      }
+      if (this.pointed) return this.pointed.url;
+    }
+    return this.url;
   }
 
   private async gql<T>(query: string, variables: Record<string, unknown>, schema: z.ZodType<T>): Promise<T> {
-    if (!this.url) throw new Error("ENVIO_URL not set");
-    const res = await this.fetchImpl(this.url, {
+    const url = await this.endpoint();
+    if (!url) throw new Error("ENVIO_URL not set");
+    const res = await this.fetchImpl(url, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ query, variables }),

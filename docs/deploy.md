@@ -1,9 +1,32 @@
 # Deploying the Brain API (and the Referee executor)
 
-**Live:** `API_URL=https://leash-brain-api.fly.dev` (Fly.io, app `leash-brain-api`, region lax, 1 GB volume `leash_data`,
+**Current hosting (free, no card): Render.** Blueprint `deploy/render.testnet.yaml` → services `leash-brain-api`
+(https://leash-brain-api.onrender.com) and `leash-perpl-gateway-testnet` (https://leash-perpl-gateway-testnet.onrender.com), testnet 10143,
+`LIVE=false`. Secrets: uploaded per service via Environment → "Add from .env" from the gitignored `services/api/.env.render` and
+`services/perpl-gateway/.env.render`. Free plan: sleeps after 15 min idle (`.github/workflows/keepalive.yml` pings every 10 min), no
+persistent disk (Brain SQLite + gateway keystore reset on restart: re-run compile → setMandate → activate for the demo user).
+When the Envio tunnel URL changes: update `ENVIO_URL` on the leash-brain-api service (Environment) + `SERVICES.envioUrl`.
+Web front end: static site `leash-app` (https://leash-app.onrender.com), Face's Expo web export in demo mode (`EXPO_PUBLIC_USE_MOCKS=true`);
+live mode on web needs passkeys on the RP domain + `apps/mobile/integration/team.ts`.
+The Fly apps below were stopped when the Fly trial ended (kept for reference).
+
+**Live:** `API_URL=https://leash-brain-api.onrender.com` (Fly.io, app `leash-brain-api`, region lax, 1 GB volume `leash_data`,
 chain 10143, `LIVE=false`). Deployed 2026-10-12. Redeploy from the repo root:
 `fly deploy . --config services/api/fly.toml --remote-only`. Secrets: `fly secrets list --app leash-brain-api` (names only).
 When Rails' URLs exist: `fly secrets set GATEWAY_URL=... ENVIO_URL=... --app leash-brain-api`.
+
+**Perpl gateway (Rails' code, Brain-hosted):** `GATEWAY_URL=https://leash-perpl-gateway-testnet.onrender.com` (Fly app `leash-perpl-gateway`, lax,
+1 GB volume `gw_data` at /data, chain 10143). Config: `services/perpl-gateway/fly.toml` (public env); secrets `MONAD_RPC` and
+`GATEWAY_KEYSTORE_PASSWORD` in Fly only (password backed up in gitignored `services/perpl-gateway/.env`). Redeploy:
+`cd services/perpl-gateway && fly deploy --remote-only`. Brain uses it via the `GATEWAY_URL` Fly secret on `leash-brain-api`.
+
+**Envio (current):** self-hosted on Prem's Mac: `scripts/envio-local/start.sh` runs `envio dev` (Postgres + Hasura in Docker), a
+read-only proxy (`scripts/envio-local/proxy.mjs`: only `POST /v1/graphql`, public role, admin headers stripped, mutations refused) and a
+Cloudflare quick tunnel. Current `ENVIO_URL=https://making-spyware-determines-establishing.trycloudflare.com/v1/graphql`. **The URL changes if the tunnel restarts**: then update `ENVIO_URL` on
+`leash-brain-api` (`fly secrets set ENVIO_URL=… --app leash-brain-api`) and tell Deep. Stop: `scripts/envio-local/stop.sh`.
+
+**Envio (target):** hosted on **Envio Cloud** (Rails' account), see docs/TESTNET_PLAN.md. A self-host recipe (Hasura + `envio start` + Fly
+Postgres) is in `indexer/deploy/` but not deployed: the Fly trial org blocks additional apps without a card.
 
 The API needs a **persistent disk** (SQLite at `DATABASE_PATH`) and **public HTTPS** (the app calls it).
 Any of Railway, Fly.io or Render works. Secrets go in the host's env settings, never in the image.

@@ -180,13 +180,14 @@ export type CompileResult = z.infer<typeof compileSchema>;
 export type ReceiptStatus = 'EXECUTED' | 'REJECTED' | 'FAILED' | 'SHADOW' | 'PAUSED';
 export type IndexedReceipt = {
   id: string;
+  agentId?: string;
   account?: string;
   proofTxHash?: string;
   anchorSource?: 'envio' | 'rpc';
   usedSlack?: boolean;
   execTxHash?: string | null;
   seq: number;
-  persona: Persona['id'];
+  persona: Persona['id'] | null;
   status: ReceiptStatus;
   reasonHash: string | null;
   signalHash: string | null;

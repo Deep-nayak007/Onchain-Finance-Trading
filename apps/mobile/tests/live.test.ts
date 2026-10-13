@@ -168,6 +168,20 @@ test('a confirmed log from the actual contract supplies an independent anchor', 
     'mismatch',
   );
 });
+test('missing Brain reasoning retains paper/slack metadata without an invented persona or verification', () => {
+  const anchor = decodeReceiptProof(
+    receipt,
+    contract,
+    detail.reasonHash as `0x${string}`,
+    null,
+    '2026-10-12T00:00:00Z',
+  );
+  assert.equal(anchor.detail, undefined);
+  assert.equal(anchor.persona, null);
+  assert.equal(anchor.execTxHash, null);
+  assert.equal(anchor.usedSlack, detail.decision.usedSlack);
+  assert.equal(anchor.reasonHash, detail.reasonHash);
+});
 test('reverted, removed, wrong-contract and wrong-fingerprint logs cannot become verified', () => {
   assert.throws(
     () =>

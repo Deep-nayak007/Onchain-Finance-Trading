@@ -19,6 +19,8 @@ async function main() {
     { verifyReceipt },
     { ServiceError },
     { liveBindings },
+    { gateway, assertGatewayMarkets },
+    { readIndexedReceipt },
   ] = await Promise.all([
     import('../lib/api'),
     import('../lib/chain'),
@@ -26,6 +28,8 @@ async function main() {
     import('../lib/verify'),
     import('../lib/http'),
     import('../integration/live'),
+    import('../lib/gateway'),
+    import('../integration/indexer'),
   ]);
   const [health, configuration, detail, traders] = await Promise.all([
     api.health(),
@@ -38,18 +42,50 @@ async function main() {
   assert.equal(health.live, false);
   assert.equal(configuration.chainId, 10143);
   assert.equal(await publicClient.getChainId(), 10143);
-  assert.ok(detail);
-  assert.equal(detail.execTxHash, null);
-  assert.equal(detail.decision.usedSlack, true);
   assert.deepEqual(
     traders.map((p) => p.id),
     ['falcon', 'otter', 'owl'],
   );
+  const [gatewayHealth, markets, book, risk, spot, indexed] = await Promise.all([
+    gateway.health(),
+    gateway.markets(),
+    gateway.book('MON-PERP'),
+    gateway.risk('0xE7f1FFcC13C1384a2a1d7eaC19edF0F69e85f4FD'),
+    liveBindings.readSpotBook(),
+    readIndexedReceipt(null, testnetHandoff.reasonHash),
+  ]);
+  assert.equal(gatewayHealth.ok, true);
+  assertGatewayMarkets(markets, 10143);
+  assert.ok(book.bids.length || book.asks.length);
+  assert.equal(risk.account.toLowerCase(), '0xe7f1ffcc13c1384a2a1d7eac19edf0f69e85f4fd');
+  assert.ok(spot.bids.length || spot.asks.length);
+  assert.ok(indexed);
+  console.log(`PASS: Render API + RPC chain 10143; paper mode; ${traders.length} personas.`);
+  console.log(
+    `PASS: shared testnet gateway; ${markets.length} markets; live MON-PERP book and account risk.`,
+  );
+  console.log(`PASS: Kuru SDK book; Envio indexed receipt #${indexed.seq}.`);
   const proof = await readReceiptProof(
     testnetHandoff.reasonHash,
     testnetHandoff.receiptTxHash,
     detail,
   );
+  assert.equal(proof.reasonHash, indexed.reasonHash);
+  assert.equal(proof.signalHash, indexed.signalHash);
+  assert.equal(proof.execTxHash, null);
+  assert.equal(proof.usedSlack, true);
+  console.log(
+    'PASS: indexed anchors agree with the confirmed ReceiptLog transaction; paper + usedSlack.',
+  );
+  if (!detail) {
+    console.error(
+      'BLOCKED: Brain returned 404 for receipt reasoning. Onchain metadata is available; full hash verification and latency cannot be checked. Ask Brain to restore its receipt data.',
+    );
+    process.exitCode = 2;
+    return;
+  }
+  assert.equal(detail.execTxHash, null);
+  assert.equal(detail.decision.usedSlack, true);
   const verification = verifyReceipt(detail, proof, false);
   assert.equal(verification.state, 'verified');
   assert.equal(verification.latencyMs, 886);
@@ -61,7 +97,6 @@ async function main() {
     verifyReceipt(detail, { reasonHash: null, signalHash: null }, false).state,
     'pending',
   );
-  console.log(`PASS: deployed API + RPC chain 10143; paper mode; ${traders.length} personas.`);
   console.log(
     `PASS: independent ReceiptLog proof; usedSlack; ${verification.latencyMs} ms; tampering rejected.`,
   );

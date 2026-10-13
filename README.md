@@ -11,15 +11,17 @@ code decides; five independent knots can stop it.
 
 | What | Where |
 |---|---|
-| Brain API | **https://leash-brain-api.fly.dev** (`/health`, `/config`, `/traders`, `/receipts/:reasonHash`; spec `services/api/openapi.yaml`) |
+| **Web app (demo mode)** | **https://leash-app.onrender.com**: Face's Expo app in the browser, labelled sample data; the phone build runs live on testnet |
+| Brain API | **https://leash-brain-api.onrender.com** (`/health`, `/config`, `/traders`, `/receipts/:reasonHash`; spec `services/api/openapi.yaml`) |
 | MandateRegistry | [`0x81bbeaf263eeae41cfd4be137427af3ba7248467`](https://testnet.monadvision.com/address/0x81bbeaf263eeae41cfd4be137427af3ba7248467) |
 | ReceiptLog | [`0x21b168148e7c47ca0f1fab8bf9f69faff3aed6b3`](https://testnet.monadvision.com/address/0x21b168148e7c47ca0f1fab8bf9f69faff3aed6b3) |
 | Referee key | [`0xFad2FFf6024214711Dc3A6521F40e5871A779a44`](https://testnet.monadvision.com/address/0xFad2FFf6024214711Dc3A6521F40e5871A779a44) |
 | Perpl exchange (live market data) | [`0x1964C32f0bE608E7D29302AFF5E61268E72080cc`](https://testnet.monadvision.com/address/0x1964C32f0bE608E7D29302AFF5E61268E72080cc) · AUSD [`0xa9012a…22dC`](https://testnet.monadvision.com/address/0xa9012a055bd4e0eDfF8Ce09f960291C09D5322dC) |
 | Kuru MON/USDC | [`0xa241896A7Dbe8a550D2E5fF7A914bB1989ceD2D9`](https://testnet.monadvision.com/address/0xa241896A7Dbe8a550D2E5fF7A914bB1989ceD2D9) |
-| ERC-8004 identity | [`0x8004A818BFB912233c491871b3d84c89A494BD9e`](https://testnet.monadvision.com/address/0x8004A818BFB912233c491871b3d84c89A494BD9e) |
+| ERC-8004 identity | [`0x8004A818BFB912233c491871b3d84c89A494BD9e`](https://testnet.monadvision.com/address/0x8004A818BFB912233c491871b3d84c89A494BD9e): Falcon **#2227**, Otter **#2228**, Owl **#2229** (cards: `https://leash-brain-api.onrender.com/agents/falcon.json`) |
 | Persona wallets (Privy, `logShadow` only) | Falcon [`0x2477…1994`](https://testnet.monadvision.com/address/0x2477150BBA80a4E9127151eB863892f346211994) · Otter [`0x1780…0FB6`](https://testnet.monadvision.com/address/0x1780E260D175e975c6FFD31ed1FfaE9b6e7D0FB6) · Owl [`0x3858…d22C`](https://testnet.monadvision.com/address/0x38581aaaf757d195e2343651Ada5E7cE58F9d22C) |
-| Perpl gateway / Envio | *(Rails, deploying to testnet; until then the API reads Perpl markets onchain and mocks account risk)* |
+| Perpl gateway | **https://leash-perpl-gateway-testnet.onrender.com** (`/health`, `/markets`, `/book/MON-PERP`, `/risk/:address`): Rails' Rust gateway, 15 live testnet perps |
+| Envio GraphQL | **https://making-spyware-determines-establishing.trycloudflare.com/v1/graphql** (read-only; self-hosted fallback via `scripts/envio-local`, temporary tunnel URL) · mainnet gateway (Rails, Render): https://leash-gateway.onrender.com |
 
 **Proven on testnet** (tx links in [`docs/testnet-evidence.md`](docs/testnet-evidence.md)): rules compiled by Qwen → policy-locked Privy wallet
 → `setMandate` → agent runs on live Perpl prices → receipts onchain (REJECTED, EXECUTED with `usedSlack`, SHADOW) → slack request →
@@ -113,7 +115,7 @@ npm run testnet:ios
 npm run testnet:check
 ```
 
-Tap **Check the testnet receipt** on Welcome. It opens Brain's deployed receipt, independently verifies the ReceiptLog event, and shows **PAPER**, **used slack**, and **✓ · 0.9 s**. No wallet login is needed for this public check. The profile sets `EXPO_PUBLIC_API_URL=https://leash-brain-api.fly.dev`, chain 10143 and the public testnet RPC; Prem's Mac and `adb reverse` for port 8787 are unnecessary. Metro still needs to run for development builds. Copy `apps/mobile/.env.testnet.example` to `.env` for regular launches. Gateway/Envio URLs and the permanent passkey domain are still required for the remaining wallet flows. See [testnet validation](docs/FACE_TESTNET_VALIDATION.md).
+Tap **Check live connections** on Welcome to inspect Brain, RPC, Perpl markets/depth, Kuru depth and Envio without signing in. **Check the testnet receipt** shows the independently anchored paper record; the Render API currently returns 404 for its reasoning, so verification is visibly pending. The profile sets the Render API, chain 10143 and the public testnet RPC, and imports gateway/Envio URLs from the shared package. The API is cloud-hosted; Envio is still a temporary laptop-hosted tunnel. Keep Metro running for development builds. Copy `apps/mobile/.env.testnet.example` to `.env` for regular launches. Device passkeys still require native association/signing setup. See [current testnet validation](docs/FACE_TESTNET_VALIDATION.md).
 
 For local testing before Brain/Rails arrive, run from the repository root:
 

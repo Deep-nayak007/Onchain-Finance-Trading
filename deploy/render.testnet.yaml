@@ -1,0 +1,104 @@
+# Render Blueprint: LEASH testnet demo on the FREE plan (no card). Brain API + Perpl gateway (Rails' code, testnet settings).
+# Dashboard → New + → Blueprint → public repo https://github.com/yashpy/Onchain-Finance-Trading → Blueprint file path:
+#   deploy/render.testnet.yaml
+# Secrets are NOT here: after creation, open each service → Environment → "Add from .env" and upload
+#   services/api/.env.render            (Brain)     — generated locally, gitignored
+#   services/perpl-gateway/.env.render  (gateway)   — generated locally, gitignored
+# Free-plan limits: sleeps after 15 min idle (kept warm by .github/workflows/keepalive.yml), no persistent disk
+# (Brain's SQLite + gateway keystore reset on restart/redeploy).
+services:
+  - type: web
+    name: leash-brain-api
+    runtime: docker
+    plan: free
+    region: oregon
+    branch: main
+    dockerfilePath: ./services/api/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeploy: true
+    buildFilter:
+      paths:
+        - services/api/**
+        - packages/shared/**
+        - pnpm-lock.yaml
+    envVars:
+      - key: CHAIN_ID
+        value: "10143"
+      - key: LIVE
+        value: "false"
+      - key: MAX_ORDER_USD
+        value: "25"
+      - key: DATABASE_PATH
+        value: /tmp/leash.db
+      - key: GATEWAY_URL
+        value: https://leash-perpl-gateway-testnet.onrender.com
+      # Passkey association (RP = this host). Public identifiers, not secrets. App id app.leash.mobile.
+      - key: APPLE_TEAM_ID
+        value: WYHX7XQG8Y
+      # ENVIO_URL comes from the uploaded .env (tunnel URL changes; update it in the dashboard)
+
+  - type: web
+    name: leash-perpl-gateway-testnet
+    runtime: docker
+    plan: free
+    region: oregon
+    branch: main
+    rootDir: services/perpl-gateway
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeploy: true
+    buildFilter:
+      paths:
+        - services/perpl-gateway/**
+    envVars:
+      - key: CHAIN_ID
+        value: "10143"
+      - key: MANDATE_REGISTRY_ADDRESS
+        value: "0x81bbeaf263eeae41cfd4be137427af3ba7248467"
+      - key: MARKET_ALLOWLIST
+        value: MON-PERP
+      - key: MAX_ORDER_USD
+        value: "25"
+      - key: STALE_BLOCKS_MAX
+        value: "60"
+      - key: GATEWAY_KEYSTORE_DIR
+        value: /tmp/keystore
+      - key: GATEWAY_DB_PATH
+        value: /tmp/gateway.sqlite
+
+  # Web front end: Face's Expo app exported for the browser (static, free), LIVE on testnet: browser passkeys with
+  # RP = this site's own host, real Brain API / gateway / Envio / Monad testnet RPC.
+  - type: web
+    name: leash-app
+    runtime: static
+    branch: main
+    buildCommand: npm install --no-audit --no-fund && cd apps/mobile && npx expo export --platform web
+    staticPublishPath: apps/mobile/dist
+    buildFilter:
+      paths:
+        - apps/mobile/**
+        - packages/shared/**
+        - deploy/render.testnet.yaml
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: EXPO_PUBLIC_USE_MOCKS
+        value: "false"
+      - key: EXPO_PUBLIC_PASSKEY_RP_ID
+        value: leash-app.onrender.com
+      - key: EXPO_PUBLIC_ENVIO_URL_POINTER
+        value: https://raw.githubusercontent.com/yashpy/Onchain-Finance-Trading/main/deploy/envio-url.txt
+      - key: EXPO_PUBLIC_CHAIN_ID
+        value: "10143"
+      - key: EXPO_PUBLIC_RPC_URL
+        value: https://testnet-rpc.monad.xyz
+      - key: EXPO_PUBLIC_API_URL
+        value: https://leash-brain-api.onrender.com
+      - key: EXPO_PUBLIC_GATEWAY_URL
+        value: https://leash-perpl-gateway-testnet.onrender.com

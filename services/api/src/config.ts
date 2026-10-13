@@ -38,6 +38,8 @@ export const ConfigSchema = z.object({
   NANSEN_DAILY_CALLS: num(10),
   GATEWAY_URL: opt,
   ENVIO_URL: opt,
+  /** One-line file with the current Envio URL (rotated by commit when the tunnel changes). Empty string disables. */
+  ENVIO_URL_POINTER: z.string().default("https://raw.githubusercontent.com/yashpy/Onchain-Finance-Trading/main/deploy/envio-url.txt"),
   TENDERLY_ACCESS_KEY: opt,
   LIVE: bool,
   MAX_ORDER_USD: num(25),
@@ -45,6 +47,10 @@ export const ConfigSchema = z.object({
   SHADOW_TICK_SECONDS: num(180),
   /** JSON {"falcon":{"id","address"},...} from scripts/persona-wallets.ts; keeps persona wallets stable across deploys. */
   PERSONA_WALLETS: opt,
+  /** Passkey association (RP = this API's host). Public identifiers, not secrets. Comma-separated lists allowed. */
+  APPLE_TEAM_ID: opt,
+  ANDROID_CERT_SHA256: opt,
+  MOBILE_APP_ID: z.string().default("app.leash.mobile"),
   /** Enables POST /demo/intent (paper only) for filming; unset = endpoint disabled. */
   DEMO_TOKEN: opt,
   /** Comma-separated origins; empty = allow all (mobile app has no origin). */

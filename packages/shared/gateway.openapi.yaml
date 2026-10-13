@@ -317,10 +317,19 @@ components:
         account: { type: string }
     KeyPrepareResult:
       type: object
-      required: [tradeKey, enrollment]
+      required: [keyAddress, tradeKey, enrollment]
       properties:
-        tradeKey: { type: string }
-        enrollment: { $ref: "#/components/schemas/TxRequest" }
+        keyAddress:
+          type: string
+          description: Public address of the generated trade-only key the user authorizes.
+        tradeKey:
+          type: string
+          description: Alias of keyAddress, kept for backward compatibility.
+        enrollment:
+          description: null while the Perpl enrollment payload (Q1) is pending; the key is still created
+          oneOf:
+            - { $ref: "#/components/schemas/TxRequest" }
+            - { type: "null" }
     Ack:
       type: object
       required: [ok]

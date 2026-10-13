@@ -46,3 +46,16 @@ describe("drip confirms by receipt", () => {
     expect(store.claimDrip(USER)).toBe(true); // claim was released
   });
 });
+
+describe("Envio URL pointer", () => {
+  it("prefers a valid pointer URL, ignores junk, falls back to static ENVIO_URL", async () => {
+    const { Envio } = await import("../src/signals/envio");
+    const mk = (body: string, ok = true) => (async () => new Response(body, { status: ok ? 200 : 500 })) as unknown as typeof fetch;
+    expect(await new Envio("https://static.example/v1/graphql", mk("https://new-tunnel.trycloudflare.com/v1/graphql\n"), "https://p").endpoint()).toBe(
+      "https://new-tunnel.trycloudflare.com/v1/graphql",
+    );
+    expect(await new Envio("https://static.example/v1/graphql", mk("javascript:alert(1)"), "https://p").endpoint()).toBe("https://static.example/v1/graphql");
+    expect(await new Envio("https://static.example/v1/graphql", mk("", false), "https://p").endpoint()).toBe("https://static.example/v1/graphql");
+    expect(await new Envio("https://static.example/v1/graphql").endpoint()).toBe("https://static.example/v1/graphql");
+  });
+});

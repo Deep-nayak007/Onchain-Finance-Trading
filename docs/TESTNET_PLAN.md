@@ -1,10 +1,27 @@
 # Testnet demo plan (Monad 10143): who does what
 
 Decision (2026-10-12): the whole demo runs on **Monad testnet (10143)**. No mainnet deploy now. Mainnet stays a config-only switch.
-Brain status: API live at `https://leash-brain-api.fly.dev` (chain 10143, paper), proven end to end. See `docs/testnet-evidence.md`.
+Brain status: API live at `https://leash-brain-api.onrender.com` (chain 10143, paper), proven end to end. See `docs/testnet-evidence.md`.
+
+## Status (2026-10-12, evening)
+- ✅ **Gateway live on testnet**: `https://leash-perpl-gateway-testnet.onrender.com` (Brain hosted Rails' code on Fly; deploy file only, logic untouched).
+  Wired into the Brain API (`GATEWAY_URL`). Health ok, 15 perps, deep MON book, real `/risk`.
+- ✅ **Indexer is Envio-Cloud-ready** on branch `envio` (c0450de): ABIs inside `indexer/`, Kuru testnet market, persona wallets,
+  BigDecimal fix; verified locally against testnet.
+- ✅ **ENVIO_URL live (self-hosted fallback)**: https://making-spyware-determines-establishing.trycloudflare.com/v1/graphql, synced to head; all receipts/pauses/slack/mandates
+  indexed; wired into the Brain API (`/traders`) and the Referee (watches all active mandates). Envio Cloud is stuck (see LIMITATIONS).
+- ✅ **Envio Cloud source repo (fallback)**: https://github.com/prempagare07/leash-indexer (Prem-owned, `git subtree split` of `indexer/`,
+  history kept, pnpm 10.32.0 lockfile). The monorepo's transferred ownership blocked the Envio GitHub app for collaborators.
+  Envio Cloud: root `./`, config `config.yaml`, branch `envio`. Re-sync after indexer changes (from the monorepo root):
+  `git subtree split --prefix=indexer origin/envio -b indexer-split && git push https://github.com/prempagare07/leash-indexer.git indexer-split:envio`
+  (drop `deploy/` as in the first standalone commit if needed). ⏳ Remaining: Prem installs the Envio app on that repo + adds the indexer.
+- ✅ **ERC-8004 on testnet**: Falcon #2227, Otter #2228, Owl #2229 on IdentityRegistry `0x8004A818…BD9e`; agentURI served by the Brain API
+  (`/agents/<persona>.json`). In `addresses.ts` PERSONAS.
+- ℹ️ Rails also runs a **mainnet** gateway on Render (`https://leash-gateway.onrender.com`, `SERVICES.gatewayUrlMainnet`).
+- ⏳ **Perpl testnet AUSD** (~150) from the Perpl team for a live order.
 
 ## Rails (Yadnesh)
-1. **Gateway on testnet.** Env:
+1. ✅ **DONE by Brain** (`https://leash-perpl-gateway-testnet.onrender.com`, `services/perpl-gateway/fly.toml`, STALE_BLOCKS_MAX=50). Original spec, for reference:
    ```
    CHAIN_ID=10143
    MONAD_RPC=https://testnet-rpc.monad.xyz
@@ -14,7 +31,18 @@ Brain status: API live at `https://leash-brain-api.fly.dev` (chain 10143, paper)
    ```
    `cache.rs` already picks `Chain::testnet()` when `CHAIN_ID != 143`, and `find_perp` maps `MON-PERP` → testnet symbol `MON` (perp id 64).
    Deploy it (Fly/Railway) and send `GATEWAY_URL`.
-2. **Envio Cloud on testnet**: MandateRegistry + ReceiptLog (start block 70331260), and add the **Perpl testnet exchange**
+2. **Envio Cloud on testnet: checklist** (official: docs.envio.dev/docs/HyperIndex/hosted-service-deployment; requires
+   envio ≥ 2.21.5, not 2.29.x (we're on 3.14.0 ✓), pnpm 10.32.0-compatible, repo < 100 MB ✓, **all imports inside the indexer root**):
+   a. GitHub (yashpy) → Settings → Applications → Installed GitHub Apps → **Envio Deployments** → Configure → grant
+      `Onchain-Finance-Trading` (the repo was transferred, so the old grant doesn't apply).
+   b. **Make the indexer self-contained** (your code): copy `packages/shared/abis/{MandateRegistry,ReceiptLog}.json` into
+      `indexer/abis/` and change both `abi_file_path` in `indexer/config.yaml` to `./abis/...`. Optional: commit an
+      `indexer/pnpm-lock.yaml` (`cd indexer && pnpm install --ignore-workspace`).
+   c. Envio dashboard: delete the stale `leash-monad` indexer, re-add it on `yashpy/Onchain-Finance-Trading` with **root dir `indexer`**,
+      config `config.yaml`, **branch `envio`** (CLI: `pnpx envio-cloud indexer add --name leash-monad --repo Onchain-Finance-Trading`
+      + root/config/branch flags, after `envio-cloud login`).
+   d. Merge `main` into `envio`, push → watch the deployment (`envio-cloud deployment status … -o json`) → send `ENVIO_URL` (GraphQL).
+   Then also index: MandateRegistry + ReceiptLog (start block 70331260), and add the **Perpl testnet exchange**
    `0x1964C32f0bE608E7D29302AFF5E61268E72080cc` (from block **62953**) and the **Kuru testnet MON/USDC market**
    `0xa241896A7Dbe8a550D2E5fF7A914bB1989ceD2D9` (base MON 18 dec, quote USDC 6 dec, pricePrecision 1e8, sizePrecision 1e10).
    Fill `PERSONA_WALLETS` in `EventHandlers.ts`: Falcon `0x2477150BBA80a4E9127151eB863892f346211994`,
@@ -35,7 +63,7 @@ Brain status: API live at `https://leash-brain-api.fly.dev` (chain 10143, paper)
    EXPO_PUBLIC_USE_MOCKS=false
    EXPO_PUBLIC_CHAIN_ID=10143
    EXPO_PUBLIC_RPC_URL=https://testnet-rpc.monad.xyz
-   EXPO_PUBLIC_API_URL=https://leash-brain-api.fly.dev
+   EXPO_PUBLIC_API_URL=https://leash-brain-api.onrender.com
    EXPO_PUBLIC_GATEWAY_URL=   # when Rails sends it
    EXPO_PUBLIC_ENVIO_URL=     # when Rails sends it
    ```

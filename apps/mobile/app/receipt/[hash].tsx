@@ -65,10 +65,30 @@ export default function ReceiptDetailScreen() {
           }}
         />
       ) : !data ? (
-        <Message
-          text="The reasoning is not available yet. Refresh once the trader publishes it."
-          tone="info"
-        />
+        <>
+          {anchor.data && <ReceiptPaper receipt={anchor.data} />}
+          <Message
+            text={
+              anchor.data
+                ? 'The onchain record is available, but the Brain API has no reasoning for this receipt. Verification is pending until the reasoning is restored.'
+                : 'This receipt is unavailable. Refresh once the trader publishes its reasoning and onchain record.'
+            }
+            tone="info"
+          />
+          <Button
+            label="Retry reasoning"
+            variant="secondary"
+            onPress={() => void detail.refetch()}
+          />
+          {!config.useMocks && anchor.data?.proofTxHash && (
+            <Button
+              label="View receipt on explorer"
+              variant="secondary"
+              icon="external"
+              onPress={() => void Linking.openURL(explorerTxUrl(anchor.data!.proofTxHash!))}
+            />
+          )}
+        </>
       ) : (
         <>
           {anchor.data && <ReceiptPaper receipt={{ ...anchor.data, detail: data }} />}

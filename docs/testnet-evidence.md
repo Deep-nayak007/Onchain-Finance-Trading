@@ -52,3 +52,44 @@ Steps 4 and 6 used the token-guarded paper `POST /demo/intent` (`model = "manual
 and the LLM (correctly) holds; the checker, receipt, slack and execution path is identical to an LLM decision.
 Not done (blocked): live Perpl order (`LIVE=true`) needs ≥ 100 testnet AUSD + Rails' gateway; real Kuru swap needs Kuru's testnet USDC
 (see docs/testnet-feasibility.md).
+
+## Run 3: real Perpl gateway on testnet (2026-10-12 evening)
+Brain API now uses `https://leash-perpl-gateway.fly.dev` (Rails' gateway): markets + `/risk` come from the gateway's live Perpl
+snapshot. Paper intent for the demo user → **EXECUTED (paper)**, snapshot mark **$0.02459** from the gateway, receipt confirmed
+**1033 ms** after the decision, `GET /receipts/:reasonHash` → ✓ with `@leash/shared/canonical`:
+reasonHash `0xd4ccad748eb04b4624f665f86c3efcf150a88887d9ceed8721456918075e8483` ·
+[https://testnet.monadvision.com/tx/0xc7412d7885eb55be7ac168e6b5106331fa62e140e67b7a40d9b4074b2369864b](https://testnet.monadvision.com/tx/0xc7412d7885eb55be7ac168e6b5106331fa62e140e67b7a40d9b4074b2369864b)
+Referee `--once` against the deployed gateway's `/risk`: `ok` (weekly 0% vs −5% limit).
+
+## ERC-8004 identities on testnet (2026-10-12)
+Registered on IdentityRegistry `0x8004A818BFB912233c491871b3d84c89A494BD9e` by the gas tank, agentURI served by the Brain API:
+| Persona | agentId | Register tx | Card |
+|---|---|---|---|
+| Falcon | 2227 | [https://testnet.monadvision.com/tx/0x954b8e92…005c](https://testnet.monadvision.com/tx/0x954b8e92ecbaf4fc866a5d02c15eabd88a133d6c802ecca4be8b8c3652a3005c) | https://leash-brain-api.fly.dev/agents/falcon.json |
+| Otter | 2228 | [https://testnet.monadvision.com/tx/0x0052a0a6…4140](https://testnet.monadvision.com/tx/0x0052a0a606a2133dcb47d3e13eadd68481591ba95b9b0c87e655b9a4876d4140) | https://leash-brain-api.fly.dev/agents/otter.json |
+| Owl | 2229 | [https://testnet.monadvision.com/tx/0xa366ba97…5467](https://testnet.monadvision.com/tx/0xa366ba97890e107dbb572ea090913d08245e584b1b2cbb2974eb14ad47065467) | https://leash-brain-api.fly.dev/agents/owl.json |
+
+## Run 4: full stack on testnet, gateway + Envio + ERC-8004 (2026-10-12 night)
+Brain API → real gateway (`leash-perpl-gateway.fly.dev`, `/keys/prepare` now returns the per-user trade key) → onchain receipt →
+Envio (`https://add-bush-herbal-raid.trycloudflare.com/v1/graphql`) → Brain `/traders`.
+| Step | Result | Tx |
+|---|---|---|
+| Compile → agentId **2227** (Falcon's ERC-8004 id), Privy agentWallet, real `perplKey` 0xa097…eefc from the gateway | ok | — |
+| User signs `setMandate` with agentId 2227 + gateway trade key | ok | [https://testnet.monadvision.com/tx/0xe45bff67…](https://testnet.monadvision.com/tx/0xe45bff67b767f05ee4efbc3000e72bf394812f768bbf90c6aa7ce3f6df102564) |
+| Paper intent → **EXECUTED** receipt, gateway mark $0.02486, **639 ms** decision→confirmed, `GET /receipts` ✓ | reasonHash `0xd8b7b0c3…` | [https://testnet.monadvision.com/tx/0x6812046a…](https://testnet.monadvision.com/tx/0x6812046a7d53b5ca99108f3f2343f4d6386ba400a61e482792a2544682eee782) |
+| Envio indexes it within seconds: Receipt (agentId 2227), Agent #2227 executed 1 / volume $12, Mandate perplKey | ok | — |
+| Brain `/traders` → Falcon stats from Envio (executedCount 1, volumeUsd 12) | ok | — |
+| Referee `--once` discovers both active mandates via Envio and reads the gateway's `/risk` | ok | — |
+
+## Hosting moved to Render free (2026-10-12, Fly trial ended)
+Brain https://leash-brain-api.onrender.com · gateway https://leash-perpl-gateway-testnet.onrender.com (both testnet, paper). ERC-8004
+agentURIs re-pointed with `setAgentURI` (gas tank, testnet): Falcon #2227 [https://testnet.monadvision.com/tx/0xc3535311…](https://testnet.monadvision.com/tx/0xc353531153b449cb6abc279011a04c112e1adaa3305d09cdf62d51d402057c5b) ·
+Otter #2228 [https://testnet.monadvision.com/tx/0x1d261e30…](https://testnet.monadvision.com/tx/0x1d261e30d496f8eccb33732791a24edc6dfe9485c3024700fb34793421cfe4bf) ·
+Owl #2229 [https://testnet.monadvision.com/tx/0x9aa78dab…](https://testnet.monadvision.com/tx/0x9aa78dab185384fdcfc06c3b46cb43f895a7b3c6ff361ada9f77cf264186c8da).
+
+## Run 5: full stack on free hosting (Render + self-hosted Envio), 2026-10-12 night
+Brain https://leash-brain-api.onrender.com → gateway https://leash-perpl-gateway-testnet.onrender.com → chain → Envio (URL via
+`deploy/envio-url.txt` pointer) → `/traders`. New Privy agent wallet `0x2d75…1E18`, new gateway trade key `0x74f4…8b60`.
+- `setMandate` (agentId 2227) [https://testnet.monadvision.com/tx/0x3afab0ed…](https://testnet.monadvision.com/tx/0x3afab0ed59d8dd6033586aeb020a13f0ec8cd82012fc03ccc85ad438b19850e3)
+- Paper intent → **EXECUTED**, mark $0.02483, **901 ms** → receipt [https://testnet.monadvision.com/tx/0x378d0c12…](https://testnet.monadvision.com/tx/0x378d0c1244c31f428e06efe3db87cb7c5c17333579db1c1beb8b8a8d5e1bca33), `GET /receipts/0x64a50261…` ✓
+- Envio Agent #2227: executed 2, volume $27 → Render `/traders` Falcon stats identical; Referee `--once`: 2 mandates via Envio, `ok`.

@@ -13,6 +13,7 @@ import {
   hashSchema,
   traderResponseSchema,
   receiptDetailSchema,
+  policySchema,
   slackSchema,
   type Persona,
   type CompileResult,
@@ -47,7 +48,25 @@ export const api = {
   receipt: (hash: string) =>
     config.useMocks
       ? Promise.resolve(demoStore.receipts.find((r) => r.reasonHash === hash)?.detail ?? null)
-      : request(config.apiUrl, `/receipts/${encodeURIComponent(hash)}`, receiptDetailSchema),
+      : request(config.apiUrl, `/receipts/${encodeURIComponent(hash)}`, receiptDetailSchema).catch(
+          (error) => {
+            if (error instanceof ServiceError && error.status === 404) return null;
+            throw error;
+          },
+        ),
+  policy: (account: string) =>
+    request(
+      config.apiUrl,
+      `/policy/${encodeURIComponent(account)}`,
+      z.object({
+        policy: policySchema,
+        policyHash: hashSchema,
+        persona: z.enum(['falcon', 'otter', 'owl']),
+      }),
+    ).catch((error) => {
+      if (error instanceof ServiceError && error.status === 404) return null;
+      throw error;
+    }),
   pendingSlack: (account: string) =>
     config.useMocks
       ? Promise.resolve(

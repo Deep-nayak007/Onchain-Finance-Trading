@@ -13,7 +13,7 @@ Every live transaction must use the team's sendTx through integration/team.ts.
 No EIP-7702. Accept Monad mainnet 143 and testnet 10143; every request and RPC must match EXPO_PUBLIC_CHAIN_ID.
 Mera 0.2.0 + react-native-passkey 3.6.1; native client on mobile, browser on web.
 RP ID is permanent; do not choose it for the team.
-The team has now chosen leash-brain-api.fly.dev. Signing handoff: ../../docs/FACE_PASSKEY_SETUP.md. Deep has no paid Apple Developer account; do not configure his Personal Team as the passkey signing team.
+Deep approved migration before any passkeys existed. The team has now chosen leash-brain-api.onrender.com. Signing handoff: ../../docs/FACE_PASSKEY_SETUP.md. Deep has no paid Apple Developer account; do not configure his Personal Team as the passkey signing team.
 Prompt per transaction; always end session in finally and clear secret buffers.
 Store credentialId and transports only in SecureStore; never store PRF/key.
 Check signer matches the signed-in wallet before sending.
@@ -21,7 +21,7 @@ Live receipt hash must be anchored to Envio, not the API's own hash.
 Respect reduced motion; cancel long-press on release, background, unmount.
 No funds are sent while integrations are absent. Live mode never uses demo fallback.
 Record incomplete integration acceptance in ../../docs/LIMITATIONS.md.
-The deployed Brain API is https://leash-brain-api.fly.dev, testnet paper mode. Read ../../docs/FACE_LIVE_HANDOFF.md and FACE_TESTNET_VALIDATION.md.
+The deployed Brain API is https://leash-brain-api.onrender.com, testnet paper mode. Read ../../docs/FACE_LIVE_HANDOFF.md and FACE_TESTNET_VALIDATION.md.
 The known public receipt can use an independently decoded ReceiptLog transaction proof until Envio arrives. Never use the API's own hash as an anchor.
 Use npm workspaces (npm is installed; pnpm is not). Do not touch home-directory Git.
 Prefix shell commands with rtk per /Users/deepnayak/.codex/RTK.md.

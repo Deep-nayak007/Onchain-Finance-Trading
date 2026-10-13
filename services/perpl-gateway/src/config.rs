@@ -31,7 +31,12 @@ impl Config {
         Ok(Self {
             monad_rpc: env::var("MONAD_RPC").unwrap_or_else(|_| "https://rpc.monad.xyz".into()),
             chain_id: env::var("CHAIN_ID").ok().and_then(|v| v.parse().ok()).unwrap_or(143),
-            bind: env::var("GATEWAY_BIND").unwrap_or_else(|_| "0.0.0.0:8080".into()),
+            // GATEWAY_BIND wins; else honor a platform-provided PORT (Render,
+            // Railway, Heroku-style hosts); else default to 8080 (Fly/local).
+            bind: env::var("GATEWAY_BIND").unwrap_or_else(|_| {
+                let port = env::var("PORT").unwrap_or_else(|_| "8080".into());
+                format!("0.0.0.0:{port}")
+            }),
             mandate_registry: env::var("MANDATE_REGISTRY_ADDRESS")
                 .ok()
                 .and_then(|v| v.parse().ok()),

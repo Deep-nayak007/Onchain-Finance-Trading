@@ -3,8 +3,8 @@
 export const testnetHandoff = {
   chainId: 10143,
   rpcUrl: 'https://testnet-rpc.monad.xyz',
-  apiUrl: 'https://leash-brain-api.fly.dev',
-  rpId: 'leash-brain-api.fly.dev',
+  apiUrl: 'https://leash-brain-api.onrender.com',
+  rpId: 'leash-brain-api.onrender.com',
   reasonHash: '0x86e8ca275306825cbd9aed2c7d4dd40bc4a71f055823dd712cec166e70bb75c1',
   receiptTxHash: '0x8d35d96b72148be12f25514366f98fc63c26970ad310ad24bee0dfd0f30869e4',
 } as const;

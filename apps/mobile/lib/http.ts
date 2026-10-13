@@ -13,10 +13,12 @@ export async function request<T>(
   path: string,
   schema: ZodType<T>,
   body?: unknown,
+  options: { timeoutMs?: number } = {},
 ): Promise<T> {
   if (!base) throw new Error('This service is not connected yet. Add its URL to apps/mobile/.env.');
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 30000);
+  // Render's free Brain and gateway instances can take about a minute to wake up.
+  const timeout = setTimeout(() => controller.abort(), options.timeoutMs ?? 90000);
   try {
     const response = await fetch(`${base.replace(/\/$/, '')}${path}`, {
       method: body === undefined ? 'GET' : 'POST',

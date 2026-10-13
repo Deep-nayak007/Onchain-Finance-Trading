@@ -1,3 +1,21 @@
+# Current Face service check — October 12, 2026
+
+Latest GitHub main `2563d64` is merged into Face. Native RP migration to `leash-brain-api.onrender.com` was explicitly approved by Deep before any LEASH passkeys existed.
+
+- The Render Brain API reports chain **10143**, `live:false`, real HTTP gateway, contracts and three registered personas.
+- Rails' shared service file selects **leash-perpl-gateway-testnet.onrender.com** for 10143 and **leash-gateway.onrender.com** for 143. Testnet has 15 markets, MON-PERP id 64; mainnet has MON-PERP id 10. The app rejects a known wrong-network URL and checks market IDs/cache health before gateway reads/preparation. Prepared transactions must match the configured chain.
+- Live Perpl market depth and the demo account's zero-balance risk response validate against the consumer schemas. Gateway and Brain HTTP requests allow 90 seconds for free-instance wake-up.
+- Kuru `/spot/book` delivers real SDK depth (asks available, no bids). Envio resolves via the team's rotating GitHub pointer, caches it for 60 seconds and retains a fallback endpoint. Its indexed anchors agree with the independently decoded ReceiptLog transaction.
+- **Backend blocker:** both the old `0x86e8…75c1` and newer `0x64a5…c52b` receipt reasoning return 404 on Render. Onchain records remain in Envio. Face shows paper/slack metadata and pending verification without a checkmark or invented latency. Feed rows remain visible when reasoning is missing. Prem was offline; no backend records were modified.
+- `npm run testnet:check` checks all live services read-only, then exits **2** to identify missing receipt reasoning. This is an unresolved integration check, not a clean end-to-end pass.
+- The browser flow passes: public receipt renders the missing-reasoning state; `/dev/services` reads Brain, RPC, Perpl, Kuru and Envio; wallet screens still require sign-in. Screenshots: `08-testnet-receipt-after-migration.png` and `09-testnet-connections.png`.
+- TypeScript, all **35 mobile tests** and all **95 shared tests** pass. Production web/iOS/Android JS/Hermes exports pass. Xcode rebuilt and installed the iPhone 17 Pro simulator app with 0 errors (one script-dependency warning); live Brain/RPC/Perpl/Kuru/Envio connections were visually confirmed there. The full sample browser flow passes, including onboarding, deposit/authorization, slack, tamper detection and reset, with **zero external requests**. No Android APK or physical-phone signing was tested.
+- Android association is still **404**. iOS association returns **200** with Deep's Personal Team, which does not establish paid-team passkey support. See [passkey setup](FACE_PASSKEY_SETUP.md). `/keys/prepare` returns `keyAddress` and nullable `enrollment`; a null payload leaves authorization unavailable. User pause preparation can work directly onchain when Brain is down.
+
+Run `npm run testnet:ios` or `npm run testnet:web`. On Welcome, choose **Check live connections**. For independent offline testing, run `npm run mock:ios` / `npm run mock:web`.
+
+## Earlier Fly validation (historical; superseded by the current check above)
+
 # Face testnet handoff — October 12, 2026
 
 Profile: Monad testnet **10143**, RPC `https://testnet-rpc.monad.xyz`, Brain API `https://leash-brain-api.fly.dev`, **paper mode**. Brain/Rails' shared package and handoff were taken from merged main commit `27a612c`. No owner code or frozen interface was changed.

@@ -9,7 +9,7 @@ export function decodeReceiptProof(
   receipt: Pick<TransactionReceipt, 'status' | 'logs' | 'transactionHash'>,
   contract: Address,
   reasonHash: Hex,
-  detail: ReceiptDetail,
+  detail: ReceiptDetail | null,
   createdAt: string,
 ): IndexedReceipt {
   if (receipt.status !== 'success') throw new Error('The receipt transaction reverted.');
@@ -36,14 +36,15 @@ export function decodeReceiptProof(
       id: `${receipt.transactionHash}-${event.args.seq}`,
       account: event.args.user,
       seq: Number(event.args.seq),
-      persona: detail.intent.persona,
+      agentId: String(event.args.agentId),
+      persona: detail?.intent.persona ?? null,
       status,
       usedSlack: event.args.usedSlack,
       execTxHash: event.args.execTxHash === zeroHash ? null : event.args.execTxHash,
       reasonHash: event.args.reasonHash,
       signalHash: event.args.signalHash,
       createdAt,
-      detail,
+      detail: detail ?? undefined,
       proofTxHash: receipt.transactionHash,
       anchorSource: 'rpc',
     };
@@ -54,7 +55,7 @@ export function decodeReceiptProof(
 export async function readReceiptProof(
   reasonHash: Hex,
   txHash: Hex,
-  detail: ReceiptDetail,
+  detail: ReceiptDetail | null,
 ): Promise<IndexedReceipt> {
   requireConfiguredChain(await publicClient.getChainId());
   const contract = (config.chainId === 10143 ? LEASH.testnet : LEASH.mainnet).receiptLog.address;

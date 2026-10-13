@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { zeroHash, type Address, type Hex } from 'viem';
+import { PERSONAS } from '@leash/shared/addresses';
 import { queryEnvio } from '../lib/envioTransport';
 import { api } from '../lib/api';
 import { addressSchema, hashSchema, type IndexedReceipt } from '../lib/schemas';
@@ -13,6 +14,7 @@ const rowSchema = z.object({
   id: z.string(),
   user_id: addressSchema.optional(),
   seq: uint,
+  agentId: uint,
   status: z.enum(['EXECUTED', 'REJECTED', 'FAILED', 'SHADOW']),
   reasonHash: hashSchema,
   signalHash: hashSchema,
@@ -24,14 +26,19 @@ const rowSchema = z.object({
 const responseSchema = z.object({ Receipt: z.array(rowSchema) });
 async function view(row: z.infer<typeof rowSchema>, account?: Address): Promise<IndexedReceipt> {
   const detail = await api.receipt(row.reasonHash);
-  if (!detail) throw new Error('The reasoning for this indexed receipt is not available yet.');
   const seq = Number(row.seq);
   if (!Number.isSafeInteger(seq)) throw new Error('Receipt sequence is out of range.');
   return {
     id: row.id,
     account: row.user_id ?? account,
     seq,
-    persona: detail.intent.persona,
+    agentId: row.agentId,
+    persona:
+      detail?.intent.persona ??
+      (Object.keys(PERSONAS) as (keyof typeof PERSONAS)[]).find(
+        (id) => PERSONAS[id].agentId === row.agentId,
+      ) ??
+      null,
     status: row.status,
     reasonHash: row.reasonHash,
     signalHash: row.signalHash,
@@ -40,7 +47,7 @@ async function view(row: z.infer<typeof rowSchema>, account?: Address): Promise<
     createdAt: new Date(Number(row.blockTimestamp) * 1000).toISOString(),
     proofTxHash: row.txHash,
     anchorSource: 'envio',
-    detail,
+    detail: detail ?? undefined,
   };
 }
 export async function readIndexedReceipt(

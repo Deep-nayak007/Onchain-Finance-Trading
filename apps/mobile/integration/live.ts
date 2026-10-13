@@ -19,9 +19,9 @@ import { api } from '../lib/api';
 import { config, requireConfiguredChain } from '../lib/config';
 import { activeChain, publicClient } from '../lib/chain';
 import { request } from '../lib/http';
-import { compiledPolicy } from '../lib/compiledPolicies';
-import { gateway } from '../lib/gateway';
-import { addressSchema, spotPrepareSchema, txRequestSchema } from '../lib/schemas';
+import { compiledPolicy, rememberPolicy } from '../lib/compiledPolicies';
+import { gateway, requestGateway, keyPrepareSchema, spotBookSchema } from '../lib/gateway';
+import { spotPrepareSchema, txRequestSchema } from '../lib/schemas';
 import { readIndexedFeed, readIndexedPnl, readIndexedReceipt } from './indexer';
 import { readReceiptProof } from './receiptProof';
 import { testnetHandoff } from './testnet';
@@ -34,8 +34,7 @@ async function registryAddress(): Promise<Address> {
     throw new Error('MandateRegistry is not deployed on this network.');
   const address = deployment.mandateRegistry.address;
   const bytecode = await publicClient.getBytecode({ address });
-  if (!bytecode || bytecode === '0x')
-    throw new Error('The registry has no deployed code.');
+  if (!bytecode || bytecode === '0x') throw new Error('The registry has no deployed code.');
   return address;
 }
 async function backendRegistry(): Promise<Address> {
@@ -46,12 +45,12 @@ async function backendRegistry(): Promise<Address> {
     throw new Error('The API and app disagree about the deployed registry.');
   return address;
 }
-async function prepareRegistry(account: Address, data: Hex) {
+async function prepareRegistry(account: Address, data: Hex, needsBackend = true) {
   return txRequestSchema.parse(
     await prepareTxRequest(
       publicClient,
       account,
-      { to: await backendRegistry(), data },
+      { to: await (needsBackend ? backendRegistry() : registryAddress()), data },
       { chainId: config.chainId },
     ),
   );
@@ -140,6 +139,7 @@ export const liveBindings: TeamBindings = {
         functionName: 'pause',
         args: [account, 'user'],
       }),
+      false, // A user can pause directly onchain even when the Brain API is down.
     ),
   prepareResume: (account) =>
     prepareRegistry(
@@ -154,15 +154,22 @@ export const liveBindings: TeamBindings = {
   },
   readReceipts: readIndexedFeed,
   readReceipt: async (account, hash, proofTxHash) => {
-    if (config.envioUrl) return readIndexedReceipt(account, hash);
     const knownTx =
       config.chainId === 10143 && hash.toLowerCase() === testnetHandoff.reasonHash
         ? testnetHandoff.receiptTxHash
         : undefined;
     const tx = proofTxHash ?? knownTx;
+    if (config.envioUrl || config.envioUrlPointer) {
+      try {
+        const indexed = await readIndexedReceipt(account, hash);
+        if (indexed || !tx) return indexed;
+      } catch (error) {
+        if (!tx) throw error;
+        // A bounded, explicit ReceiptLog transaction remains an independent proof.
+      }
+    }
     if (!tx) return null;
     const detail = await api.receipt(hash);
-    if (!detail) return null;
     const proof = await readReceiptProof(hash, tx, detail);
     if (account && proof.account?.toLowerCase() !== account.toLowerCase())
       throw new Error('This receipt belongs to another wallet.');
@@ -196,7 +203,18 @@ export const liveBindings: TeamBindings = {
       functionName: 'getMandate',
       args: [account],
     });
-    return compiledPolicy(account, mandate.policyHash);
+    const cached = compiledPolicy(account, mandate.policyHash);
+    if (cached) return cached;
+    const result = await api.policy(account);
+    if (!result) return null;
+    const hash = keccak256(toBytes(canonicalJSON(result.policy)));
+    if (
+      hash.toLowerCase() !== result.policyHash.toLowerCase() ||
+      hash.toLowerCase() !== mandate.policyHash.toLowerCase()
+    )
+      throw new Error('The stored rules do not match your onchain mandate.');
+    rememberPolicy(account, hash, result.policy);
+    return result.policy;
   },
   readBalanceUsd: async (account) => {
     requireConfiguredChain(await publicClient.getChainId());
@@ -214,25 +232,28 @@ export const liveBindings: TeamBindings = {
       throw new Error('The collateral token decimals differ from the shared specification.');
     return formatUnits(balance, decimals);
   },
-  prepareDeposit: (account, amountUsd) =>
-    request(config.gatewayUrl, '/deposit/prepare', z.array(txRequestSchema).min(1), {
+  prepareDeposit: async (account, amountUsd) => {
+    const txs = await requestGateway('/deposit/prepare', z.array(txRequestSchema).min(1), {
       account,
       amountUsd,
-    }),
+    });
+    txs.forEach((tx) => requireConfiguredChain(tx.chainId));
+    return txs;
+  },
   prepareKeyEnrollment: async (account) => {
-    const result = await request(
-      config.gatewayUrl,
-      '/keys/prepare',
-      z.object({ tradeKey: addressSchema, enrollment: txRequestSchema }),
-      { account },
-    );
+    const result = await requestGateway('/keys/prepare', keyPrepareSchema, { account });
+    if (!result.enrollment)
+      throw new Error(
+        'The trading key was created, but Perpl authorization is not available yet. Your trader has not been authorized.',
+      );
+    requireConfiguredChain(result.enrollment.chainId);
     return [result.enrollment];
   },
   prepareManualOrder: async (account, market, side, sizeUsd, leverage) => {
     const book = await gateway.book(market);
     const price = (side === 'LONG' ? book.asks : book.bids)[0]?.[0];
     if (!price) throw new Error('There is no market depth for this order.');
-    return request(config.gatewayUrl, '/orders/prepare', txRequestSchema, {
+    const tx = await requestGateway('/orders/prepare', txRequestSchema, {
       account,
       market,
       side,
@@ -241,11 +262,12 @@ export const liveBindings: TeamBindings = {
       leverage,
       reduce_only: false,
     });
+    requireConfiguredChain(tx.chainId);
+    return tx;
   },
   readSpotBook: async () => {
-    throw new Error(
-      'The Kuru order-book display is not connected yet. You can still request a quote from the API.',
-    );
+    requireConfiguredChain((await api.health()).chainId);
+    return request(config.apiUrl, '/spot/book', spotBookSchema);
   },
   quoteSwap: async (account, sizeUsd, side) => {
     requireConfiguredChain((await api.health()).chainId);

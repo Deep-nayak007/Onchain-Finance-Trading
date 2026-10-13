@@ -95,6 +95,7 @@ export default function RootLayout() {
                   <Stack.Screen name="break-leash" />
                   <Stack.Screen name="dev/components" />
                   <Stack.Screen name="dev/mocks" />
+                  <Stack.Screen name="dev/services" />
                 </Stack>
               )}
               <TransactionReview />

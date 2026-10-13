@@ -109,6 +109,13 @@ export default function Welcome() {
           }
         />
       )}
+      {!config.useMocks && (
+        <Button
+          variant="ghost"
+          label="Check live connections"
+          onPress={() => router.push('/dev/services')}
+        />
+      )}
       {(config.useMocks || setupIssue) && (
         <Type
           color={colors.muted}

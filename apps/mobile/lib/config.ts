@@ -1,3 +1,5 @@
+import { serviceUrls } from './serviceUrls';
+import { testnetHandoff } from '../integration/testnet';
 export type MonadChainId = 143 | 10143;
 export function parseChainId(value: string | number): MonadChainId {
   const id = Number(value);
@@ -14,9 +16,12 @@ export const config = {
   rpcUrl:
     process.env.EXPO_PUBLIC_RPC_URL ||
     (chainId === 10143 ? 'https://testnet-rpc.monad.xyz' : 'https://rpc.monad.xyz'),
-  apiUrl: process.env.EXPO_PUBLIC_API_URL || '',
-  gatewayUrl: process.env.EXPO_PUBLIC_GATEWAY_URL || '',
-  envioUrl: process.env.EXPO_PUBLIC_ENVIO_URL || '',
+  apiUrl: process.env.EXPO_PUBLIC_API_URL || (chainId === 10143 ? testnetHandoff.apiUrl : ''),
+  ...serviceUrls(chainId, {
+    gatewayUrl: process.env.EXPO_PUBLIC_GATEWAY_URL,
+    envioUrl: process.env.EXPO_PUBLIC_ENVIO_URL,
+    envioUrlPointer: process.env.EXPO_PUBLIC_ENVIO_URL_POINTER,
+  }),
   rpId: process.env.EXPO_PUBLIC_PASSKEY_RP_ID || '',
   easProjectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID || '',
 };

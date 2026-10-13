@@ -1,0 +1,40 @@
+# Render Blueprint for the LEASH Perpl gateway (Rails lane).
+# Dashboard: New + -> Blueprint -> pick this repo. Render reads this file and
+# creates the service. Secrets marked `sync: false` are entered in the
+# dashboard on first deploy and are never stored in git.
+#
+# Notes:
+# - Render injects PORT (10000 by default); the gateway binds 0.0.0.0:$PORT.
+# - Free instances sleep after 15 min idle, which drops the Perpl snapshot; ping
+#   /health every 5 min (e.g. UptimeRobot) to keep it warm.
+# - Free instances have no persistent disk: per-user trade-only keys and the
+#   idempotency DB reset on every restart. Fine for reads/demo; add a disk on a
+#   paid plan before real trading.
+services:
+  - type: web
+    name: leash-gateway
+    runtime: docker
+    plan: free
+    region: oregon
+    branch: rails
+    rootDir: services/perpl-gateway
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: MONAD_RPC
+        sync: false # dedicated RPC URL (secret — do not commit)
+      - key: GATEWAY_KEYSTORE_PASSWORD
+        sync: false # any strong passphrase (secret)
+      - key: CHAIN_ID
+        value: "143"
+      - key: MARKET_ALLOWLIST
+        value: MON-PERP
+      - key: MAX_ORDER_USD
+        value: "25"
+      - key: STALE_BLOCKS_MAX
+        value: "60" # ~24s on Monad; free-tier CPU + 20 rps throttle hold a steady ~60-block lag
+      # Set after the CP1 mainnet deploy so /orders/execute can check isActive:
+      - key: MANDATE_REGISTRY_ADDRESS
+        sync: false

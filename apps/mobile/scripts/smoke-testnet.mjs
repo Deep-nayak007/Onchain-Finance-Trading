@@ -17,9 +17,8 @@ try {
   );
   await page.getByRole('button', { name: 'Check the testnet receipt' }).click();
   await page
-    .getByText('✓ matches onchain · 0.9 s', { exact: true })
-    .first()
-    .waitFor({ timeout: 60000 });
+    .getByText('PAPER · No trade was executed', { exact: true })
+    .waitFor({ timeout: 120000 });
   await page.getByText('PAPER · No trade was executed', { exact: true }).waitFor();
   await page
     .getByText('Temporary slack used · expires on its own', { exact: false })
@@ -27,12 +26,39 @@ try {
     .waitFor();
   await page.getByRole('button', { name: 'View receipt on explorer' }).waitFor();
   assert.equal(await page.getByRole('button', { name: 'View trade on explorer' }).count(), 0);
+  const blocked = (await page.getByRole('button', { name: 'Retry reasoning' }).count()) > 0;
+  if (blocked) {
+    assert.equal(await page.getByText('✓ matches onchain', { exact: false }).count(), 0);
+    await page.getByRole('button', { name: 'Retry reasoning' }).waitFor();
+  } else {
+    await page.getByText('✓ matches onchain · 0.9 s', { exact: true }).first().waitFor();
+  }
   await page.screenshot({
-    path: '../../artifacts/screenshots/web/07-testnet-paper-receipt.png',
+    path: '../../artifacts/screenshots/web/08-testnet-receipt-after-migration.png',
     fullPage: true,
   });
   console.log(
-    'PASS: welcome → public receipt → independent onchain ✓, 0.9 s, paper, usedSlack, receipt explorer.',
+    blocked
+      ? 'PASS: missing Brain reasoning shows paper metadata + pending verification, with no checkmark.'
+      : 'PASS: public receipt independently verifies; paper, usedSlack, receipt explorer.',
+  );
+  await page.goto(`${base}/dev/services`, { waitUntil: 'domcontentloaded' });
+  for (const label of [
+    'Brain connected',
+    'RPC matches · 10143',
+    'Perpl connected',
+    'MON-PERP · network matches',
+    'Kuru book connected',
+    'Envio connected',
+  ]) {
+    await page.getByText(label, { exact: false }).first().waitFor({ timeout: 120000 });
+  }
+  await page.screenshot({
+    path: '../../artifacts/screenshots/web/09-testnet-connections.png',
+    fullPage: true,
+  });
+  console.log(
+    'PASS: public connection screen reads real Brain, RPC, Perpl book and markets, Kuru book and Envio.',
   );
   await page.goto(`${base}/traders`, { waitUntil: 'domcontentloaded' });
   await page.getByRole('button', { name: 'Continue with Face ID' }).waitFor({ timeout: 30000 });

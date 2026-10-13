@@ -68,6 +68,24 @@ Updated 2026-10-12. Everything below sits behind an interface, so the real thing
   to 143 and fills `LEASH.mainnet` in `addresses.ts`; re-point persona-wallet Privy policies to chain 143; fund agent/persona/
   referee/gas-tank wallets; gateway with `CHAIN_ID=143`; Face sets `EXPO_PUBLIC_CHAIN_ID=143`. No code changes. Proven on mainnet so
   far: Kuru market params read live on 143; Perpl mainnet exchange/collateral + ERC-8004 bytecode checked (Rails).
+- **Envio Cloud blocked**: the indexer `leash-monad` exists on Envio Cloud (org prempagare07, repo `prempagare07/leash-indexer`)
+  but Envio never receives the repo's push events (dashboard shows "GitHub app removed" even after reinstall; 0 commits). Until Envio
+  support fixes it, the indexer is **self-hosted on Prem's Mac** behind a read-only proxy + Cloudflare quick tunnel (`scripts/envio-local`):
+  same schema and queries; the URL is temporary and only up while the Mac is on.
+- **Envio (indexer)**: deployed from a standalone mirror `prempagare07/leash-indexer` (the transferred monorepo couldn't be granted to the Envio GitHub app by collaborators); code is Envio-Cloud-ready (branch `envio`, verified locally); not yet hosted. Envio Cloud needs (1) the repo owner to grant the Envio Deployments GitHub app on the transferred
+  repo `yashpy/Onchain-Finance-Trading` and (2) keep all indexer imports inside `indexer/` (config.yaml reads `../packages/shared/abis`).
+  Self-hosting on Fly was prepared (`indexer/deploy/`) but the Fly trial blocks more apps. Until then `/traders` has no stats and the
+  Referee watches `REFEREE_WATCH` instead of all active mandates; receipts still verify via the API + chain.
+- **Envio (indexer)**: running **temporarily** as local `envio dev` on Rails' laptop, exposed through a Cloudflare
+  quick tunnel (`SERVICES.envioUrl`). It is only reachable while that laptop is awake with both processes up, and the
+  hostname changes on every tunnel restart. Envio Cloud is blocked on Envio's side for org `yashpy`: its linked-repo
+  list is frozen (repos added after the original install never appear, even a brand-new repo), and `indexer add` for
+  the fresh mirror `yashpy/leash-indexer` fails server-side (`Failed to add indexer`). The code is Envio-Cloud-ready:
+  standalone mirrors `yashpy/leash-indexer` and `prempagare07/leash-indexer` (branch `envio`, root `./`, config
+  `config.yaml`, pnpm 10 lockfile), verified with a frozen-lockfile install + codegen. Self-hosting files are in
+  `indexer/deploy/` (Fly). Swap `SERVICES.envioUrl` to the hosted endpoint once either org deploys.
+- **Gateway staleness**: `STALE_BLOCKS_MAX=50` (~20s). The default 20 (~8s at 0.4s blocks) flapped `ok:false` under the gateway's 20 req/s
+  RPC throttle, which would have caused false Referee stale-pauses and refused executes.
 - **Live Perpl orders on testnet**: need ≥ 100 testnet AUSD (no public faucet found) in an account owned by the agent trade key, plus
   Rails' gateway. Perpl's real "can't withdraw" mechanism is its API keys (mainnet design); the gateway path uses an owned demo account.
 - **Kuru on testnet**: only the BUY side has liquidity and Kuru's testnet USDC has no public faucet → quotes/tx-building only.
@@ -104,19 +122,20 @@ Updated 2026-10-12. Everything below sits behind an interface, so the real thing
 
 # LIMITATIONS — FACE lane
 
-Updated October 12, 2026. Face connects to the deployed Brain API on Monad testnet 10143 in paper mode. The public handoff receipt is independently verified against its actual ReceiptLog transaction, including reason hash, signal hash, execution hash and slack flag. This proves a paper decision was logged onchain; it does not prove a venue trade or a Face ID ceremony.
+Updated October 12, 2026 after merging main `2563d64` and checking the Render services. Current validation: [FACE_TESTNET_VALIDATION.md](FACE_TESTNET_VALIDATION.md).
 
-- Brain/Rails code was imported from their merged main branch. The live adapter now uses their actual shared canonicalizer, ABIs, addresses, unit helpers and gas-explicit sender. Sample data remains isolated in `apps/mobile/mocks`.
-- The team has confirmed `leash-brain-api.fly.dev` as the permanent passkey domain, and Face is configured for it. Both association URLs still return 404 pending signing identifiers. Android's actual debug certificate fingerprint is ready in `FACE_PASSKEY_SETUP.md`. Deep has no paid Apple Developer account; iPhone signing requires a teammate's paid-team build/signing setup. Real-device passkey acceptance and the 0-value testnet proof remain pending.
-- Gateway and Envio URLs are still absent. Risk/depth, general receipt feed, indexed PnL, Perpl deposit/enrollment/manual orders remain unavailable in the testnet profile, with explicit errors. There is no live fallback to sample data. The public receipt uses a documented transaction hash fetched from the RPC, not an invented indexer response or an unbounded historical scan.
-- Onchain rules, slack, pause/resume and activation are wired but cannot be accepted end-to-end until real passkey signing works. Cloud compilation and unsigned setMandate preparation were tested. A fresh test wallet received 0.2 test MON once; repeat drip was refused. No app signature or user transaction was sent.
-- The Kuru BUY quote and unsigned transactions were tested against the deployed API. A real swap still needs test USDC and signing. SELL uses a USD amount (API converts to MON); the testnet book has no bids. The Kuru depth display has no supplied live interface yet. Testnet spot dollars are labelled USDC, not AUSD.
-- Full Policy JSON is retained during the session after compile and shown only if its hash matches the current mandate. There is no API endpoint to retrieve a full policy after app restart; unknown limits/performance remain unavailable rather than being guessed. Seven-day trader returns are unavailable; receipt counters/drawdown display only when the API supplies indexed stats.
-- The sample rule compiler is deterministic and produces a visible sample warning. It is not an AI compiler. Persona performance and order-book data are samples. Sample hash matches never show an onchain ✓.
-- Demo data is held in memory and resets when the app reloads. Demo orders and swaps illustrate flows rather than constitute an exchange or financial simulator.
-- Native Desktop builds encounter Apple File Provider/Finder metadata errors during framework signing. `ios:cached` builds an identical dependency/source copy under `Library/Caches` without extended attributes. The generated iOS project is not source-controlled.
-- Runtime delivery of push requests from a terminated app and real device permission/failure states need testing. Slack polling works independently of push.
-- The two-minute preview and web screenshot exports use sample data. They are review assets, not evidence for live bounty acceptance. Submission form fields require the signed-in team workspace.
-- `npm audit fix --ignore-scripts` leaves 29 inherited dependency reports (18 high, 11 moderate) in the current Expo/React Native dependency graph. npm suggests incompatible major changes/downgrades for the remaining reports, including Expo 44; those were not applied. Review upstream patches before a public production release. This is recorded as an unresolved check, not a clean security audit.
+- The app imports Rails' shared gateway URLs by chain: testnet `leash-perpl-gateway-testnet.onrender.com`, mainnet `leash-gateway.onrender.com`. Live testnet markets, account risk, Perpl depth, Kuru SDK depth and Envio receipt metadata were checked. Free-instance wake-up can take about a minute; requests allow 90 seconds and the UI offers retry.
+- **Brain receipt reasoning is unavailable on Render:** both published hashes return 404, though their independent Envio/onchain records remain. Face retains feed rows and paper/slack metadata, shows pending verification and never invents reasoning, latency or a verification checkmark. The read-only cloud check intentionally exits 2 for this backend blocker. Prem was offline; no backend records were created or changed.
+- Envio is a temporary self-hosted tunnel; its URL is read from the team's GitHub pointer and cached for 60 seconds. It remains dependent on the host laptop. Indexed PnL/fill statistics and gateway weekly PnL/funding are not yet complete upstream; the app cannot verify those as real performance.
+- Deep explicitly approved native RP migration to `leash-brain-api.onrender.com` before any LEASH passkeys existed. Native configurations were regenerated. Android association is still 404; the debug fingerprint is in [FACE_PASSKEY_SETUP.md](FACE_PASSKEY_SETUP.md). iOS association currently lists Deep's Personal Team; Deep has no paid Apple Developer account. The native app still withholds iPhone sign-up without paid-team configuration. No real-device passkey ceremony or user-signed proof is claimed.
+- `/keys/prepare` returns `keyAddress` and nullable `enrollment`; a null enrollment is handled as unavailable permission, never as successful authorization. Trade-only enrollment is still Q1. `/deposit/prepare` deliberately returns BAD_REQUEST upstream; this explains the Fund the Leash 400 and is not an app schema error. Perpl testnet account opening needs 100 test AUSD while this app's deposit demo remains capped at $25; live funding is not accepted. Mainnet LEASH contracts are absent and mainnet execution remains disabled upstream.
+- Onchain rules, slack, pause/resume and activation use actual shared ABIs, addresses, unit helpers and gas-explicit sender, with chain checks and confirmed callbacks. User pause preparation works directly against the deployed registry even when Brain is unavailable. These flows still need real passkey signing and funded acceptance.
+- Full rules can now be retrieved from Brain `/policy/:account` after a restart and are displayed only when their canonical fingerprint matches both the response and current onchain mandate. Missing rules remain unavailable. Registered testnet ERC-8004 identities are #2227, #2228 and #2229; real fill-derived performance remains pending.
+- Kuru BUY depth/quotes are connected; testnet has no bids and no public USDC faucet. A funded real swap and signing remain untested. Paper receipts (`execTxHash:null`) never imply that an exchange trade was executed.
+- Samples stay inside `apps/mobile/mocks`, reset on app reload and never become live proof. Sample orders/swaps illustrate flows. The sample compiler is deterministic and visibly labelled; sample hashes never show an onchain checkmark.
+- `ios:cached` avoids Apple File Provider framework-signing errors by building under `Library/Caches`. Its simulator development URL defaults to localhost to avoid the previous Tailscale-IP App Transport Security error. Generated native projects are ignored.
+- Runtime push delivery from a terminated physical app needs an EAS project and device testing. Polling remains available.
+- The sample video/screenshots 01–06 are review artifacts; 07 records the earlier Fly paper receipt. New captures 08/09 record the current missing-reasoning state and live connection checks. These are not evidence of a real venue trade or Face ID ceremony.
+- The previous dependency audit retained 29 inherited reports (18 high, 11 moderate). Incompatible Expo downgrades were not applied. Build warnings from viem/noble export resolution fall back successfully; native Xcode has one script-dependency warning.
 
-The domain decision is confirmed; signing and gateway/indexer acceptance are still pending. No messages were sent to teammates and no app was deployed or submitted. Source updates are pushed to the face branch after validation.
+No orders, swaps, deposits or app signatures were submitted during this integration. No teammate messages or deployments were sent. Source changes are pushed only to Face.

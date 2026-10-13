@@ -42,6 +42,7 @@ function setup(replies: string[] = []) {
     kuru: null,
     alchemyNotifyToken: "whsec",
     demoToken: "demo-secret",
+    passkey: { appleTeamIds: ["ABCDE12345"], androidCertSha256: [`${"AB:".repeat(31)}AB`], appId: "app.leash.mobile" },
     log: () => {},
   };
   const app = createApp(deps);
@@ -83,6 +84,14 @@ describe("API routes", () => {
     const kill = await post("/agent/kill", { account: USER });
     expect(await kill.json()).toMatchObject({ state: "KILLED" });
     await expect(e.gateway.execute({ account: USER, market: "MON-PERP", side: "LONG", sizeUsd: "5", price: "2", leverage: 1, idempotencyKey: "k" })).rejects.toThrow(/KEY_DISABLED/);
+  });
+
+  it("GET /policy/:account returns the stored rules after activate", async () => {
+    const { app, post } = setup();
+    expect((await app.request(`/policy/${USER}`)).status).toBe(404);
+    await post("/mandate/compile", { account: USER, text: "x", persona: "falcon" });
+    await post("/agent/activate", { account: USER });
+    expect(await (await app.request(`/policy/${USER}`)).json()).toMatchObject({ persona: "falcon", policy: { version: 1 } });
   });
 
   it("activate without compile → 409; unknown status → 404", async () => {
@@ -145,6 +154,26 @@ describe("API routes", () => {
     expect(j.decision.reasons).toEqual(["LEVERAGE_EXCEEDS"]);
     expect(j.slackRequestId).toBeTruthy();
     expect(e.store.getReceipt(j.reasonHash)?.model).toBe("manual-paper-test");
+  });
+
+  it("landing page + passkey association files (JSON, exact paths)", async () => {
+    const { app } = setup();
+    expect(await (await app.request("/")).json()).toMatchObject({ network: "Monad testnet (10143)", mode: "paper" });
+    const aasa = await app.request("/.well-known/apple-app-site-association");
+    expect(aasa.headers.get("content-type")).toMatch(/application\/json/);
+    expect(await aasa.json()).toEqual({ webcredentials: { apps: ["ABCDE12345.app.leash.mobile"] } });
+    const al = (await (await app.request("/.well-known/assetlinks.json")).json()) as { target: { package_name: string; sha256_cert_fingerprints: string[] } }[];
+    expect(al[0]!.target.package_name).toBe("app.leash.mobile");
+    expect(al[0]!.target.sha256_cert_fingerprints).toHaveLength(1);
+  });
+
+  it("serves ERC-8004 registration files with the persona's onchain agentId", async () => {
+    const { app } = setup();
+    const j = (await (await app.request("/agents/falcon.json")).json()) as { type: string; registrations: { agentId: number; agentRegistry: string }[] };
+    expect(j.type).toBe("https://eips.ethereum.org/EIPS/eip-8004#registration-v1");
+    expect(j.registrations).toEqual([{ agentId: 2227, agentRegistry: "eip155:10143:0x8004A818BFB912233c491871b3d84c89A494BD9e" }]);
+    expect((await app.request("/agents/eagle.json")).status).toBe(404);
+    expect((await app.request("/agents/otter.svg")).headers.get("content-type")).toMatch(/image\/svg/);
   });
 
   it("alchemy webhook requires a valid HMAC signature and pushes deposits", async () => {

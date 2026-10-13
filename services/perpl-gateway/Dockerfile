@@ -15,9 +15,10 @@ RUN apt-get update \
 WORKDIR /app
 COPY --from=build /app/target/release/perpl-gateway /usr/local/bin/perpl-gateway
 # Keystore + SQLite live under /data (mount a volume in prod).
+# Bind address comes from GATEWAY_BIND, else $PORT (Render), else 8080 (Fly/local).
+RUN mkdir -p /data/keystore
 ENV GATEWAY_DB_PATH=/data/gateway.sqlite
 ENV GATEWAY_KEYSTORE_DIR=/data/keystore
-ENV GATEWAY_BIND=0.0.0.0:8080
 EXPOSE 8080
 VOLUME ["/data"]
 CMD ["perpl-gateway"]

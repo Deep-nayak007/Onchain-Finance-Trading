@@ -51,7 +51,7 @@ export function buildApp(cfg: Config, opts: { store?: Store; startLoops?: boolea
   const gateway = !cfg.GATEWAY_URL && perplCfg ? new ChainMarketsGateway(publicClient, perplCfg, { maxOrderUsd: cfg.MAX_ORDER_USD }) : makeGateway(cfg);
   const marks = new MarkHistory();
   const nansen = new Nansen(store, { apiKey: cfg.NANSEN_API_KEY, cacheSeconds: cfg.NANSEN_CACHE_SECONDS, dailyBudget: cfg.NANSEN_DAILY_CALLS });
-  const envio = new Envio(cfg.ENVIO_URL);
+  const envio = new Envio(cfg.ENVIO_URL, fetch, cfg.ENVIO_URL_POINTER || undefined);
   const chat = makeChat(cfg);
   const pusher = new ExpoPusher(store);
   const sink = wallets.configured && addresses ? new OnchainReceiptSink(wallets, publicClient, addresses.receiptLog, cfg.CHAIN_ID, url) : new LocalReceiptSink();
@@ -89,6 +89,11 @@ export function buildApp(cfg: Config, opts: { store?: Store; startLoops?: boolea
     kuru,
     alchemyNotifyToken: cfg.ALCHEMY_WEBHOOK_SIGNING_KEY,
     demoToken: cfg.DEMO_TOKEN,
+    passkey: {
+      appleTeamIds: (cfg.APPLE_TEAM_ID ?? "").split(",").map((s) => s.trim()).filter((s) => /^[A-Z0-9]{10}$/.test(s)),
+      androidCertSha256: (cfg.ANDROID_CERT_SHA256 ?? "").split(",").map((s) => s.trim().toUpperCase()).filter((s) => /^([0-9A-F]{2}:){31}[0-9A-F]{2}$/.test(s)),
+      appId: cfg.MOBILE_APP_ID,
+    },
     corsOrigins: cfg.CORS_ORIGINS?.split(",").map((s) => s.trim()),
     log,
   };

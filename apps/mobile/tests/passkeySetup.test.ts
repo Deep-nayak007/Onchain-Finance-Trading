@@ -1,12 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { passkeySetupIssue } from '../lib/passkeySetup';
-const rpId = 'leash-brain-api.fly.dev';
+const rpId = 'leash-brain-api.onrender.com';
 test('browser passkeys reject localhost and lookalike hostnames outside the chosen RP domain', () => {
   for (const hostname of [
     'localhost',
-    'evil-leash-brain-api.fly.dev',
-    'leash-brain-api.fly.dev.attacker.example',
+    'evil-leash-brain-api.onrender.com',
+    'leash-brain-api.onrender.com.attacker.example',
   ])
     assert.match(passkeySetupIssue({ platform: 'web', rpId, hostname })!, /browser preview/);
   assert.equal(passkeySetupIssue({ platform: 'web', rpId, hostname: rpId }), null);
