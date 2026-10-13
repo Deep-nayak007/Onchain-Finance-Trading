@@ -1,6 +1,6 @@
 # Current Face service check — October 12, 2026
 
-Latest GitHub main `6a959bd` is merged into Face, including the browser passkey error message and new architecture/design documentation. Native RP migration to `leash-brain-api.onrender.com` was explicitly approved by Deep before any LEASH passkeys existed.
+Latest GitHub main `67456c8` is merged into Face, including paper-mode onboarding, the browser passkey error message and new architecture/design documentation. Native RP migration to `leash-brain-api.onrender.com` was explicitly approved by Deep before any LEASH passkeys existed.
 
 - The Render Brain API reports chain **10143**, `live:false`, real HTTP gateway, contracts and three registered personas.
 - Rails' shared service file selects **leash-perpl-gateway-testnet.onrender.com** for 10143 and **leash-gateway.onrender.com** for 143. Testnet has 15 markets, MON-PERP id 64; mainnet has MON-PERP id 10. The app rejects a known wrong-network URL and checks market IDs/cache health before gateway reads/preparation. Prepared transactions must match the configured chain.
@@ -13,6 +13,29 @@ Latest GitHub main `6a959bd` is merged into Face, including the browser passkey 
 - Android association is still **404**. iOS association returns **200** with Deep's Personal Team, which does not establish paid-team passkey support. See [passkey setup](FACE_PASSKEY_SETUP.md). `/keys/prepare` returns `keyAddress` and nullable `enrollment`; a null payload leaves authorization unavailable. User pause preparation can work directly onchain when Brain is down.
 
 Run `npm run testnet:ios` or `npm run testnet:web`. On Welcome, choose **Check live connections**. For independent offline testing, run `npm run mock:ios` / `npm run mock:web`.
+
+## Full retry — October 12, 2026 (Phoenix)
+
+Latest main `67456c8` is merged into Face. Results from this retry:
+
+| Check | Result |
+|---|---|
+| Mobile / shared / Brain / guardian unit tests | 35 + 95 + 68 + 6 = **204 pass**; one real Privy integration test deliberately skipped |
+| TypeScript / production web build / sample browser flow | Pass; sample flow makes zero external requests |
+| Hosted browser and Face candidate passkeys | Virtual PRF authenticator creates/restores the same account; zero runtime errors |
+| Paper onboarding | Hosted main and Face candidate reach rules without Perpl collateral/enrollment; Face shows a clear message for the deposit stub |
+| API / RPC / gateway / Envio / Kuru book | Respond correctly on chain 10143; 15 Perpl markets, live book/risk, indexed commitments |
+| Live rule compilation | Isolated prior test account: exact canonical policy hash, Falcon #2227, real agent wallet/key, no warnings; unsigned setMandate prepared with explicit gas |
+| Kuru BUY quote preparation | 200; two unsigned testnet transactions, estimated output 0.999000999, minimum 0.98901098901 |
+| Receipt reasoning / verification | **Failing and unstable**: old demo records return 404; two recent shadow records first returned 200 and then 404 during the retry. Their commitments remain indexed and onchain. Deploy config uses /tmp/leash.db, which resets on restart/redeploy. Persistent backend storage is required |
+| Perpl deposit / enrollment | Deposit preparation returns documented 400 BAD_REQUEST; enrollment is still null. Paper onboarding can continue; real trading cannot be accepted |
+| Kuru SELL quote | **500 internal error**; SDK book has no bids/buyers. SELL cannot execute with this testnet liquidity |
+| Rust gateway | Locked build succeeds on installed Rust 1.95.0; the gateway crate currently defines zero tests. Repo pins 1.94.1 |
+| Native association / real signing | Android association remains 404; iPhone native setup still lacks a paid team. Real Touch ID/Face ID, signed rules/activation, deposits/orders/swaps and mainnet execution are unverified |
+
+Brain tests initially failed to load because backend dependencies were absent from the npm mobile workspace. A separate cached checkout installed the unchanged Brain/shared dependencies with frozen pnpm lockfile and then passed all 68 tests; the mobile dependency tree was not replaced. Foundry is not installed, so the Solidity local suite was not rerun. The deployed ReceiptLog event and registry calldata were checked through the RPC.
+
+No gas drip, user signature, agent activation, deposit, order or swap was submitted. One rule compilation used the existing disposable test account and created its backend wallet/key records; only unsigned calldata/quotes were prepared. The public website still deploys main; Face's additional safeguards remain on the face branch.
 
 ## Hosted browser check — October 12, 2026 (Phoenix)
 

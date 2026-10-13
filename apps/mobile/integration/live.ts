@@ -18,7 +18,7 @@ import { canonicalJSON } from '@leash/shared/canonical';
 import { api } from '../lib/api';
 import { config, requireConfiguredChain } from '../lib/config';
 import { activeChain, publicClient } from '../lib/chain';
-import { request } from '../lib/http';
+import { request, ServiceError } from '../lib/http';
 import { compiledPolicy, rememberPolicy } from '../lib/compiledPolicies';
 import { gateway, requestGateway, keyPrepareSchema, spotBookSchema } from '../lib/gateway';
 import { spotPrepareSchema, txRequestSchema } from '../lib/schemas';
@@ -233,10 +233,24 @@ export const liveBindings: TeamBindings = {
     return formatUnits(balance, decimals);
   },
   prepareDeposit: async (account, amountUsd) => {
-    const txs = await requestGateway('/deposit/prepare', z.array(txRequestSchema).min(1), {
-      account,
-      amountUsd,
-    });
+    let txs;
+    try {
+      txs = await requestGateway('/deposit/prepare', z.array(txRequestSchema).min(1), {
+        account,
+        amountUsd,
+      });
+    } catch (error) {
+      if (
+        config.chainId === 10143 &&
+        error instanceof ServiceError &&
+        error.status === 400 &&
+        error.message.includes('deposit/prepare wired at CP2')
+      )
+        throw new Error(
+          'Perpl testnet deposits are not available yet. In paper mode, continue to Write my rules without depositing.',
+        );
+      throw error;
+    }
     txs.forEach((tx) => requireConfiguredChain(tx.chainId));
     return txs;
   },
