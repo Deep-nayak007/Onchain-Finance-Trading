@@ -18,6 +18,9 @@
     "check": "npm run check --workspace @leash/mobile",
     "test:mobile": "npm run test --workspace @leash/mobile",
     "mock:ios": "npm run mock:ios --workspace @leash/mobile",
-    "mock:web": "npm run mock:web --workspace @leash/mobile"
+    "mock:web": "npm run mock:web --workspace @leash/mobile",
+    "testnet:ios": "npm run testnet:ios --workspace @leash/mobile",
+    "testnet:web": "npm run testnet:web --workspace @leash/mobile",
+    "testnet:check": "npm run testnet:check --workspace @leash/mobile"
   }
 }

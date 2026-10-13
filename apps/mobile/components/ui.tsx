@@ -14,6 +14,8 @@ import { router } from 'expo-router';
 import { colors, fonts } from '../theme';
 import { BrandMark, Icon, type IconName } from './Icon';
 import { config } from '../lib/config';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '../lib/api';
 export function Type({
   kind = 'body',
   color,
@@ -139,6 +141,12 @@ export function Screen({
   back?: boolean;
   action?: React.ReactNode;
 }) {
+  const health = useQuery({
+    queryKey: ['api-health', config.apiUrl],
+    queryFn: api.health,
+    enabled: !config.useMocks && !!config.apiUrl,
+    staleTime: 30000,
+  });
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView
@@ -175,11 +183,19 @@ export function Screen({
                 <Pill label="DEMO" color={colors.accent} />
               </Pressable>
             ) : (
-              <Label>MONAD</Label>
+              <Label>{config.networkName}</Label>
             )}
             {action}
           </Row>
         </Row>
+        {!config.useMocks && health.data && (
+          <View style={{ marginBottom: 18 }}>
+            <Pill
+              label={health.data.live ? 'LIVE TRADES' : 'PAPER MODE'}
+              color={health.data.live ? colors.ok : colors.rope}
+            />
+          </View>
+        )}
         {title && (
           <View style={{ gap: 7, marginBottom: 26 }}>
             <Type

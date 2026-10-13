@@ -130,11 +130,16 @@ export function walletError(error: unknown): string {
     // Surface the browser's own reason (e.g. NotAllowedError) so failures are diagnosable.
     const cause = (error as { cause?: unknown }).cause;
     const detail =
-      cause instanceof Error ? ` (${cause.name}: ${cause.message})` : cause ? ` (${String(cause)})` : '';
+      cause instanceof Error
+        ? ` (${cause.name}: ${cause.message})`
+        : cause
+          ? ` (${String(cause)})`
+          : '';
     if (error.code === 'PASSKEY_OPERATION_FAILED' && Platform.OS === 'web')
       return `The passkey prompt did not finish${detail}. If you just created your passkey, tap "I already have a passkey" to unlock it with a fresh tap.`;
     return (
-      (messages[error.code] ?? 'Your wallet could not finish this action. Try signing in again.') + detail
+      (messages[error.code] ?? 'Your wallet could not finish this action. Try signing in again.') +
+      detail
     );
   }
   return error instanceof Error ? error.message : 'This action did not finish. Please retry.';

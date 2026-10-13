@@ -17,41 +17,42 @@ import {
 import { ReceiptPaper } from '../../components/ReceiptPaper';
 import { WhyChip } from '../../components/WhyChip';
 import { colors } from '../../theme';
-import { useSession } from '../../lib/session';
 import { api } from '../../lib/api';
 import { envio } from '../../lib/envio';
 import { verifyReceipt } from '../../lib/verify';
 import { config } from '../../lib/config';
 import { hashSchema } from '../../lib/schemas';
+import { explorerTxUrl } from '../../lib/chain';
 export default function ReceiptDetailScreen() {
-  const { hash } = useLocalSearchParams<{ hash: string }>();
-  const { account } = useSession();
+  const { hash, proofTxHash } = useLocalSearchParams<{ hash: string; proofTxHash?: string }>();
   const [tampered, setTampered] = useState(false);
   const validHash = hashSchema.safeParse(hash).success;
+  const validProof = proofTxHash === undefined || hashSchema.safeParse(proofTxHash).success;
   const detail = useQuery({
     queryKey: ['detail', hash],
     queryFn: () => api.receipt(hash),
     enabled: validHash,
   });
   const anchor = useQuery({
-    queryKey: ['anchor', account, hash],
-    queryFn: () => envio.receipt(account!, hash as Hex),
-    enabled: !!account && validHash,
+    queryKey: ['anchor', config.chainId, hash, proofTxHash],
+    queryFn: () => envio.receipt(null, hash as Hex, proofTxHash as Hex | undefined),
+    enabled: validHash && validProof,
   });
   const data = detail.data
     ? tampered
       ? { ...detail.data, intent: { ...detail.data.intent, sizeUsd: '999' } }
       : detail.data
     : null;
-  const verification =
-    data && anchor.data ? verifyReceipt(data, anchor.data, config.useMocks) : null;
+  const verification = data
+    ? verifyReceipt(data, anchor.data ?? { reasonHash: null, signalHash: null }, config.useMocks)
+    : null;
   return (
     <Screen
       back
       title="The whole story."
       subtitle="A decision, its reasoning, and a fingerprint you can check."
     >
-      {!validHash ? (
+      {!validHash || !validProof ? (
         <Message text="This receipt link is invalid. Open a receipt from your feed." />
       ) : detail.isPending || anchor.isPending ? (
         <Loading label="Fetching the receipt and its fingerprint…" />
@@ -64,10 +65,30 @@ export default function ReceiptDetailScreen() {
           }}
         />
       ) : !data ? (
-        <Message
-          text="The reasoning is not available yet. Refresh once the trader publishes it."
-          tone="info"
-        />
+        <>
+          {anchor.data && <ReceiptPaper receipt={anchor.data} />}
+          <Message
+            text={
+              anchor.data
+                ? 'The onchain record is available, but the Brain API has no reasoning for this receipt. Verification is pending until the reasoning is restored.'
+                : 'This receipt is unavailable. Refresh once the trader publishes its reasoning and onchain record.'
+            }
+            tone="info"
+          />
+          <Button
+            label="Retry reasoning"
+            variant="secondary"
+            onPress={() => void detail.refetch()}
+          />
+          {!config.useMocks && anchor.data?.proofTxHash && (
+            <Button
+              label="View receipt on explorer"
+              variant="secondary"
+              icon="external"
+              onPress={() => void Linking.openURL(explorerTxUrl(anchor.data!.proofTxHash!))}
+            />
+          )}
+        </>
       ) : (
         <>
           {anchor.data && <ReceiptPaper receipt={{ ...anchor.data, detail: data }} />}
@@ -88,8 +109,17 @@ export default function ReceiptDetailScreen() {
             />
             <Type color={colors.muted} style={{ fontSize: 12, lineHeight: 19 }}>
               Your phone fingerprints the full intent and decision, then compares it to the receipt
-              from the indexer. Changing even one dollar changes the fingerprint.
+              {anchor.data?.anchorSource === 'rpc'
+                ? ' in the confirmed ReceiptLog transaction.'
+                : ' from the indexer.'}{' '}
+              Changing even one dollar changes the fingerprint.
             </Type>
+            {!config.useMocks && data.execTxHash === null && (
+              <Message
+                tone="info"
+                text="Paper decision. The receipt is onchain; no venue trade was executed."
+              />
+            )}
             {verification?.latencyMs !== null && verification?.latencyMs !== undefined && (
               <Row style={{ justifyContent: 'space-between' }}>
                 <Label>Decision → confirmation</Label>
@@ -138,6 +168,14 @@ export default function ReceiptDetailScreen() {
             )}
           </Card>
           <View style={{ gap: 12, marginTop: 22 }}>
+            {anchor.data?.account && (
+              <>
+                <Label>Receipt account</Label>
+                <Type selectable kind="mono" style={{ fontSize: 10, letterSpacing: 0 }}>
+                  {anchor.data.account}
+                </Type>
+              </>
+            )}
             <Label>Reasoning fingerprint</Label>
             <Type
               selectable
@@ -161,7 +199,15 @@ export default function ReceiptDetailScreen() {
                 variant="secondary"
                 label="View trade on explorer"
                 icon="external"
-                onPress={() => void Linking.openURL(`https://monadscan.com/tx/${data.execTxHash}`)}
+                onPress={() => void Linking.openURL(explorerTxUrl(data.execTxHash!))}
+              />
+            )}
+            {!config.useMocks && anchor.data?.proofTxHash && (
+              <Button
+                variant="secondary"
+                label="View receipt on explorer"
+                icon="external"
+                onPress={() => void Linking.openURL(explorerTxUrl(anchor.data!.proofTxHash!))}
               />
             )}
           </View>

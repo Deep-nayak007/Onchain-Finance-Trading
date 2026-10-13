@@ -11,7 +11,7 @@ code decides; five independent knots can stop it.
 
 | What | Where |
 |---|---|
-| **Web app (live, testnet)** | **https://leash-app.onrender.com**: Face's Expo app in the browser on real data: browser passkey wallet (RP = this host), Brain API, gateway, Envio, Monad testnet RPC |
+| **Web app (live data, testnet paper mode)** | **https://leash-app.onrender.com**: Expo browser app; browser passkey wallet (RP = this host), Brain API, gateway, Envio and Monad testnet RPC |
 | Brain API | **https://leash-brain-api.onrender.com** (`/health`, `/config`, `/traders`, `/receipts/:reasonHash`; spec `services/api/openapi.yaml`) |
 | MandateRegistry | [`0x81bbeaf263eeae41cfd4be137427af3ba7248467`](https://testnet.monadvision.com/address/0x81bbeaf263eeae41cfd4be137427af3ba7248467) |
 | ReceiptLog | [`0x21b168148e7c47ca0f1fab8bf9f69faff3aed6b3`](https://testnet.monadvision.com/address/0x21b168148e7c47ca0f1fab8bf9f69faff3aed6b3) |
@@ -105,6 +105,19 @@ the real Perpl gateway, Envio Cloud, mainnet contracts. See [`docs/LIMITATIONS.m
 
 
 The Face lane is an Expo React Native app for iOS, Android, and a browser preview. It includes every screen in the supplied brief, the dark visual system, on-device receipt fingerprints, and an interactive threat-model demo. **The default build uses clearly labelled sample data.** Real Face ID and mainnet acceptance require the team's account domain, shared package, deployments, and services.
+
+For the deployed Brain API on **Monad testnet (10143), paper mode**:
+
+Face's **Explore the live demo** opens public market data, trader identities, demo risk and receipts without a wallet. It is a read-only view; set up your own passkey for rules, slack and pause/resume. On October 13 the current Envio tunnel could not be reached and Brain's published receipt reasoning returned 404. Those service gaps are documented in [current validation](docs/FACE_TESTNET_VALIDATION.md). The website deploys from main, so additions on face appear after that branch is merged.
+
+```sh
+npm install
+npm run testnet:ios
+# or: npm run testnet:web
+npm run testnet:check
+```
+
+Tap **Check live connections** on Welcome to inspect Brain, RPC, Perpl markets/depth, Kuru depth and Envio without signing in. **Check the testnet receipt** shows the independently anchored paper record; the Render API currently returns 404 for its reasoning, so verification is visibly pending. The profile sets the Render API, chain 10143 and the public testnet RPC, and imports gateway/Envio URLs from the shared package. The API is cloud-hosted; Envio is still a temporary laptop-hosted tunnel. Keep Metro running for development builds. Copy `apps/mobile/.env.testnet.example` to `.env` for regular launches. Device passkeys still require native association/signing setup. See [current testnet validation](docs/FACE_TESTNET_VALIDATION.md).
 
 For local testing before Brain/Rails arrive, run from the repository root:
 

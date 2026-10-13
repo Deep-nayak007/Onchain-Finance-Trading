@@ -3,6 +3,14 @@ import { useSession } from './session';
 import { api } from './api';
 import { gateway } from './gateway';
 import { envio } from './envio';
+import { config } from './config';
+export const useApiHealth = () =>
+  useQuery({
+    queryKey: ['api-health', config.apiUrl],
+    queryFn: api.health,
+    enabled: !config.useMocks && !!config.apiUrl,
+    staleTime: 30000,
+  });
 export const useRisk = () => {
   const { account } = useSession();
   return useQuery({

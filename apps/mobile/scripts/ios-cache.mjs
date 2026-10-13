@@ -10,7 +10,11 @@ async function run(command, args, cwd = root) {
     const child = spawn(command, args, {
       cwd,
       stdio: 'inherit',
-      env: { ...process.env, EXPO_NO_GIT_STATUS: '1' },
+      env: {
+        ...process.env,
+        EXPO_NO_GIT_STATUS: '1',
+        EXPO_PACKAGER_PROXY_URL: process.env.EXPO_PACKAGER_PROXY_URL || 'http://localhost:8081',
+      },
     });
     child.on('error', reject);
     child.on('exit', (code) =>

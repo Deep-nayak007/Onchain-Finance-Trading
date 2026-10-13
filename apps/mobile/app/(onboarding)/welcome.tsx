@@ -1,4 +1,5 @@
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
+import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { Screen, Type, Label, Button, Message } from '../../components/ui';
@@ -9,9 +10,19 @@ import { useAction } from '../../lib/useAction';
 import { createAccount, signIn } from '../../lib/mera';
 import { demoAccount } from '../../mocks/fixtures';
 import { config } from '../../lib/config';
+import { testnetHandoff } from '../../integration/testnet';
+import { passkeySetupIssue } from '../../lib/passkeySetup';
 export default function Welcome() {
   const session = useSession();
   const action = useAction();
+  const setupIssue = config.useMocks
+    ? null
+    : passkeySetupIssue({
+        platform: Platform.OS,
+        rpId: config.rpId,
+        hostname: Platform.OS === 'web' ? globalThis.location?.hostname : undefined,
+        appleTeamId: Constants.expoConfig?.ios?.appleTeamId,
+      });
   const connect = (restore: boolean) =>
     action.run(async () => {
       if (config.useMocks) {
@@ -61,14 +72,14 @@ export default function Welcome() {
         label={config.useMocks ? 'Continue with demo account' : 'Continue with Face ID'}
         icon="face"
         loading={action.busy}
-        disabled={!config.useMocks && !config.rpId}
+        disabled={!!setupIssue}
         onPress={() => void connect(false)}
       />
       <View style={{ height: 9 }} />
       <Button
         variant="ghost"
         label={config.useMocks ? 'Restore demo account' : 'I already have a passkey'}
-        disabled={(!config.useMocks && !config.rpId) || action.busy}
+        disabled={!!setupIssue || action.busy}
         onPress={() => void connect(true)}
       />
       {config.useMocks && (
@@ -82,14 +93,45 @@ export default function Welcome() {
           }}
         />
       )}
-      {!config.rpId && (
+      {!config.useMocks && config.chainId === 10143 && (
+        <Button
+          variant="secondary"
+          label="Explore the live demo"
+          icon="arrow"
+          onPress={() => router.push('/live-demo')}
+        />
+      )}
+      {!config.useMocks && config.chainId === 10143 && (
+        <Button
+          variant="secondary"
+          label="Check the testnet receipt"
+          icon="receipt"
+          onPress={() =>
+            router.push({
+              pathname: '/receipt/[hash]',
+              params: {
+                hash: testnetHandoff.reasonHash,
+                proofTxHash: testnetHandoff.receiptTxHash,
+              },
+            })
+          }
+        />
+      )}
+      {!config.useMocks && (
+        <Button
+          variant="ghost"
+          label="Check live connections"
+          onPress={() => router.push('/dev/services')}
+        />
+      )}
+      {(config.useMocks || setupIssue) && (
         <Type
           color={colors.muted}
           style={{ fontSize: 11, lineHeight: 18, marginTop: 14, textAlign: 'center' }}
         >
           {config.useMocks
             ? 'Demo account ready. No Face ID or backend is needed for testing.'
-            : 'Face ID will be available when the team connects its account domain.'}
+            : setupIssue}
         </Type>
       )}
       <Message text={action.error} />

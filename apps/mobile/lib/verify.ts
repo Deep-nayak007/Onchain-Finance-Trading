@@ -9,7 +9,12 @@ export type Verification = {
 };
 export function verifyReceipt(
   detail: ReceiptDetail,
-  anchor: { reasonHash: string | null; signalHash: string | null },
+  anchor: {
+    reasonHash: string | null;
+    signalHash: string | null;
+    usedSlack?: boolean;
+    execTxHash?: string | null;
+  },
   isDemo: boolean,
 ): Verification {
   const computedHash = keccak256(
@@ -26,7 +31,10 @@ export function verifyReceipt(
     computedHash.toLowerCase() !== anchor.reasonHash.toLowerCase() ||
     computedHash.toLowerCase() !== detail.reasonHash.toLowerCase() ||
     signals.toLowerCase() !== anchor.signalHash.toLowerCase() ||
-    signals.toLowerCase() !== detail.signalHash.toLowerCase()
+    signals.toLowerCase() !== detail.signalHash.toLowerCase() ||
+    (anchor.usedSlack !== undefined && anchor.usedSlack !== detail.decision.usedSlack) ||
+    ('execTxHash' in anchor &&
+      anchor.execTxHash?.toLowerCase() !== detail.execTxHash?.toLowerCase())
   ) {
     return {
       state: 'mismatch',

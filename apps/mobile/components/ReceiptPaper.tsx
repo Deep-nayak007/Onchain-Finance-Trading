@@ -12,7 +12,7 @@ const stampColors: Record<ReceiptStatus, string> = {
   PAUSED: colors.stampPause,
   SHADOW: colors.stampShadow,
 };
-export function Stamp({ status }: { status: ReceiptStatus }) {
+export function Stamp({ status, paper = false }: { status: ReceiptStatus; paper?: boolean }) {
   return (
     <View
       style={{
@@ -29,7 +29,7 @@ export function Stamp({ status }: { status: ReceiptStatus }) {
         color={stampColors[status]}
         style={{ fontSize: 11, fontFamily: fonts.monoBold, letterSpacing: 2 }}
       >
-        {status === 'REJECTED' ? 'DENIED' : status}
+        {paper && status === 'EXECUTED' ? 'PAPER' : status === 'REJECTED' ? 'DENIED' : status}
       </Type>
     </View>
   );
@@ -44,17 +44,20 @@ export function ReceiptPaper({
   compact?: boolean;
 }) {
   const detail = receipt.detail;
+  const paper =
+    !config.useMocks && (detail ? detail.execTxHash === null : receipt.execTxHash === null);
+  const trader = receipt.persona?.toUpperCase() ?? `AGENT ${receipt.agentId ?? '?'}`;
   const verification = detail ? verifyReceipt(detail, receipt, config.useMocks) : null;
   const label =
     receipt.status === 'PAUSED'
       ? 'Your trader is paused'
       : detail
         ? `${detail.intent.side} ${detail.intent.market.replace('-PERP', '')}`
-        : `${receipt.persona.toUpperCase()} · ${receipt.status}`;
+        : `${trader} · ${receipt.status}`;
   return (
     <Pressable
       accessibilityRole={onPress ? 'button' : undefined}
-      accessibilityLabel={`${receipt.persona}, ${receipt.status}, receipt ${receipt.seq}`}
+      accessibilityLabel={`${receipt.persona ?? trader}, ${receipt.status}, receipt ${receipt.seq}`}
       onPress={onPress}
       disabled={!onPress}
       style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1, marginBottom: 12 })}
@@ -70,7 +73,7 @@ export function ReceiptPaper({
       >
         <Row style={{ justifyContent: 'space-between' }}>
           <Type kind="mono" color={colors.paperMuted} style={{ fontSize: 9, letterSpacing: 0.8 }}>
-            {receipt.persona.toUpperCase()} · #{String(receipt.seq).padStart(4, '0')}
+            {trader} · #{String(receipt.seq).padStart(4, '0')}
           </Type>
           <Type kind="mono" color={colors.paperMuted} style={{ fontSize: 9, letterSpacing: 0 }}>
             {new Date(receipt.createdAt).toLocaleTimeString('en-US', {
@@ -103,8 +106,13 @@ export function ReceiptPaper({
               </Type>
             )}
           </View>
-          <Stamp status={receipt.status} />
+          <Stamp status={receipt.status} paper={paper} />
         </Row>
+        {paper && (
+          <Type kind="mono" color={colors.paperMuted} style={{ fontSize: 9, letterSpacing: 0 }}>
+            PAPER · No trade was executed
+          </Type>
+        )}
         <Type
           kind="mono"
           color={colors.paperMuted}
@@ -114,7 +122,10 @@ export function ReceiptPaper({
           Why:{' '}
           {receipt.pauseReason
             ? `Paused by ${receipt.pauseReason}. Only you can resume.`
-            : (detail?.intent.rationale ?? 'Open this receipt to fetch the full reasoning.')}
+            : (detail?.intent.rationale ??
+              (receipt.reasoningFetched === false
+                ? 'Open this receipt to read its reasoning.'
+                : 'The reasoning is unavailable. Verification is pending.'))}
         </Type>
         <View
           style={{ borderBottomWidth: 1, borderStyle: 'dashed', borderColor: colors.paperLine }}
@@ -135,8 +146,12 @@ export function ReceiptPaper({
           {verification?.label ??
             (receipt.status === 'PAUSED'
               ? 'Leash pulled · trading stopped'
-              : 'Open to check the onchain fingerprint')}
-          {detail?.decision.usedSlack ? '\nTemporary slack used · expires on its own' : ''}
+              : receipt.reasoningFetched === false
+                ? 'Open receipt to verify its fingerprint'
+                : 'Verification pending · reasoning unavailable')}
+          {(detail?.decision.usedSlack ?? receipt.usedSlack)
+            ? '\nTemporary slack used · expires on its own'
+            : ''}
         </Type>
       </View>
       <Svg width="100%" height={8} viewBox="0 0 400 8" preserveAspectRatio="none">

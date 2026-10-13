@@ -6,17 +6,23 @@ import { Icon } from '../components/Icon';
 import { colors } from '../theme';
 import { useSession } from '../lib/session';
 import { useAction } from '../lib/useAction';
-import { config, isTestnet } from '../lib/config';
+import { config } from '../lib/config';
 import { validAmount } from '../lib/money';
 import { requireBindings } from '../integration/team';
 import { signPrepared } from '../lib/actions';
 import { demoStore } from '../mocks/store';
-import { useRisk } from '../lib/queries';
+import { useRisk, useApiHealth } from '../lib/queries';
 import type { TxRequest } from '../lib/schemas';
 export default function PerplSetup() {
   const { account } = useSession();
   const action = useAction(),
     query = useRisk();
+  const health = useApiHealth();
+  const paper =
+    !config.useMocks &&
+    config.chainId === 10143 &&
+    health.data?.chainId === config.chainId &&
+    health.data.live === false;
   const [amount, setAmount] = useState('25');
   const [depositDone, setDepositDone] = useState(false);
   const [keyDone, setKeyDone] = useState(false);
@@ -94,7 +100,7 @@ export default function PerplSetup() {
                   : 'Deposit with Face ID'
           }
           icon="face"
-          disabled={depositDone || !validAmount(amount, 25) || !account}
+          disabled={depositDone || !validAmount(amount, 25) || !account || paper}
           loading={action.busy}
           onPress={() => void deposit()}
         />
@@ -126,7 +132,7 @@ export default function PerplSetup() {
                 : 'Authorize with Face ID'
           }
           icon="shield"
-          disabled={!depositDone || keyDone}
+          disabled={!depositDone || keyDone || paper}
           loading={action.busy}
           onPress={() =>
             void action.run(
@@ -156,17 +162,18 @@ export default function PerplSetup() {
           {query.data ? `$${Number(query.data.collateralUsd).toFixed(2)}` : '—'}
         </Type>
       </Row>
-      {isTestnet && !config.useMocks && (
+      {paper && (
         <Card style={{ marginTop: 4, gap: 8 }}>
           <Label>Monad testnet · paper trading</Label>
           <Type color={colors.muted} style={{ fontSize: 12, lineHeight: 20 }}>
-            Perpl testnet collateral (AUSD) isn&apos;t available yet, so deposits and the exchange key are skipped. Your
-            trader still decides on live Perpl prices, every decision is checked by your rules and receipted onchain,
-            and orders are simulated (paper) until collateral exists.
+            Perpl testnet collateral (AUSD) isn&apos;t available yet, so deposits and the exchange
+            key are skipped. Your trader still decides on live Perpl prices, every decision is
+            checked by your rules and receipted onchain, and orders are simulated (paper) until
+            collateral exists.
           </Type>
         </Card>
       )}
-      {(keyDone || (isTestnet && !config.useMocks)) && (
+      {(keyDone || paper) && (
         <Button label="Write my rules" icon="arrow" onPress={() => router.push('/rules')} />
       )}
       <View style={{ marginTop: 15 }}>

@@ -42,7 +42,7 @@ Blockers outside Face: passkey RP domain (team decision; then `assetlinks.json` 
   - `https://leash-brain-api.onrender.com/.well-known/assetlinks.json` (package `app.leash.mobile`, relations `get_login_creds` + `handle_all_urls`)
   - `https://leash-brain-api.onrender.com/.well-known/apple-app-site-association` (`webcredentials` → `<TEAM_ID>.app.leash.mobile`)
   They return 404 until Deep sends: **Android signing SHA-256** (`cd apps/mobile/android && ./gradlew signingReport`, debug is fine for the
-  emulator; colon-separated) and, for iPhone, the **Apple Team ID** (paid Apple Developer account). Prem sets them on Fly
+  emulator; colon-separated) and, for iPhone, the **Apple Team ID** (paid Apple Developer account). Prem sets them on Render
   (`ANDROID_CERT_SHA256`, `APPLE_TEAM_ID`: public identifiers) and they go live after a restart.
 - Then rebuild the native app (associated domains are baked in at build time).
 
