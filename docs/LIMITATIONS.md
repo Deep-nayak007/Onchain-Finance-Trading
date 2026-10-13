@@ -68,6 +68,12 @@ Updated 2026-10-12. Everything below sits behind an interface, so the real thing
   to 143 and fills `LEASH.mainnet` in `addresses.ts`; re-point persona-wallet Privy policies to chain 143; fund agent/persona/
   referee/gas-tank wallets; gateway with `CHAIN_ID=143`; Face sets `EXPO_PUBLIC_CHAIN_ID=143`. No code changes. Proven on mainnet so
   far: Kuru market params read live on 143; Perpl mainnet exchange/collateral + ERC-8004 bytecode checked (Rails).
+- **Envio (indexer)**: not yet hosted. Envio Cloud needs Rails to (1) grant the Envio Deployments GitHub app on the transferred
+  repo `yashpy/Onchain-Finance-Trading` and (2) keep all indexer imports inside `indexer/` (config.yaml reads `../packages/shared/abis`).
+  Self-hosting on Fly was prepared (`indexer/deploy/`) but the Fly trial blocks more apps. Until then `/traders` has no stats and the
+  Referee watches `REFEREE_WATCH` instead of all active mandates; receipts still verify via the API + chain.
+- **Gateway staleness**: `STALE_BLOCKS_MAX=50` (~20s). The default 20 (~8s at 0.4s blocks) flapped `ok:false` under the gateway's 20 req/s
+  RPC throttle, which would have caused false Referee stale-pauses and refused executes.
 - **Live Perpl orders on testnet**: need ≥ 100 testnet AUSD (no public faucet found) in an account owned by the agent trade key, plus
   Rails' gateway. Perpl's real "can't withdraw" mechanism is its API keys (mainnet design); the gateway path uses an owned demo account.
 - **Kuru on testnet**: only the BUY side has liquidity and Kuru's testnet USDC has no public faucet → quotes/tx-building only.

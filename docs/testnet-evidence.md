@@ -52,3 +52,11 @@ Steps 4 and 6 used the token-guarded paper `POST /demo/intent` (`model = "manual
 and the LLM (correctly) holds; the checker, receipt, slack and execution path is identical to an LLM decision.
 Not done (blocked): live Perpl order (`LIVE=true`) needs ≥ 100 testnet AUSD + Rails' gateway; real Kuru swap needs Kuru's testnet USDC
 (see docs/testnet-feasibility.md).
+
+## Run 3: real Perpl gateway on testnet (2026-10-12 evening)
+Brain API now uses `https://leash-perpl-gateway.fly.dev` (Rails' gateway): markets + `/risk` come from the gateway's live Perpl
+snapshot. Paper intent for the demo user → **EXECUTED (paper)**, snapshot mark **$0.02459** from the gateway, receipt confirmed
+**1033 ms** after the decision, `GET /receipts/:reasonHash` → ✓ with `@leash/shared/canonical`:
+reasonHash `0xd4ccad748eb04b4624f665f86c3efcf150a88887d9ceed8721456918075e8483` ·
+[https://testnet.monadvision.com/tx/0xc7412d7885eb55be7ac168e6b5106331fa62e140e67b7a40d9b4074b2369864b](https://testnet.monadvision.com/tx/0xc7412d7885eb55be7ac168e6b5106331fa62e140e67b7a40d9b4074b2369864b)
+Referee `--once` against the deployed gateway's `/risk`: `ok` (weekly 0% vs −5% limit).
