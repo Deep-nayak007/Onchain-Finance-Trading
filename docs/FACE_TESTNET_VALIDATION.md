@@ -1,6 +1,6 @@
 # Current Face service check — October 13, 2026 (Phoenix)
 
-Main `c455393` is incorporated into Face. A GitHub push, a deployed web bundle, and a healthy service are separate checks. The website is still built from main; Face changes require a merge to publish.
+Main `9e10b70` is incorporated into Face, including the latest tunnel pointer rotations; application/service code is unchanged from `c455393`. A GitHub push, a deployed web bundle, and a healthy service are separate checks. The website is still built from main; Face changes require a merge to publish.
 
 | Check | Current result |
 |---|---|
