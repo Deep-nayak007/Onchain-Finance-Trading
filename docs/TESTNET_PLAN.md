@@ -6,7 +6,12 @@ Brain status: API live at `https://leash-brain-api.fly.dev` (chain 10143, paper)
 ## Status (2026-10-12, evening)
 - ✅ **Gateway live on testnet**: `https://leash-perpl-gateway.fly.dev` (Brain hosted Rails' code on Fly; deploy file only, logic untouched).
   Wired into the Brain API (`GATEWAY_URL`). Health ok, 15 perps, deep MON book, real `/risk`.
-- ⏳ **Envio**: Envio Cloud via Rails (checklist below). Self-host on Fly blocked by the trial (files in `indexer/deploy/`).
+- ✅ **Indexer is Envio-Cloud-ready** on branch `envio` (c0450de): ABIs inside `indexer/`, Kuru testnet market, persona wallets,
+  BigDecimal fix; verified locally against testnet. ⏳ Remaining: the GitHub-app grant + Envio Cloud indexer (needs the repo owner's login).
+- ✅ **ERC-8004 on testnet**: Falcon #2227, Otter #2228, Owl #2229 on IdentityRegistry `0x8004A818…BD9e`; agentURI served by the Brain API
+  (`/agents/<persona>.json`). In `addresses.ts` PERSONAS.
+- ℹ️ Rails also runs a **mainnet** gateway on Render (`https://leash-gateway.onrender.com`, `SERVICES.gatewayUrlMainnet`).
+- ⏳ **Perpl testnet AUSD** (~150) from the Perpl team for a live order.
 
 ## Rails (Yadnesh)
 1. ✅ **DONE by Brain** (`https://leash-perpl-gateway.fly.dev`, `services/perpl-gateway/fly.toml`, STALE_BLOCKS_MAX=50). Original spec, for reference:

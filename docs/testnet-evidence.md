@@ -60,3 +60,11 @@ snapshot. Paper intent for the demo user → **EXECUTED (paper)**, snapshot mark
 reasonHash `0xd4ccad748eb04b4624f665f86c3efcf150a88887d9ceed8721456918075e8483` ·
 [https://testnet.monadvision.com/tx/0xc7412d7885eb55be7ac168e6b5106331fa62e140e67b7a40d9b4074b2369864b](https://testnet.monadvision.com/tx/0xc7412d7885eb55be7ac168e6b5106331fa62e140e67b7a40d9b4074b2369864b)
 Referee `--once` against the deployed gateway's `/risk`: `ok` (weekly 0% vs −5% limit).
+
+## ERC-8004 identities on testnet (2026-10-12)
+Registered on IdentityRegistry `0x8004A818BFB912233c491871b3d84c89A494BD9e` by the gas tank, agentURI served by the Brain API:
+| Persona | agentId | Register tx | Card |
+|---|---|---|---|
+| Falcon | 2227 | [https://testnet.monadvision.com/tx/0x954b8e92…005c](https://testnet.monadvision.com/tx/0x954b8e92ecbaf4fc866a5d02c15eabd88a133d6c802ecca4be8b8c3652a3005c) | https://leash-brain-api.fly.dev/agents/falcon.json |
+| Otter | 2228 | [https://testnet.monadvision.com/tx/0x0052a0a6…4140](https://testnet.monadvision.com/tx/0x0052a0a606a2133dcb47d3e13eadd68481591ba95b9b0c87e655b9a4876d4140) | https://leash-brain-api.fly.dev/agents/otter.json |
+| Owl | 2229 | [https://testnet.monadvision.com/tx/0xa366ba97…5467](https://testnet.monadvision.com/tx/0xa366ba97890e107dbb572ea090913d08245e584b1b2cbb2974eb14ad47065467) | https://leash-brain-api.fly.dev/agents/owl.json |

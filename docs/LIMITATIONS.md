@@ -68,7 +68,7 @@ Updated 2026-10-12. Everything below sits behind an interface, so the real thing
   to 143 and fills `LEASH.mainnet` in `addresses.ts`; re-point persona-wallet Privy policies to chain 143; fund agent/persona/
   referee/gas-tank wallets; gateway with `CHAIN_ID=143`; Face sets `EXPO_PUBLIC_CHAIN_ID=143`. No code changes. Proven on mainnet so
   far: Kuru market params read live on 143; Perpl mainnet exchange/collateral + ERC-8004 bytecode checked (Rails).
-- **Envio (indexer)**: not yet hosted. Envio Cloud needs Rails to (1) grant the Envio Deployments GitHub app on the transferred
+- **Envio (indexer)**: code is Envio-Cloud-ready (branch `envio`, verified locally); not yet hosted. Envio Cloud needs (1) the repo owner to grant the Envio Deployments GitHub app on the transferred
   repo `yashpy/Onchain-Finance-Trading` and (2) keep all indexer imports inside `indexer/` (config.yaml reads `../packages/shared/abis`).
   Self-hosting on Fly was prepared (`indexer/deploy/`) but the Fly trial blocks more apps. Until then `/traders` has no stats and the
   Referee watches `REFEREE_WATCH` instead of all active mandates; receipts still verify via the API + chain.
