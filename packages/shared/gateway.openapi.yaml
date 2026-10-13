@@ -325,7 +325,11 @@ components:
         tradeKey:
           type: string
           description: Alias of keyAddress, kept for backward compatibility.
-        enrollment: { $ref: "#/components/schemas/TxRequest" }
+        enrollment:
+          description: null while the Perpl enrollment payload (Q1) is pending; the key is still created
+          oneOf:
+            - { $ref: "#/components/schemas/TxRequest" }
+            - { type: "null" }
     Ack:
       type: object
       required: [ok]

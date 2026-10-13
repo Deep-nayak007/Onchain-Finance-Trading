@@ -160,7 +160,9 @@ pub struct KeyPrepareResult {
     #[serde(rename = "tradeKey")]
     pub trade_key: String,
     /// Enrollment payload the user signs to authorize the trade-only key (Q1).
-    pub enrollment: TxRequest,
+    /// `null` while the enrollment format is pending: the key itself is still created and returned,
+    /// so the mandate can bind `perplKey` (paper mode / until Q1 lands).
+    pub enrollment: Option<TxRequest>,
 }
 
 #[derive(Serialize)]

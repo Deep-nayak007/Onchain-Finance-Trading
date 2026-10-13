@@ -202,7 +202,14 @@ pub async fn keys_prepare(
         st.keys.get_or_create(&req.account).map_err(GatewayError::from)?;
     // Re-enable a previously-disabled key on fresh enrollment.
     st.store.set_disabled(&req.account, false)?;
-    let enrollment = perpl::prepare_key_enrollment(&st, &req.account, trade_key)?;
+    // Enrollment is optional until Q1 is confirmed: never fail the key itself on it.
+    let enrollment = match perpl::prepare_key_enrollment(&st, &req.account, trade_key) {
+        Ok(tx) => Some(tx),
+        Err(e) => {
+            tracing::warn!("keys/prepare: enrollment unavailable ({e:?}); returning key only");
+            None
+        }
+    };
     let addr = format!("{trade_key:#x}");
     Ok(Json(KeyPrepareResult {
         key_address: addr.clone(),
