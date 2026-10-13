@@ -64,3 +64,34 @@ services:
         value: /tmp/keystore
       - key: GATEWAY_DB_PATH
         value: /tmp/gateway.sqlite
+
+  # Web front end: Face's Expo app exported for the browser (static, free). Demo mode = clearly labelled sample data,
+  # every screen/flow clickable. Live mode needs passkeys on the permanent RP domain + Face's integration/team.ts.
+  - type: web
+    name: leash-app
+    runtime: static
+    branch: main
+    buildCommand: npm install --no-audit --no-fund && cd apps/mobile && npx expo export --platform web
+    staticPublishPath: apps/mobile/dist
+    buildFilter:
+      paths:
+        - apps/mobile/**
+        - packages/shared/**
+        - deploy/render.testnet.yaml
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: EXPO_PUBLIC_USE_MOCKS
+        value: "true"
+      - key: EXPO_PUBLIC_CHAIN_ID
+        value: "10143"
+      - key: EXPO_PUBLIC_RPC_URL
+        value: https://testnet-rpc.monad.xyz
+      - key: EXPO_PUBLIC_API_URL
+        value: https://leash-brain-api.onrender.com
+      - key: EXPO_PUBLIC_GATEWAY_URL
+        value: https://leash-perpl-gateway-testnet.onrender.com
