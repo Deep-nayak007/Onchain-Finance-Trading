@@ -1,0 +1,25 @@
+# Deploy file (added by Brain; indexer logic untouched). Runs `envio start` against the self-hosted Postgres + Hasura.
+# Build context is the REPO ROOT because config.yaml reads ../packages/shared/abis/*.json:
+#   fly deploy . --config indexer/deploy/fly.indexer.toml
+# Secrets (set via fly, never committed): DATABASE_URL (fly postgres attach), HASURA_GRAPHQL_ADMIN_SECRET.
+app = "leash-envio-indexer"
+primary_region = "lax"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  # Env names from Envio's local-docker-example + packages/envio/src/Env.res
+  HASURA_GRAPHQL_ENDPOINT = "https://leash-envio-graphql.fly.dev/v1/metadata"
+  HASURA_GRAPHQL_ROLE = "admin"
+  ENVIO_PG_PUBLIC_SCHEMA = "public"
+  ENVIO_INDEXER_HOST = "0.0.0.0"
+  ENVIO_INDEXER_PORT = "9898"
+  CONFIG_FILE = "config.yaml"
+  LOG_LEVEL = "info"
+  LOG_STRATEGY = "console-plain"
+  TUI_OFF = "true"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "1gb"
