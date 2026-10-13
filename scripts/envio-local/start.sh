@@ -41,4 +41,9 @@ nohup cloudflared tunnel --no-autoupdate --url http://localhost:8090 > "$LOGS/tu
 for _ in $(seq 1 60); do URL=$(grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' "$LOGS/tunnel.log" | head -1 || true); [ -n "$URL" ] && break; sleep 1; done
 [ -n "${URL:-}" ] || { echo "tunnel did not start (see $LOGS/tunnel.log)"; exit 1; }
 echo "$URL/v1/graphql" > "$LOGS/ENVIO_URL"
+echo "$URL/v1/graphql" > "$ROOT/deploy/envio-url.txt"
 echo "ENVIO_URL=$URL/v1/graphql"
+"$ROOT/scripts/envio-local/publish-url.sh" "$URL/v1/graphql" || echo "(could not publish pointer; run publish-url.sh manually)"
+pkill -f "scripts/envio-local/watch.sh" 2>/dev/null || true
+nohup "$ROOT/scripts/envio-local/watch.sh" > "$LOGS/watch.log" 2>&1 &
+echo "watchdog running (log: $LOGS/watch.log)"

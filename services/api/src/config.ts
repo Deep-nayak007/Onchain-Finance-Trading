@@ -38,6 +38,8 @@ export const ConfigSchema = z.object({
   NANSEN_DAILY_CALLS: num(10),
   GATEWAY_URL: opt,
   ENVIO_URL: opt,
+  /** One-line file with the current Envio URL (rotated by commit when the tunnel changes). Empty string disables. */
+  ENVIO_URL_POINTER: z.string().default("https://raw.githubusercontent.com/yashpy/Onchain-Finance-Trading/main/deploy/envio-url.txt"),
   TENDERLY_ACCESS_KEY: opt,
   LIVE: bool,
   MAX_ORDER_USD: num(25),
