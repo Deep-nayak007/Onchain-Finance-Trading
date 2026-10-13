@@ -10,7 +10,10 @@ export async function envioEndpoint(): Promise<string> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 5000);
     try {
-      const response = await fetch(config.envioUrlPointer, { signal: controller.signal });
+      const response = await fetch(config.envioUrlPointer, {
+        signal: controller.signal,
+        cache: 'no-store',
+      });
       const text = response.ok ? (await response.text()).trim() : '';
       if (/^https:\/\/[a-z0-9.-]+\/v1\/graphql$/i.test(text)) {
         pointed = { url: text, at: Date.now() };
@@ -46,6 +49,14 @@ export async function queryEnvio<T>(
         'The indexer sent data this app cannot read. Ask Rails to check the shared queries.',
       );
     return parsed.data;
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError')
+      throw new Error('The history service took too long to respond. Refresh after it reconnects.');
+    if (error instanceof TypeError)
+      throw new Error(
+        'The history service could not be reached. Refresh after the team restores it.',
+      );
+    throw error;
   } finally {
     clearTimeout(timer);
   }

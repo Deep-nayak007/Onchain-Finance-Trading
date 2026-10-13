@@ -48,6 +48,8 @@ export default function Spot() {
     action.clear();
   };
   const valid = validAmount(amount, config.useMocks && direction === 'SELL' ? 500 : 25);
+  const noLiquidity =
+    !!book.data && (direction === 'BUY' ? book.data.asks : book.data.bids).length === 0;
   return (
     <Screen
       title="A simple swap."
@@ -121,7 +123,7 @@ export default function Spot() {
           variant="secondary"
           icon="refresh"
           loading={action.busy}
-          disabled={!valid || !account}
+          disabled={!valid || !account || noLiquidity}
           onPress={() =>
             void action.run(async () => {
               const next = config.useMocks
@@ -139,6 +141,16 @@ export default function Spot() {
             })
           }
         />
+        {noLiquidity && (
+          <Message
+            tone="info"
+            text={
+              direction === 'SELL'
+                ? 'No buyers are available in this Kuru market. Selling will be available when bids return.'
+                : 'No sellers are available in this Kuru market. Buying will be available when asks return.'
+            }
+          />
+        )}
         {quote && (
           <Button
             label={config.useMocks ? 'Confirm demo swap' : 'Swap with Face ID'}

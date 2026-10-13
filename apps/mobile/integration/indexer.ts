@@ -24,8 +24,12 @@ const rowSchema = z.object({
   txHash: hashSchema,
 });
 const responseSchema = z.object({ Receipt: z.array(rowSchema) });
-async function view(row: z.infer<typeof rowSchema>, account?: Address): Promise<IndexedReceipt> {
-  const detail = await api.receipt(row.reasonHash);
+async function view(
+  row: z.infer<typeof rowSchema>,
+  account?: Address,
+  includeDetail = true,
+): Promise<IndexedReceipt> {
+  const detail = includeDetail ? await api.receipt(row.reasonHash) : null;
   const seq = Number(row.seq);
   if (!Number.isSafeInteger(seq)) throw new Error('Receipt sequence is out of range.');
   return {
@@ -48,6 +52,7 @@ async function view(row: z.infer<typeof rowSchema>, account?: Address): Promise<
     proofTxHash: row.txHash,
     anchorSource: 'envio',
     detail: detail ?? undefined,
+    reasoningFetched: includeDetail,
   };
 }
 export async function readIndexedReceipt(
@@ -66,12 +71,17 @@ export async function readIndexedReceipt(
     throw new Error('The indexed receipt belongs to another account or fingerprint.');
   return view(row);
 }
-export async function readIndexedFeed(account: Address): Promise<IndexedReceipt[]> {
+export async function readIndexedFeed(
+  account: Address,
+  options: { limit?: number; includeDetails?: boolean } = {},
+): Promise<IndexedReceipt[]> {
   const result = await queryEnvio(feedByUserQuery, responseSchema, {
     user: account.toLowerCase(),
-    limit: 50,
+    limit: options.limit ?? 50,
   });
-  return Promise.all(result.Receipt.map((row) => view(row, account)));
+  return Promise.all(
+    result.Receipt.map((row) => view(row, account, options.includeDetails ?? true)),
+  );
 }
 export async function readIndexedPnl(agentId: string): Promise<number[]> {
   const result = await queryEnvio(
@@ -84,4 +94,15 @@ export async function readIndexedPnl(agentId: string): Promise<number[]> {
     { agentId },
   );
   return result.PnlSnapshot.map((row) => Number(row.cumulativeRealizedUsd));
+}
+// Public identity receipts span user wallets as well as the persona's shadow wallet.
+// Uses the same Receipt fields as shared queries; the deployed numeric filter was checked live.
+export async function readIndexedTraderFeed(agentId: string): Promise<IndexedReceipt[]> {
+  if (!/^[1-9]\d*$/.test(agentId)) throw new Error('This trader has no registered identity yet.');
+  const result = await queryEnvio(
+    `query TraderReceipts($agentId: numeric!) { Receipt(where: { agentId: { _eq: $agentId } }, order_by: { blockTimestamp: desc }, limit: 10) { user_id ${fields} } }`,
+    responseSchema,
+    { agentId },
+  );
+  return Promise.all(result.Receipt.map((row) => view(row, undefined, false)));
 }

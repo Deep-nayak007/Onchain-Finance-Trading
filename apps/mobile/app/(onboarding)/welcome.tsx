@@ -96,6 +96,14 @@ export default function Welcome() {
       {!config.useMocks && config.chainId === 10143 && (
         <Button
           variant="secondary"
+          label="Explore the live demo"
+          icon="arrow"
+          onPress={() => router.push('/live-demo')}
+        />
+      )}
+      {!config.useMocks && config.chainId === 10143 && (
+        <Button
+          variant="secondary"
           label="Check the testnet receipt"
           icon="receipt"
           onPress={() =>

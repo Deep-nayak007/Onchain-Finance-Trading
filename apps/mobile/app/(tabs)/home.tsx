@@ -23,7 +23,12 @@ import { colors } from '../../theme';
 import { useRisk, useStatus, useReceipts, useSlack, usePolicy } from '../../lib/queries';
 import { useSession } from '../../lib/session';
 import { useAction } from '../../lib/useAction';
-import { pullLeash, resumeTrader, retryConfirmedCallback } from '../../lib/actions';
+import {
+  pullLeash,
+  resumeTrader,
+  retryConfirmedCallback,
+  reconnectTrader,
+} from '../../lib/actions';
 import { dollars, percent } from '../../lib/money';
 import { envio } from '../../lib/envio';
 import { config } from '../../lib/config';
@@ -80,9 +85,11 @@ export default function Home() {
                 ? 'PAUSED'
                 : active
                   ? 'ON A LEASH'
-                  : status.data?.state === 'NOT_STARTED'
-                    ? 'SET RULES'
-                    : 'CONNECTING'
+                  : status.data?.state === 'RECOVERY_REQUIRED'
+                    ? 'RECONNECT'
+                    : status.data?.state === 'NOT_STARTED'
+                      ? 'SET RULES'
+                      : 'CONNECTING'
             }
             color={paused || !active ? colors.rope : colors.ok}
           />
@@ -112,7 +119,9 @@ export default function Home() {
               <Type color={colors.muted} style={{ fontSize: 11, lineHeight: 17 }}>
                 {paused
                   ? 'Waiting for you. Only you can resume.'
-                  : 'Room to trade. Bound by your rules.'}
+                  : active
+                    ? 'Room to trade. Bound by your rules.'
+                    : 'Set your rules or reconnect your trader to start.'}
               </Type>
             </View>
           </Row>
@@ -208,6 +217,22 @@ export default function Home() {
         )}
       </View>
       <Message text={action.error} />
+      {!config.useMocks && status.data?.state === 'RECOVERY_REQUIRED' && (
+        <>
+          <Message
+            tone="info"
+            text="Your rules are onchain, but Brain has no current trader record. Reconnect using your saved rules; Brain verifies their onchain hash."
+          />
+          <Button
+            label="Reconnect my trader"
+            variant="secondary"
+            loading={action.busy}
+            onPress={() =>
+              void action.run(() => reconnectTrader(account!), 'Your trader reconnected.')
+            }
+          />
+        </>
+      )}
       {action.pending && (
         <Button
           variant="secondary"

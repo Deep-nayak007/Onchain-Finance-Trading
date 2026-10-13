@@ -11,7 +11,7 @@ import {
   type Hex,
 } from 'viem';
 import { leverageToX10, toUsd6 } from '@leash/shared';
-import { LEASH, PERPL, PERPL_TESTNET } from '@leash/shared/addresses';
+import { PERPL, PERPL_TESTNET } from '@leash/shared/addresses';
 import { mandateRegistryAbi } from '@leash/shared/abis';
 import { prepareTxRequest, sendTx } from '@leash/shared/sendTx';
 import { canonicalJSON } from '@leash/shared/canonical';
@@ -25,18 +25,9 @@ import { spotPrepareSchema, txRequestSchema } from '../lib/schemas';
 import { readIndexedFeed, readIndexedPnl, readIndexedReceipt } from './indexer';
 import { readReceiptProof } from './receiptProof';
 import { testnetHandoff } from './testnet';
+import { registryAddress } from '../lib/mandate';
 import type { TeamBindings } from './team';
 
-async function registryAddress(): Promise<Address> {
-  requireConfiguredChain(await publicClient.getChainId());
-  const deployment = config.chainId === 10143 ? LEASH.testnet : LEASH.mainnet;
-  if (!deployment.mandateRegistry.address)
-    throw new Error('MandateRegistry is not deployed on this network.');
-  const address = deployment.mandateRegistry.address;
-  const bytecode = await publicClient.getBytecode({ address });
-  if (!bytecode || bytecode === '0x') throw new Error('The registry has no deployed code.');
-  return address;
-}
 async function backendRegistry(): Promise<Address> {
   const backend = await api.configuration();
   requireConfiguredChain(backend.chainId);

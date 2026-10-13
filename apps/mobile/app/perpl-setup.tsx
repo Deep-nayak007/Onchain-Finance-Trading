@@ -100,7 +100,7 @@ export default function PerplSetup() {
                   : 'Deposit with Face ID'
           }
           icon="face"
-          disabled={depositDone || !validAmount(amount, 25) || !account}
+          disabled={depositDone || !validAmount(amount, 25) || !account || paper}
           loading={action.busy}
           onPress={() => void deposit()}
         />
@@ -132,7 +132,7 @@ export default function PerplSetup() {
                 : 'Authorize with Face ID'
           }
           icon="shield"
-          disabled={!depositDone || keyDone}
+          disabled={!depositDone || keyDone || paper}
           loading={action.busy}
           onPress={() =>
             void action.run(

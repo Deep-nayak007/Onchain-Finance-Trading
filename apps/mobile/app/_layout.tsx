@@ -96,6 +96,7 @@ export default function RootLayout() {
                   <Stack.Screen name="dev/components" />
                   <Stack.Screen name="dev/mocks" />
                   <Stack.Screen name="dev/services" />
+                  <Stack.Screen name="live-demo" />
                 </Stack>
               )}
               <TransactionReview />

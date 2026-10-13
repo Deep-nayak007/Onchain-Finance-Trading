@@ -108,6 +108,8 @@ The Face lane is an Expo React Native app for iOS, Android, and a browser previe
 
 For the deployed Brain API on **Monad testnet (10143), paper mode**:
 
+Face's **Explore the live demo** opens public market data, trader identities, demo risk and receipts without a wallet. It is a read-only view; set up your own passkey for rules, slack and pause/resume. On October 13 the current Envio tunnel could not be reached and Brain's published receipt reasoning returned 404. Those service gaps are documented in [current validation](docs/FACE_TESTNET_VALIDATION.md). The website deploys from main, so additions on face appear after that branch is merged.
+
 ```sh
 npm install
 npm run testnet:ios

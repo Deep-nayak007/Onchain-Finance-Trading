@@ -16,6 +16,7 @@ pub enum Code {
     BadRequest,
     Upstream,
     Internal,
+    Unauthorized,
 }
 
 impl Code {
@@ -31,6 +32,7 @@ impl Code {
             Code::BadRequest => "BAD_REQUEST",
             Code::Upstream => "UPSTREAM_ERROR",
             Code::Internal => "INTERNAL_ERROR",
+            Code::Unauthorized => "UNAUTHORIZED",
         }
     }
 
@@ -45,6 +47,7 @@ impl Code {
             Code::BadRequest => StatusCode::BAD_REQUEST,
             Code::Upstream => StatusCode::BAD_GATEWAY,
             Code::Internal => StatusCode::INTERNAL_SERVER_ERROR,
+            Code::Unauthorized => StatusCode::UNAUTHORIZED,
         }
     }
 }

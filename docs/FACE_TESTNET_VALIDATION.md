@@ -1,4 +1,32 @@
-# Current Face service check — October 12, 2026
+# Current Face service check — October 13, 2026 (Phoenix)
+
+Main `c455393` is incorporated into Face. A GitHub push, a deployed web bundle, and a healthy service are separate checks. The website is still built from main; Face changes require a merge to publish.
+
+| Check | Current result |
+|---|---|
+| Mobile TypeScript and unit tests | Pass, **38 tests**, including saved-policy integrity and onchain pause/recovery when Brain loses a record |
+| Latest Brain tests | **70 pass**, one live Privy integration test deliberately skipped; tested c455393 in the isolated backend checkout |
+| Rust gateway | Locked compilation succeeds with installed Rust 1.95.0; crate defines **zero tests** |
+| Hosted app / Brain / gateway | HTTP 200; Brain reports testnet 10143 and `live:false`; gateway cache healthy |
+| Kuru BUY preparation | 200; two unsigned chain-10143 transactions, nonzero minimum output; no swap submitted |
+| Live rule compile / mandate preparation | Pass on the existing disposable test account: Falcon #2227, ready wallet/key, no warnings, matching policy hash and unsigned setMandate with explicit gas 147531 |
+| Kuru SELL preparation | **409**, clear no-bids response; no buyers in the live book. This fixes the previous 500 but does not create liquidity |
+| Envio | **Intermittent**: initial checks failed with ENOTFOUND; later pointer-based retries recovered indexed receipts and trader counters. The team pushed several tunnel URL rotations during this check |
+| Receipt reasoning | Old handoff and latest shadow reason hash `0xde1643…ddc3b` return **404**; indexed commitments remain available |
+| Demo agent status | **404 unknown account** after hosting restart; the onchain mandate is independently readable |
+| Android native association | **404 not configured**; physical native biometrics/signing remain unverified |
+
+Face adds **Explore the live demo** on Welcome, with real Perpl/Kuru market reads, persona identities/counters, demo-account risk and public receipt browsing. It does not log into the team's demo wallet. Missing history is shown with retry; the known paper receipt can still be read through its confirmed RPC transaction. There is no sample fallback or invented verification.
+
+Paper-mode deposits/manual exchange orders and quotes for an empty book side are disabled with explanations. Saved browser policies are validated and hash-bound; onchain pause state remains visible after a Brain restart. Reconnecting a trader is an explicit action and Brain accepts the policy only if its hash matches the mandate. Read-only status polling never silently activates a trader. Native rule recovery currently keeps the non-secret policy for the session; browser storage persists it.
+
+Production web and iOS/Hermes exports succeed. The complete offline sample smoke passes with zero external requests. A production Face browser candidate, served locally under the intended web origin, passes public live markets/identities/risk/receipts, virtual PRF passkey creation, new-user status, paper setup/rules navigation, disabled exchange orders and live Kuru BUY/no-bids SELL behavior with no runtime errors. A simulated Envio outage still renders the actual confirmed RPC receipt and pending reasoning. These checks establish UI/build behavior, not a physical Face ID ceremony or funded trade. No gas drip, signature, activation, deposit, exchange order or swap was submitted. The gateway deposit preparation still returns its documented 400 stub. Capture: `artifacts/screenshots/web/10-live-demo.png`.
+
+Remaining service work: restore Envio with a reachable URL, persist full receipt reasoning outside `/tmp/leash.db`, finish Perpl deposit/enrollment, and obtain funded test tokens/liquidity for real trading. The deployment's restart recovery can recover policy/wallet links; it cannot reconstruct vanished reasoning from a hash.
+
+One live compilation used the prior disposable test account `0x2635…B708` and can create its backend wallet/key records; it did not sign or activate. Public persona feeds filter by the actual registered agentId, so Falcon's receipts include its user-wallet decisions as well as shadow records.
+
+## Previous Face service check — October 12, 2026
 
 Latest GitHub main `67456c8` is merged into Face, including paper-mode onboarding, the browser passkey error message and new architecture/design documentation. Native RP migration to `leash-brain-api.onrender.com` was explicitly approved by Deep before any LEASH passkeys existed.
 

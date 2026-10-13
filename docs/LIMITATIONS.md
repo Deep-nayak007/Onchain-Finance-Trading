@@ -73,6 +73,13 @@ Updated 2026-10-12. Everything below sits behind an interface, so the real thing
   Password Manager). With iCloud Keychain the creation step may not return PRF, and browsers block the automatic follow-up
   prompt: tap "I already have a passkey" to unlock with a fresh tap. Perpl deposit/enrollment stay stubbed (no test AUSD), PnL
   series is empty (not indexed), Kuru testnet has no bids.
+- **Free hosting = ephemeral Brain disk** (`/tmp/leash.db`): a redeploy wipes the cache. Recovery without a paid DB: the agent
+  wallet is re-linked from Privy by the address in the onchain mandate, and the app re-sends its signed policy (accepted only
+  if it hashes to the onchain `policyHash`). Mandates and receipt commitments persist onchain, but complete reasoning and
+  local slack/drip records can be lost. A hash cannot reconstruct the reasoning; missing details remain unverified.
+- **Hardening (red-team, `services/api/scripts/e2e-live.ts`, 51 checks)**: per-IP rate limits on compile/drip/spot; `/agent/kill`
+  only after the onchain pause; gateway `/orders/execute` + `/keys/disable` require `x-gateway-token` (Render-generated, shared
+  via `fromService`); Envio proxy refuses mutations and hides the Hasura admin API; prompt injection in rules stays clamped.
 - **Envio Cloud blocked**: the indexer `leash-monad` exists on Envio Cloud (org prempagare07, repo `prempagare07/leash-indexer`)
   but Envio never receives the repo's push events (dashboard shows "GitHub app removed" even after reinstall; 0 commits). Until Envio
   support fixes it, the indexer is **self-hosted on Prem's Mac** behind a read-only proxy + Cloudflare quick tunnel (`scripts/envio-local`):
@@ -127,7 +134,10 @@ Updated 2026-10-12. Everything below sits behind an interface, so the real thing
 
 # LIMITATIONS — FACE lane
 
-Updated October 12, 2026 after merging main `67456c8` and checking the Render services. Current validation: [FACE_TESTNET_VALIDATION.md](FACE_TESTNET_VALIDATION.md).
+Updated October 13, 2026 with main `c455393` and fresh Render checks. Current validation: [FACE_TESTNET_VALIDATION.md](FACE_TESTNET_VALIDATION.md).
+
+- **Intermittent Envio outage:** October 13 checks initially returned ENOTFOUND at the hostname in `deploy/envio-url.txt`; later pointer-based retries recovered feeds and counters as the team rotated tunnel URLs. The tunnel/host is not a durable deployment. Face offers a public live-demo overview and bounded RPC proof for the known paper receipt; unavailable history is visibly retryable.
+- **Restart recovery:** saved browser policies are validated and accepted only against their onchain hash. Face reads onchain pause state after a status 404 and offers an explicit reconnect action; it does not silently start an agent while polling. Native policy caching is session-only. The public demo never controls the team's wallet.
 
 - The app imports Rails' shared gateway URLs by chain: testnet `leash-perpl-gateway-testnet.onrender.com`, mainnet `leash-gateway.onrender.com`. Live testnet markets, account risk, Perpl depth, Kuru SDK depth and Envio receipt metadata were checked. Free-instance wake-up can take about a minute; requests allow 90 seconds and the UI offers retry.
 - **Brain receipt reasoning is unavailable on Render:** both published hashes return 404, though their independent Envio/onchain records remain. Two recent shadow records also changed from 200 to 404 during the full retry, consistent with the ephemeral /tmp/leash.db deployment; persistent backend storage is required. Face retains feed rows and paper/slack metadata, shows pending verification and never invents reasoning, latency or a verification checkmark. The read-only cloud check intentionally exits 2 for this backend blocker. Prem was offline; no backend records were created or changed.
@@ -136,7 +146,7 @@ Updated October 12, 2026 after merging main `67456c8` and checking the Render se
 - `/keys/prepare` returns `keyAddress` and nullable `enrollment`; a null enrollment is handled as unavailable permission, never as successful authorization. Trade-only enrollment is still Q1. `/deposit/prepare` deliberately returns BAD_REQUEST upstream; this explains the Fund the Leash 400 and is not an app schema error. Perpl testnet account opening needs 100 test AUSD while this app's deposit demo remains capped at $25; live funding is not accepted. Mainnet LEASH contracts are absent and mainnet execution remains disabled upstream.
 - Onchain rules, slack, pause/resume and activation use actual shared ABIs, addresses, unit helpers and gas-explicit sender, with chain checks and confirmed callbacks. User pause preparation works directly against the deployed registry even when Brain is unavailable. Paper onboarding can now continue directly to rules when the matching API reports live:false. These flows still need real passkey signing and funded acceptance.
 - Full rules can now be retrieved from Brain `/policy/:account` after a restart and are displayed only when their canonical fingerprint matches both the response and current onchain mandate. Missing rules remain unavailable. Registered testnet ERC-8004 identities are #2227, #2228 and #2229; real fill-derived performance remains pending.
-- Kuru BUY depth/quotes are connected; testnet has no bids and no public USDC faucet. SELL quote preparation currently returns HTTP 500 with no bids; BUY preparation succeeds with a nonzero minimum. A funded real swap and signing remain untested. Paper receipts (`execTxHash:null`) never imply that an exchange trade was executed.
+- Kuru BUY depth/quotes are connected; testnet has no bids and no public USDC faucet. Latest deployed SELL preparation returns a clear HTTP 409; Face disables quotes when that side has no depth. BUY preparation succeeds with a nonzero minimum. A funded real swap and signing remain untested. Paper receipts (`execTxHash:null`) never imply that an exchange trade was executed. Perpl manual orders/deposits are disabled while the matching Brain reports paper mode.
 - Samples stay inside `apps/mobile/mocks`, reset on app reload and never become live proof. Sample orders/swaps illustrate flows. The sample compiler is deterministic and visibly labelled; sample hashes never show an onchain checkmark.
 - `ios:cached` avoids Apple File Provider framework-signing errors by building under `Library/Caches`. Its simulator development URL defaults to localhost to avoid the previous Tailscale-IP App Transport Security error. Generated native projects are ignored.
 - Runtime push delivery from a terminated physical app needs an EAS project and device testing. Polling remains available.

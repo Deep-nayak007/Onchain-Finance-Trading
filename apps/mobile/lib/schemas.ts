@@ -193,6 +193,7 @@ export type IndexedReceipt = {
   signalHash: string | null;
   createdAt: string;
   detail?: ReceiptDetail;
+  reasoningFetched?: boolean;
   pauseReason?: string;
 };
 export type TraderStats = {

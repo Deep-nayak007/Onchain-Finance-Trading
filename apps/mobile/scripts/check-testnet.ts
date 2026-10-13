@@ -46,42 +46,65 @@ async function main() {
     traders.map((p) => p.id),
     ['falcon', 'otter', 'owl'],
   );
-  const [gatewayHealth, markets, book, risk, spot, indexed] = await Promise.all([
-    gateway.health(),
-    gateway.markets(),
-    gateway.book('MON-PERP'),
-    gateway.risk('0xE7f1FFcC13C1384a2a1d7eaC19edF0F69e85f4FD'),
-    liveBindings.readSpotBook(),
-    readIndexedReceipt(null, testnetHandoff.reasonHash),
-  ]);
-  assert.equal(gatewayHealth.ok, true);
-  assertGatewayMarkets(markets, 10143);
-  assert.ok(book.bids.length || book.asks.length);
-  assert.equal(risk.account.toLowerCase(), '0xe7f1ffcc13c1384a2a1d7eac19edf0f69e85f4fd');
-  assert.ok(spot.bids.length || spot.asks.length);
-  assert.ok(indexed);
   console.log(`PASS: Render API + RPC chain 10143; paper mode; ${traders.length} personas.`);
-  console.log(
-    `PASS: shared testnet gateway; ${markets.length} markets; live MON-PERP book and account risk.`,
-  );
-  console.log(`PASS: Kuru SDK book; Envio indexed receipt #${indexed.seq}.`);
+  const checks = [
+    [
+      'Perpl gateway',
+      async () => {
+        const [gatewayHealth, markets, book, risk] = await Promise.all([
+          gateway.health(),
+          gateway.markets(),
+          gateway.book('MON-PERP'),
+          gateway.risk(testnetHandoff.account),
+        ]);
+        assert.equal(gatewayHealth.ok, true);
+        assertGatewayMarkets(markets, 10143);
+        assert.ok(book.bids.length || book.asks.length);
+        assert.equal(risk.account.toLowerCase(), testnetHandoff.account.toLowerCase());
+        return `${markets.length} markets; live MON-PERP book and account risk`;
+      },
+    ],
+    [
+      'Kuru book',
+      async () => {
+        const spot = await liveBindings.readSpotBook();
+        assert.ok(spot.bids.length || spot.asks.length);
+        return `${spot.bids.length} bids; ${spot.asks.length} asks`;
+      },
+    ],
+    [
+      'Envio receipt',
+      async () => {
+        const indexed = await readIndexedReceipt(null, testnetHandoff.reasonHash);
+        assert.ok(indexed);
+        return `indexed receipt #${indexed.seq}`;
+      },
+    ],
+  ] as const;
+  const outcomes = await Promise.allSettled(checks.map(([, run]) => run()));
+  let serviceFailed = false;
+  outcomes.forEach((result, i) => {
+    if (result.status === 'fulfilled') console.log(`PASS: ${checks[i]![0]}: ${result.value}.`);
+    else {
+      serviceFailed = true;
+      console.error(
+        `FAIL: ${checks[i]![0]}: ${result.reason instanceof Error ? result.reason.message : String(result.reason)}`,
+      );
+    }
+  });
   const proof = await readReceiptProof(
     testnetHandoff.reasonHash,
     testnetHandoff.receiptTxHash,
     detail,
   );
-  assert.equal(proof.reasonHash, indexed.reasonHash);
-  assert.equal(proof.signalHash, indexed.signalHash);
   assert.equal(proof.execTxHash, null);
   assert.equal(proof.usedSlack, true);
-  console.log(
-    'PASS: indexed anchors agree with the confirmed ReceiptLog transaction; paper + usedSlack.',
-  );
+  console.log('PASS: independent confirmed ReceiptLog transaction; paper + usedSlack.');
   if (!detail) {
     console.error(
       'BLOCKED: Brain returned 404 for receipt reasoning. Onchain metadata is available; full hash verification and latency cannot be checked. Ask Brain to restore its receipt data.',
     );
-    process.exitCode = 2;
+    process.exitCode = serviceFailed ? 1 : 2;
     return;
   }
   assert.equal(detail.execTxHash, null);
@@ -100,6 +123,7 @@ async function main() {
   console.log(
     `PASS: independent ReceiptLog proof; usedSlack; ${verification.latencyMs} ms; tampering rejected.`,
   );
+  if (serviceFailed) process.exitCode = 1;
 
   // Optional integration exercise: an ephemeral wallet, test MON only, no user signature or venue order.
   if (process.argv.includes('--exercise-wallet')) {

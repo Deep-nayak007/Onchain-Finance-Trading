@@ -107,3 +107,9 @@ export async function retryConfirmedCallback(pending: PendingCallback) {
     await requireBindings().resumeAgent(pending.account, pending.txHash);
   else await api.approveSlack(pending.id, pending.txHash);
 }
+export async function reconnectTrader(account: Address) {
+  const policy = await requireBindings().readPolicy(account);
+  if (!policy)
+    throw new Error('Your signed rules are unavailable. Review and sign your rules again to reconnect.');
+  return api.activate({ account });
+}

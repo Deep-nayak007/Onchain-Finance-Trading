@@ -59,6 +59,22 @@ export class Wallets {
     return row;
   }
 
+  /**
+   * Re-links a user's agent wallet after the local store was wiped (free hosting = ephemeral disk): the onchain
+   * mandate names the wallet address; Privy still holds it. Returns null when Privy has no such wallet.
+   */
+  async adopt(user: Address, persona: PersonaId, address: Address): Promise<WalletRow | null> {
+    const key = Wallets.userKey(user, persona);
+    const existing = this.store.getWallet(key);
+    if (existing) return existing;
+    const { privy } = this.need();
+    const w = await privy.findWalletByAddress(address);
+    if (!w) return null;
+    const row: WalletRow = { key, walletId: w.id, address: w.address as Address, policyId: w.policy_ids?.[0] ?? "" };
+    this.store.saveWallet(row);
+    return row;
+  }
+
   /** Kill switch: replace the wallet's policy with deny-all. */
   async denyAll(user: Address, persona: PersonaId): Promise<boolean> {
     const row = this.store.getWallet(Wallets.userKey(user, persona));

@@ -123,7 +123,9 @@ export function ReceiptPaper({
           {receipt.pauseReason
             ? `Paused by ${receipt.pauseReason}. Only you can resume.`
             : (detail?.intent.rationale ??
-              'The reasoning is unavailable. Verification is pending.')}
+              (receipt.reasoningFetched === false
+                ? 'Open this receipt to read its reasoning.'
+                : 'The reasoning is unavailable. Verification is pending.'))}
         </Type>
         <View
           style={{ borderBottomWidth: 1, borderStyle: 'dashed', borderColor: colors.paperLine }}
@@ -144,7 +146,9 @@ export function ReceiptPaper({
           {verification?.label ??
             (receipt.status === 'PAUSED'
               ? 'Leash pulled · trading stopped'
-              : 'Verification pending · reasoning unavailable')}
+              : receipt.reasoningFetched === false
+                ? 'Open receipt to verify its fingerprint'
+                : 'Verification pending · reasoning unavailable')}
           {(detail?.decision.usedSlack ?? receipt.usedSlack)
             ? '\nTemporary slack used · expires on its own'
             : ''}

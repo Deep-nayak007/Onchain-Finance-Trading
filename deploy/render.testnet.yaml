@@ -33,6 +33,12 @@ services:
         value: /tmp/leash.db
       - key: GATEWAY_URL
         value: https://leash-perpl-gateway-testnet.onrender.com
+      # Shared secret for the gateway's write paths; generated on the gateway, read here (never in git).
+      - key: GATEWAY_API_TOKEN
+        fromService:
+          name: leash-perpl-gateway-testnet
+          type: web
+          envVarKey: GATEWAY_API_TOKEN
       # Passkey association (RP = this host). Public identifiers, not secrets. App id app.leash.mobile.
       - key: APPLE_TEAM_ID
         value: WYHX7XQG8Y
@@ -67,6 +73,8 @@ services:
         value: /tmp/keystore
       - key: GATEWAY_DB_PATH
         value: /tmp/gateway.sqlite
+      - key: GATEWAY_API_TOKEN
+        generateValue: true
 
   # Web front end: Face's Expo app exported for the browser (static, free), LIVE on testnet: browser passkeys with
   # RP = this site's own host, real Brain API / gateway / Envio / Monad testnet RPC.

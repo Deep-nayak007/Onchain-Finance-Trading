@@ -1,10 +1,13 @@
 import { z } from 'zod';
 import { keccak256, toBytes } from 'viem';
 import { canonicalJSON } from '@leash/shared/canonical';
+import { PERSONAS } from '@leash/shared/addresses';
+import type { Address } from 'viem';
 import { config } from './config';
 import { request, ServiceError } from './http';
 import { requireConfiguredChain } from './config';
-import { rememberPolicy } from './compiledPolicies';
+import { recallPolicy, rememberPolicy } from './compiledPolicies';
+import { readMandate } from './mandate';
 import {
   agentStatusSchema,
   compileSchema,
@@ -36,9 +39,20 @@ export const api = {
           config.apiUrl,
           `/agent/status/${encodeURIComponent(account)}`,
           agentStatusSchema,
-        ).catch((error) => {
-          if (error instanceof ServiceError && error.status === 404)
-            return { state: 'NOT_STARTED', persona: null, lastTick: null, lastDecision: null };
+        ).catch(async (error) => {
+          if (error instanceof ServiceError && error.status === 404) {
+            const mandate = await readMandate(account as Address);
+            return {
+              state: mandate ? (mandate.paused ? 'PAUSED' : 'RECOVERY_REQUIRED') : 'NOT_STARTED',
+              persona: mandate
+                ? (Object.entries(PERSONAS).find(
+                    ([, p]) => p.agentId === String(mandate.agentId),
+                  )?.[0] ?? null)
+                : null,
+              lastTick: null,
+              lastDecision: null,
+            };
+          }
           throw error;
         }),
   traders: () =>
@@ -133,8 +147,11 @@ export const api = {
     config.useMocks
       ? Promise.resolve(null)
       : request(config.apiUrl, '/devices', acknowledgment, { account, expoPushToken }),
-  activate: (body: { account: string; txHash: string }) =>
-    request(config.apiUrl, '/agent/activate', agentStatusSchema, body),
+  activate: (body: { account: string; txHash?: string }) =>
+    request(config.apiUrl, '/agent/activate', agentStatusSchema, {
+      ...body,
+      policy: recallPolicy(body.account),
+    }),
   kill: (account: string) => request(config.apiUrl, '/agent/kill', agentStatusSchema, { account }),
   approveSlack: (id: string, txHash: string) =>
     request(
