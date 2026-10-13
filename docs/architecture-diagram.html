@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>LEASH — Architecture & Who Built What</title>
+<style>
+  :root{
+    --ink:#0d0f1a; --panel:#161a2b; --panel2:#1d2238; --line:#2b3252;
+    --violet:#8b7bff; --amber:#f0a34b; --green:#3fcf8e; --red:#ff6b6b;
+    --rails:#4aa3ff; --brain:#c586ff; --face:#ff8ad1;
+    --text:#e7e9f3; --dim:#9aa0bf;
+    --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+    --sans:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 700px at 70% -10%,#1a1f38 0,var(--ink) 60%);color:var(--text);font-family:var(--sans);padding:28px 22px 48px}
+  h1{font-size:30px;margin:0 0 2px;letter-spacing:.5px}
+  .tag{color:var(--dim);margin:0 0 18px;font-size:14px}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;margin:0 0 22px;font-size:13px}
+  .chip{display:inline-flex;align-items:center;gap:7px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:5px 12px}
+  .dot{width:11px;height:11px;border-radius:3px;display:inline-block}
+  .d-rails{background:var(--rails)} .d-brain{background:var(--brain)} .d-face{background:var(--face)}
+  .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;align-items:stretch}
+  @media (max-width:960px){.grid{grid-template-columns:1fr}}
+  .col{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:0;overflow:hidden}
+  .col h2{margin:0;padding:12px 16px;font-size:15px;letter-spacing:.4px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:9px}
+  .col .who{margin-left:auto;font-size:11px;color:var(--dim);font-weight:600;text-transform:uppercase;letter-spacing:1px}
+  .b-rails h2{border-left:5px solid var(--rails)} .b-brain h2{border-left:5px solid var(--brain)} .b-face h2{border-left:5px solid var(--face)}
+  .box{margin:12px 14px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:11px 13px}
+  .box .t{font-weight:700;font-size:14px;margin-bottom:3px}
+  .box .s{color:var(--dim);font-size:12.5px;line-height:1.45}
+  .box code{font-family:var(--mono);font-size:11.5px;color:#cdd3f5;background:#11152a;border:1px solid var(--line);border-radius:5px;padding:1px 5px}
+  .flow{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin:18px 0}
+  .flow h2{margin:0 0 12px;font-size:16px}
+  .steps{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch}
+  .step{flex:1 1 150px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;position:relative;min-width:150px}
+  .step .n{font-family:var(--mono);font-size:11px;color:var(--dim)}
+  .step .st{font-weight:700;font-size:13.5px;margin:2px 0}
+  .step .d{color:var(--dim);font-size:12px;line-height:1.4}
+  .step .own{position:absolute;top:9px;right:10px;width:10px;height:10px;border-radius:3px}
+  .arrow{align-self:center;color:var(--dim);font-size:18px;padding:0 2px}
+  .knots{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:6px}
+  @media (max-width:960px){.knots{grid-template-columns:1fr 1fr}}
+  .knot{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+  .knot .k{font-weight:700;font-size:13.5px;display:flex;align-items:center;gap:7px}
+  .knot .kd{color:var(--dim);font-size:12px;margin-top:4px;line-height:1.4}
+  .knot .own{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--dim);margin-top:7px;font-weight:600}
+  .cases{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px}
+  @media (max-width:960px){.cases{grid-template-columns:1fr}}
+  .case{background:var(--panel2);border:1px solid var(--line);border-left:4px solid var(--line);border-radius:10px;padding:10px 13px}
+  .case.ok{border-left-color:var(--green)} .case.deny{border-left-color:var(--red)}
+  .case.shadow{border-left-color:var(--violet)} .case.pause{border-left-color:var(--amber)}
+  .case .ct{font-weight:700;font-size:13.5px;margin-bottom:3px}
+  .case .cd{color:var(--dim);font-size:12.5px;line-height:1.45}
+  .pill{font-family:var(--mono);font-size:10.5px;padding:1px 7px;border-radius:999px;border:1px solid var(--line);margin-left:6px}
+  .pill.g{color:var(--green);border-color:#2b5e46}.pill.r{color:var(--red);border-color:#5e2b2b}
+  .pill.v{color:var(--violet);border-color:#413063}.pill.a{color:var(--amber);border-color:#5e4a2b}
+  .foot{color:var(--dim);font-size:12px;margin-top:18px;line-height:1.5}
+  .sec{font-size:13px;color:var(--dim);text-transform:uppercase;letter-spacing:1.5px;margin:26px 0 8px;font-weight:700}
+</style>
+</head>
+<body>
+  <h1>LEASH — give your AI trader slack, never your keys</h1>
+  <p class="tag">AI trades Perpl perps &amp; Kuru spot on Monad. It can trade, but can’t withdraw, can’t break your rules, and can’t hide a decision. · Built by a team of 3</p>
+
+  <div class="legend">
+    <span class="chip"><span class="dot d-rails"></span> <b>Yadnesh — RAILS</b> · contracts, Perpl gateway, Envio</span>
+    <span class="chip"><span class="dot d-brain"></span> <b>Prem — BRAIN</b> · AI engine, API, Referee</span>
+    <span class="chip"><span class="dot d-face"></span> <b>Deep — FACE</b> · mobile/web app, video</span>
+  </div>
+
+  <!-- WHO BUILT WHAT -->
+  <div class="sec">Who built what</div>
+  <div class="grid">
+    <div class="col b-face">
+      <h2><span class="dot d-face"></span> FACE <span class="who">Deep · apps/mobile</span></h2>
+      <div class="box"><div class="t">The app you see &amp; touch</div><div class="s">Home, Rules writer, Receipts feed, Traders, Risk, Spot swap. Looks like a calm bank app.</div></div>
+      <div class="box"><div class="t">Face ID sign-in (passkey)</div><div class="s">Your fingerprint/Face is the key. No seed phrases. <code>Mera / WebAuthn</code></div></div>
+      <div class="box"><div class="t">On-device receipt check</div><div class="s">Re-computes each receipt’s hash and shows ✓ only if it matches the chain.</div></div>
+    </div>
+
+    <div class="col b-brain">
+      <h2><span class="dot d-brain"></span> BRAIN <span class="who">Prem · services/api + guardian</span></h2>
+      <div class="box"><div class="t">AI engine (the trader’s mind)</div><div class="s"><b>Qwen</b> LLM proposes a trade idea as JSON. It only <i>suggests</i>. <code>services/api/src/llm</code></div></div>
+      <div class="box"><div class="t">Rule checker (pure code)</div><div class="s"><code>checkIntent</code> tests the idea vs your signed rules. The AI never executes. <code>packages/shared</code></div></div>
+      <div class="box"><div class="t">Wallets &amp; signals</div><div class="s">Privy policy wallets, Nansen smart-money, Kuru spot, gas drip.</div></div>
+      <div class="box"><div class="t">Referee (watchdog)</div><div class="s">Independent cron that pauses the trader on a breach. <code>guardian/</code> (Chainlink CRE)</div></div>
+    </div>
+
+    <div class="col b-rails">
+      <h2><span class="dot d-rails"></span> RAILS <span class="who">Yadnesh · contracts/ · gateway · indexer</span></h2>
+      <div class="box"><div class="t">Rulebook on-chain</div><div class="s"><code>MandateRegistry</code> — your signed rules + expiring “slack”. No owner, no backdoor.</div></div>
+      <div class="box"><div class="t">Receipts on-chain</div><div class="s"><code>ReceiptLog</code> — every decision logged with proof hashes.</div></div>
+      <div class="box"><div class="t">Perpl gateway (Rust)</div><div class="s">Trade-only key signs orders, never withdraws. Fails closed. <code>services/perpl-gateway</code></div></div>
+      <div class="box"><div class="t">Envio indexer</div><div class="s">Turns receipts + fills into a verifiable track record &amp; leaderboard. <code>indexer/</code></div></div>
+      <div class="box"><div class="t">3 trader identities</div><div class="s">Falcon / Otter / Owl registered as ERC-8004 agents.</div></div>
+    </div>
+  </div>
+
+  <!-- ONE TRADE FLOW -->
+  <div class="flow">
+    <h2>How one trade flows (every ~30s, on its own)</h2>
+    <div class="steps">
+      <div class="step"><span class="own d-brain"></span><div class="n">01</div><div class="st">Gather signals</div><div class="d">Prices (gateway), history (Envio), smart money (Nansen).</div></div>
+      <span class="arrow">→</span>
+      <div class="step"><span class="own d-brain"></span><div class="n">02 · Qwen</div><div class="st">AI proposes</div><div class="d">“Long MON-PERP $20, 3×.” A suggestion only.</div></div>
+      <span class="arrow">→</span>
+      <div class="step"><span class="own d-brain"></span><div class="n">03 · code</div><div class="st">Check the rules</div><div class="d"><code>checkIntent</code> vs your signed mandate. AI can’t override it.</div></div>
+      <span class="arrow">→</span>
+      <div class="step"><span class="own d-rails"></span><div class="n">04 · gateway</div><div class="st">Execute (if allowed)</div><div class="d">Trade-only key signs the Perpl order. Can’t withdraw.</div></div>
+      <span class="arrow">→</span>
+      <div class="step"><span class="own d-rails"></span><div class="n">05 · chain</div><div class="st">Write a receipt</div><div class="d"><code>ReceiptLog</code> records what &amp; why, forever.</div></div>
+      <span class="arrow">→</span>
+      <div class="step"><span class="own d-face"></span><div class="n">06 · app</div><div class="st">You see ✓</div><div class="d">Phone verifies the receipt, shows a thermal-paper slip.</div></div>
+    </div>
+  </div>
+
+  <!-- FIVE KNOTS -->
+  <div class="sec">The five knots — any one can stop the trader</div>
+  <div class="knots">
+    <div class="knot"><div class="k">1 · Rules</div><div class="kd">Your signed limits on markets, size, leverage, weekly loss.</div><div class="own" style="color:var(--rails)">Rails · MandateRegistry</div></div>
+    <div class="knot"><div class="k">2 · Wallet</div><div class="kd">Policy wallet: spot sleeve can only touch Kuru &amp; repay you.</div><div class="own" style="color:var(--brain)">Brain · Privy</div></div>
+    <div class="knot"><div class="k">3 · Exchange</div><div class="kd">Trade-only key: place orders, <b>never</b> withdraw.</div><div class="own" style="color:var(--rails)">Rails · gateway</div></div>
+    <div class="knot"><div class="k">4 · Referee</div><div class="kd">Watchdog auto-pauses on big loss / risky position / stale data.</div><div class="own" style="color:var(--brain)">Brain · Chainlink CRE</div></div>
+    <div class="knot"><div class="k">5 · You</div><div class="kd">“Hold to pull the leash” — stop everything with Face ID.</div><div class="own" style="color:var(--face)">Face · passkey</div></div>
+  </div>
+
+  <!-- ALL CASES -->
+  <div class="sec">Every case the system handles</div>
+  <div class="cases">
+    <div class="case ok"><div class="ct">Trade allowed <span class="pill g">EXECUTED</span></div><div class="cd">Idea passes all rules → order sent to Perpl → green receipt. Shows in your feed &amp; the leaderboard.</div></div>
+    <div class="case deny"><div class="ct">Trade blocked <span class="pill r">REJECTED</span></div><div class="cd">Breaks a rule (too big, wrong market, too risky, low confidence) → refused &amp; still receipted, so refusals are provable too.</div></div>
+    <div class="case shadow"><div class="ct">Paper trade <span class="pill v">SHADOW</span></div><div class="cd">Otter/Owl practice without real money. Logged on-chain <i>before</i> the outcome, so track records can’t be faked later.</div></div>
+    <div class="case ok"><div class="ct">Ask for slack</div><div class="cd">On a strong idea that just exceeds a limit, the trader asks you for a narrow, <b>expiring</b> exception. You approve with Face ID.</div></div>
+    <div class="case pause"><div class="ct">Referee hits the brakes <span class="pill a">PAUSED</span></div><div class="cd">Weekly loss hit, liquidation too close, or data stale 3× → the watchdog pauses on-chain. Only you can resume.</div></div>
+    <div class="case pause"><div class="ct">You pull the leash <span class="pill a">PAUSED</span></div><div class="cd">Hold the button + Face ID → everything stops instantly: loop off, key disabled, policy denies all.</div></div>
+    <div class="case deny"><div class="ct">AI confused / attacked <span class="pill r">HOLD</span></div><div class="cd">Bad or injected AI output can’t parse → treated as HOLD, receipted as rejected. The AI never executes directly.</div></div>
+    <div class="case ok"><div class="ct">Spot swap (Kuru)</div><div class="cd">Owl hedges / you swap AUSD↔MON on the Kuru order book, user-signed.</div></div>
+  </div>
+
+  <p class="foot">
+    <b>Live on Monad testnet:</b> contracts verified · Perpl gateway (Render) · Envio indexer · web app with Face ID.
+    <b>The leash metaphor:</b> the AI gets <i>slack</i> to move, but you always hold the leash and can pull it at any second.
+    <br>Colours mark who wrote the code: <span style="color:var(--rails)">■ Rails (Yadnesh)</span>
+    <span style="color:var(--brain)">■ Brain (Prem)</span> <span style="color:var(--face)">■ Face (Deep)</span>.
+  </p>
+</body>
+</html>

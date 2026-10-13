@@ -1,6 +1,6 @@
 # Current Face service check — October 12, 2026
 
-Latest GitHub main `823c224` is merged into Face (runtime changes through `2563d64`; the final update only documents gateway deployment/stubs). Native RP migration to `leash-brain-api.onrender.com` was explicitly approved by Deep before any LEASH passkeys existed.
+Latest GitHub main `6a959bd` is merged into Face, including the browser passkey error message and new architecture/design documentation. Native RP migration to `leash-brain-api.onrender.com` was explicitly approved by Deep before any LEASH passkeys existed.
 
 - The Render Brain API reports chain **10143**, `live:false`, real HTTP gateway, contracts and three registered personas.
 - Rails' shared service file selects **leash-perpl-gateway-testnet.onrender.com** for 10143 and **leash-gateway.onrender.com** for 143. Testnet has 15 markets, MON-PERP id 64; mainnet has MON-PERP id 10. The app rejects a known wrong-network URL and checks market IDs/cache health before gateway reads/preparation. Prepared transactions must match the configured chain.
@@ -13,6 +13,15 @@ Latest GitHub main `823c224` is merged into Face (runtime changes through `2563d
 - Android association is still **404**. iOS association returns **200** with Deep's Personal Team, which does not establish paid-team passkey support. See [passkey setup](FACE_PASSKEY_SETUP.md). `/keys/prepare` returns `keyAddress` and nullable `enrollment`; a null payload leaves authorization unavailable. User pause preparation can work directly onchain when Brain is down.
 
 Run `npm run testnet:ios` or `npm run testnet:web`. On Welcome, choose **Check live connections**. For independent offline testing, run `npm run mock:ios` / `npm run mock:web`.
+
+## Hosted browser check — October 12, 2026 (Phoenix)
+
+- `https://leash-app.onrender.com` returns 200 and serves a live-data web bundle with mocks disabled, chain 10143, the Render Brain/testnet gateway, the rotating Envio pointer and browser RP `leash-app.onrender.com`. This is distinct from the native RP; browser sign-in does not require an Apple Developer membership.
+- The deployed browser build created and restored the same wallet using Chromium's **virtual PRF-capable authenticator**. No real Touch ID/Face ID ceremony, gas drip, mandate, agent activation, signature, order or swap was performed. Tests refused service writes and allowed only read-only RPC/GraphQL requests.
+- The deployed main build still labelled a fresh wallet TRADER ACTIVE, a missing mandate WITHIN RULES and the testnet spot market AUSD. Those cases are fixed in Face. Existing backend receipt reasoning still returns 404; deposit/enrollment remain deliberately unavailable upstream.
+- A production Face browser candidate, loaded locally under the intended web origin, passed virtual-passkey creation/restoration and the same-wallet check, waiting/new-user state, rules-unavailable state, USDC depth label and the public live service checks, with zero runtime errors and zero service writes.
+- Switching the export from native RP to browser RP initially reused cached native settings. Metro now fingerprints public build settings in its cache version. Sequential exports without `--clear` independently embedded `leash-brain-api.onrender.com` and `leash-app.onrender.com` correctly.
+- Website deployment is from **main**. The Face changes are reviewable on **face** and require a merge into main to publish. No main push or hosting change was performed during these checks.
 
 ## Earlier Fly validation (historical; superseded by the current check above)
 
