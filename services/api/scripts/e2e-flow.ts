@@ -37,6 +37,12 @@ async function main() {
   const registry = (cfg.json?.addresses as { mandateRegistry: Address }).mandateRegistry;
   const tx = (data: Hex) => sendTxAndWait(wallet, pub, { to: registry, data }, { chainId: 10143 });
 
+  // Each run costs two drips (user + agent wallet); don't drain the shared tank.
+  const tank = Number((await api("GET", "/health")).json?.gasTankMon ?? 0);
+  if (tank < 0.5) {
+    console.log(`SKIP  gas tank has ${tank} MON (< 0.5); refill it before running the write-path test`);
+    process.exit(2);
+  }
   const drip = await api("POST", "/gas/drip", { account: user });
   check("drip", drip.status === 200, drip);
   const repeat = await api("POST", "/gas/drip", { account: user });
@@ -77,6 +83,13 @@ async function main() {
   check("status RUNNING", st.json?.state === "RUNNING", st.json);
   const pol = await api("GET", `/policy/${user}`);
   check("policy served", pol.status === 200, pol.status);
+  // The trader must actually tick: an LLM (or fallback) decision, checked by the rules, receipted onchain.
+  let last: Record<string, unknown> | null = null;
+  for (let i = 0; i < 40 && !last?.lastDecision; i++) {
+    await new Promise((r) => setTimeout(r, 10_000));
+    last = (await api("GET", `/agent/status/${user}`)).json;
+  }
+  check("trader ticked (decision made)", !!last?.lastTick && !!last?.lastDecision, last);
   const killEarly = await api("POST", "/agent/kill", { account: user });
   check("kill while active onchain → 409", killEarly.status === 409, killEarly);
 
@@ -86,7 +99,7 @@ async function main() {
   const cleanup = kill.json?.cleanup as { wallet?: boolean; gatewayKey?: boolean } | undefined;
   check("kill → KILLED", kill.status === 200 && kill.json?.state === "KILLED", kill.json);
   check("kill cleanup: Privy deny-all", cleanup?.wallet === true, cleanup);
-  check("kill cleanup: gateway key disabled (Brain→gateway token works)", cleanup?.gatewayKey === true, cleanup);
+  check("kill cleanup: gateway key disabled", cleanup?.gatewayKey === true, cleanup);
 
   const resume = await tx(encodeFunctionData({ abi: mandateRegistryAbi, functionName: "resume", args: [] }));
   check("resume onchain", resume.receipt.status === "success", resume.hash);

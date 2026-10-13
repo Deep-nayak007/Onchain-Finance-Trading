@@ -4,6 +4,7 @@ import { Address, ERC8004, ERC8004_TESTNET, Hash32, Intent, PersonaId, Policy, p
 import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
 import type { Address as ViemAddress, PublicClient } from "viem";
+import { formatEther } from "viem";
 import { z } from "zod";
 import type { LeashAddresses, Registry } from "./chain/contracts";
 import { compilePolicy } from "./compile/compile";
@@ -156,7 +157,10 @@ export function createApp(d: AppDeps) {
     });
   });
 
-  app.get("/health", (c) => c.json({ ok: true, chainId: d.chainId, live: d.live, gateway: d.gateway.kind, markets: "marketsSource" in d.gateway ? d.gateway.marketsSource : d.gateway.kind, llm: !!d.chat, privy: d.wallets.configured, contracts: !!d.addresses }));
+  app.get("/health", async (c) => {
+    const tank = d.drip.wallet ? await d.drip.publicClient.getBalance({ address: d.drip.wallet.account.address }).catch(() => null) : null;
+    return c.json({ ok: true, chainId: d.chainId, live: d.live, gateway: d.gateway.kind, markets: "marketsSource" in d.gateway ? d.gateway.marketsSource : d.gateway.kind, llm: !!d.chat, privy: d.wallets.configured, contracts: !!d.addresses, gasTankMon: tank === null ? null : Number(formatEther(tank)) });
+  });
 
   // ---- mandate ----
   app.post("/mandate/compile", async (c) => {

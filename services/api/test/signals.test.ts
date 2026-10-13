@@ -39,7 +39,7 @@ describe("readPerplMarkets (onchain Perpl views)", () => {
 describe("drip confirms by receipt", () => {
   it("a reverted drip throws and releases the claim (no false success)", async () => {
     const store = new Store();
-    const publicClient = { waitForTransactionReceipt: async () => ({ status: "reverted" }) } as unknown as PublicClient;
+    const publicClient = { getBalance: async () => 10n ** 19n, waitForTransactionReceipt: async () => ({ status: "reverted" }) } as unknown as PublicClient;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const wallet = { account: { address: USER }, chain: undefined, sendTransaction: async () => `0x${"aa".repeat(32)}` } as any;
     await expect(drip({ store, wallet, publicClient, amountMon: "0.2", chainId: 10143 }, USER)).rejects.toThrow(/reverted/);
@@ -57,5 +57,15 @@ describe("Envio URL pointer", () => {
     expect(await new Envio("https://static.example/v1/graphql", mk("javascript:alert(1)"), "https://p").endpoint()).toBe("https://static.example/v1/graphql");
     expect(await new Envio("https://static.example/v1/graphql", mk("", false), "https://p").endpoint()).toBe("https://static.example/v1/graphql");
     expect(await new Envio("https://static.example/v1/graphql").endpoint()).toBe("https://static.example/v1/graphql");
+  });
+});
+
+describe("dripValue", () => {
+  it("full amount when healthy, smaller when low, zero when empty", async () => {
+    const { dripValue } = await import("../src/gas/drip");
+    const e = (x: string) => BigInt(Math.round(Number(x) * 1e6)) * 10n ** 12n;
+    expect(dripValue(e("0.2"), e("10"))).toBe(e("0.2"));
+    expect(dripValue(e("0.2"), e("0.51"))).toBe(e("0.1"));
+    expect(dripValue(e("0.2"), e("0.05"))).toBe(0n);
   });
 });
