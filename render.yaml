@@ -34,7 +34,7 @@ services:
       - key: MAX_ORDER_USD
         value: "25"
       - key: STALE_BLOCKS_MAX
-        value: "20"
+        value: "60" # ~24s on Monad; free-tier CPU + 20 rps throttle hold a steady ~60-block lag
       # Set after the CP1 mainnet deploy so /orders/execute can check isActive:
       - key: MANDATE_REGISTRY_ADDRESS
         sync: false
