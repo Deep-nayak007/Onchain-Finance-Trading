@@ -7,6 +7,8 @@ import { prepareTxRequest, sendTx as sharedSendTx } from '@leash/shared/sendTx';
 import { config, isTestnet } from '../lib/config';
 import { activeChain, publicClient } from '../lib/chain';
 import { request } from '../lib/http';
+
+import { recallPolicy, rememberPolicy } from '../lib/policyMemory';
 import { queryEnvio } from '../lib/envioTransport';
 import { bookSchema } from '../lib/gateway';
 import {
@@ -144,6 +146,7 @@ export const teamBindings: TeamBindings | null = config.useMocks
         if (!compiled.agentWallet || !compiled.perplKey)
           throw new Error('Your trader wallet or trading key is not ready yet. Go back and compile your rules again in a minute.');
         const p = compiled.policy;
+        rememberPolicy(account, p);
         const data = encodeFunctionData({
           abi: mandateRegistryAbi,
           functionName: 'setMandate',
@@ -188,11 +191,12 @@ export const teamBindings: TeamBindings | null = config.useMocks
       prepareResume: (account) =>
         prepare(account, registry(), encodeFunctionData({ abi: mandateRegistryAbi, functionName: 'resume', args: [] })),
 
+      // The policy rides along so a restarted Brain can recover it (accepted only if it matches the onchain hash).
       activateAgent: async (account, _persona, txHash) => {
-        await request(config.apiUrl, '/agent/activate', ack, { account, txHash });
+        await request(config.apiUrl, '/agent/activate', ack, { account, txHash, policy: recallPolicy(account) });
       },
       resumeAgent: async (account, txHash) => {
-        await request(config.apiUrl, '/agent/activate', ack, { account, txHash });
+        await request(config.apiUrl, '/agent/activate', ack, { account, txHash, policy: recallPolicy(account) });
       },
 
       readReceipts: async (account) => {

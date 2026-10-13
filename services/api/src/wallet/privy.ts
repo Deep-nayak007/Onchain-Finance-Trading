@@ -54,6 +54,20 @@ export class PrivyClient {
     return this.req(PrivyWallet, "POST", "/wallets", { chain_type: "ethereum", ...(policyIds.length ? { policy_ids: policyIds } : {}) });
   }
 
+  /** Finds a server wallet by address (paginated list). Privy is the durable record; our sqlite is a cache. */
+  async findWalletByAddress(address: string): Promise<z.infer<typeof PrivyWallet> | null> {
+    const Page = z.object({ data: z.array(PrivyWallet), next_cursor: z.string().nullish() });
+    let cursor: string | null | undefined;
+    for (let i = 0; i < 100; i++) {
+      const page = await this.req(Page, "GET", `/wallets?chain_type=ethereum&limit=100${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`);
+      const hit = page.data.find((w) => w.address.toLowerCase() === address.toLowerCase());
+      if (hit) return hit;
+      cursor = page.next_cursor;
+      if (!cursor) return null;
+    }
+    return null;
+  }
+
   getWallet(id: string) {
     return this.req(PrivyWallet, "GET", `/wallets/${id}`);
   }

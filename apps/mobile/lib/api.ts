@@ -3,6 +3,7 @@ import { keccak256, toBytes } from 'viem';
 import { canonicalJSON } from '@leash/shared/canonical';
 import { config } from './config';
 import { HttpError, request } from './http';
+import { recallPolicy } from './policyMemory';
 import {
   agentStatusSchema,
   compileSchema,
@@ -24,7 +25,22 @@ export const api = {
           lastTick: new Date().toISOString(),
           lastDecision: null,
         })
-      : request(config.apiUrl, `/agent/status/${encodeURIComponent(account)}`, agentStatusSchema),
+      : request(config.apiUrl, `/agent/status/${encodeURIComponent(account)}`, agentStatusSchema).catch(
+          async (e: unknown) => {
+            if (!(e instanceof HttpError) || e.status !== 404) throw e;
+            // Brain restarted and lost its cache: re-supply the signed rules (Brain checks them against the
+            // onchain policyHash). No mandate onchain → the account is simply idle.
+            const policy = recallPolicy(account);
+            if (policy) {
+              try {
+                return await request(config.apiUrl, '/agent/activate', agentStatusSchema, { account, policy });
+              } catch {
+                // fall through to idle
+              }
+            }
+            return { state: 'IDLE' as const, persona: null, lastTick: null, lastDecision: null };
+          },
+        ),
   traders: () =>
     config.useMocks
       ? Promise.resolve(personas)

@@ -95,6 +95,21 @@ describe("API routes", () => {
     expect(await (await app.request(`/policy/${USER}`)).json()).toMatchObject({ persona: "falcon", policy: { version: 1 } });
   });
 
+  it("after a store wipe, activate accepts the app's policy only if it hashes to the onchain policyHash", async () => {
+    const { post, deps } = setup();
+    const good = Policy.parse(policyJson);
+    const mandate = { policyHash: policyHash(good), paused: false, agentId: 0n, agentWallet: USER, perplKey: USER };
+    deps.registry = { isActive: async () => true, getMandate: async () => mandate, activeSlack: async () => null } as unknown as AppDeps["registry"];
+    const app2 = createApp(deps);
+    const act = (body: unknown) => app2.request("/agent/activate", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+    expect((await act({ account: USER })).status).toBe(409); // store has no policy
+    expect((await act({ account: USER, policy: { ...good, maxLeverage: 5 } })).status).toBe(409); // forged: hash mismatch
+    const ok = await act({ account: USER, policy: good });
+    expect(ok.status).toBe(200);
+    expect(await ok.json()).toMatchObject({ state: "RUNNING" });
+    void post;
+  });
+
   it("activate without compile → 409; unknown status → 404", async () => {
     const { app, post } = setup();
     expect((await post("/agent/activate", { account: USER })).status).toBe(409);

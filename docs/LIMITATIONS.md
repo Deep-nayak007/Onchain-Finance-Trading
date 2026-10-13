@@ -73,6 +73,12 @@ Updated 2026-10-12. Everything below sits behind an interface, so the real thing
   Password Manager). With iCloud Keychain the creation step may not return PRF, and browsers block the automatic follow-up
   prompt: tap "I already have a passkey" to unlock with a fresh tap. Perpl deposit/enrollment stay stubbed (no test AUSD), PnL
   series is empty (not indexed), Kuru testnet has no bids.
+- **Free hosting = ephemeral Brain disk** (`/tmp/leash.db`): a redeploy wipes the cache. Recovery without a paid DB: the agent
+  wallet is re-linked from Privy by the address in the onchain mandate, and the app re-sends its signed policy (accepted only
+  if it hashes to the onchain `policyHash`). Receipts/history live onchain + Envio, so nothing user-visible is lost.
+- **Hardening (red-team, `services/api/scripts/e2e-live.ts`, 51 checks)**: per-IP rate limits on compile/drip/spot; `/agent/kill`
+  only after the onchain pause; gateway `/orders/execute` + `/keys/disable` require `x-gateway-token` (Render-generated, shared
+  via `fromService`); Envio proxy refuses mutations and hides the Hasura admin API; prompt injection in rules stays clamped.
 - **Envio Cloud blocked**: the indexer `leash-monad` exists on Envio Cloud (org prempagare07, repo `prempagare07/leash-indexer`)
   but Envio never receives the repo's push events (dashboard shows "GitHub app removed" even after reinstall; 0 commits). Until Envio
   support fixes it, the indexer is **self-hosted on Prem's Mac** behind a read-only proxy + Cloudflare quick tunnel (`scripts/envio-local`):

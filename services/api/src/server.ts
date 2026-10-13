@@ -1,6 +1,6 @@
 // REST API for the app (ARCHITECTURE §7.4, services/api/openapi.yaml). Every body/param validated with zod.
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
-import { Address, ERC8004, ERC8004_TESTNET, Hash32, Intent, PersonaId, type ChainId } from "@leash/shared";
+import { Address, ERC8004, ERC8004_TESTNET, Hash32, Intent, PersonaId, Policy, policyHash as policyHash_, type ChainId } from "@leash/shared";
 import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
 import type { Address as ViemAddress, PublicClient } from "viem";
@@ -195,7 +195,9 @@ export function createApp(d: AppDeps) {
 
   // ---- agent ----
   app.post("/agent/activate", async (c) => {
-    const req = await body(c, z.object({ account: Address, txHash: Hash32.optional() }));
+    // `policy` lets the app re-supply its compiled rules after a Brain restart wiped the store; it is only accepted
+    // when its hash equals the policyHash in the user's ONCHAIN mandate, so it can't be swapped.
+    const req = await body(c, z.object({ account: Address, txHash: Hash32.optional(), policy: Policy.optional() }));
     const account = req.account as ViemAddress;
     if (req.txHash) await d.publicClient.waitForTransactionReceipt({ hash: req.txHash as `0x${string}`, timeout: 60_000 });
     const compiled = d.store.getKv<{ persona: z.infer<typeof PersonaId>; policyHash: string }>(`compile:${account.toLowerCase()}`, Number.MAX_SAFE_INTEGER);
@@ -208,7 +210,10 @@ export function createApp(d: AppDeps) {
       if (m.paused) throw new HttpError(409, "mandate is paused onchain; resume() first");
       policyHash = m.policyHash;
       persona = PERSONA_IDS.find((p) => personaOf(p).agentId === m.agentId.toString() && m.agentId !== 0n) ?? persona;
+      if (req.policy && !d.store.getPolicy(m.policyHash) && policyHash_(req.policy).toLowerCase() === m.policyHash.toLowerCase())
+        d.store.savePolicy(m.policyHash, req.policy);
       if (d.wallets.configured) {
+        await d.wallets.adopt(account, persona, m.agentWallet as ViemAddress);
         const w = await d.wallets.restore(account, persona);
         if (w.address.toLowerCase() !== m.agentWallet.toLowerCase()) throw new HttpError(409, "mandate agentWallet doesn't match this trader's wallet; re-sign setMandate with the compiled agentWallet");
         // The agent wallet pays gas for logReceipt: top it up once from the gas tank (drip is one-per-address).
