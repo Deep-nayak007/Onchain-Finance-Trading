@@ -1,14 +1,14 @@
 # Testnet demo plan (Monad 10143): who does what
 
 Decision (2026-10-12): the whole demo runs on **Monad testnet (10143)**. No mainnet deploy now. Mainnet stays a config-only switch.
-Brain status: API live at `https://leash-brain-api.fly.dev` (chain 10143, paper), proven end to end. See `docs/testnet-evidence.md`.
+Brain status: API live at `https://leash-brain-api.onrender.com` (chain 10143, paper), proven end to end. See `docs/testnet-evidence.md`.
 
 ## Status (2026-10-12, evening)
-- ✅ **Gateway live on testnet**: `https://leash-perpl-gateway.fly.dev` (Brain hosted Rails' code on Fly; deploy file only, logic untouched).
+- ✅ **Gateway live on testnet**: `https://leash-perpl-gateway-testnet.onrender.com` (Brain hosted Rails' code on Fly; deploy file only, logic untouched).
   Wired into the Brain API (`GATEWAY_URL`). Health ok, 15 perps, deep MON book, real `/risk`.
 - ✅ **Indexer is Envio-Cloud-ready** on branch `envio` (c0450de): ABIs inside `indexer/`, Kuru testnet market, persona wallets,
   BigDecimal fix; verified locally against testnet.
-- ✅ **ENVIO_URL live (self-hosted fallback)**: https://add-bush-herbal-raid.trycloudflare.com/v1/graphql, synced to head; all receipts/pauses/slack/mandates
+- ✅ **ENVIO_URL live (self-hosted fallback)**: https://making-spyware-determines-establishing.trycloudflare.com/v1/graphql, synced to head; all receipts/pauses/slack/mandates
   indexed; wired into the Brain API (`/traders`) and the Referee (watches all active mandates). Envio Cloud is stuck (see LIMITATIONS).
 - ✅ **Envio Cloud source repo (fallback)**: https://github.com/prempagare07/leash-indexer (Prem-owned, `git subtree split` of `indexer/`,
   history kept, pnpm 10.32.0 lockfile). The monorepo's transferred ownership blocked the Envio GitHub app for collaborators.
@@ -21,7 +21,7 @@ Brain status: API live at `https://leash-brain-api.fly.dev` (chain 10143, paper)
 - ⏳ **Perpl testnet AUSD** (~150) from the Perpl team for a live order.
 
 ## Rails (Yadnesh)
-1. ✅ **DONE by Brain** (`https://leash-perpl-gateway.fly.dev`, `services/perpl-gateway/fly.toml`, STALE_BLOCKS_MAX=50). Original spec, for reference:
+1. ✅ **DONE by Brain** (`https://leash-perpl-gateway-testnet.onrender.com`, `services/perpl-gateway/fly.toml`, STALE_BLOCKS_MAX=50). Original spec, for reference:
    ```
    CHAIN_ID=10143
    MONAD_RPC=https://testnet-rpc.monad.xyz
@@ -63,7 +63,7 @@ Brain status: API live at `https://leash-brain-api.fly.dev` (chain 10143, paper)
    EXPO_PUBLIC_USE_MOCKS=false
    EXPO_PUBLIC_CHAIN_ID=10143
    EXPO_PUBLIC_RPC_URL=https://testnet-rpc.monad.xyz
-   EXPO_PUBLIC_API_URL=https://leash-brain-api.fly.dev
+   EXPO_PUBLIC_API_URL=https://leash-brain-api.onrender.com
    EXPO_PUBLIC_GATEWAY_URL=   # when Rails sends it
    EXPO_PUBLIC_ENVIO_URL=     # when Rails sends it
    ```

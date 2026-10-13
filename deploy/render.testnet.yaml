@@ -17,6 +17,11 @@ services:
     dockerContext: .
     healthCheckPath: /health
     autoDeploy: true
+    buildFilter:
+      paths:
+        - services/api/**
+        - packages/shared/**
+        - pnpm-lock.yaml
     envVars:
       - key: CHAIN_ID
         value: "10143"
@@ -28,6 +33,7 @@ services:
         value: /tmp/leash.db
       - key: GATEWAY_URL
         value: https://leash-perpl-gateway-testnet.onrender.com
+      # ENVIO_URL comes from the uploaded .env (tunnel URL changes; update it in the dashboard)
 
   - type: web
     name: leash-perpl-gateway-testnet
@@ -40,6 +46,9 @@ services:
     dockerContext: .
     healthCheckPath: /health
     autoDeploy: true
+    buildFilter:
+      paths:
+        - services/perpl-gateway/**
     envVars:
       - key: CHAIN_ID
         value: "10143"

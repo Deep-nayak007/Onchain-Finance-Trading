@@ -80,3 +80,9 @@ Envio (`https://add-bush-herbal-raid.trycloudflare.com/v1/graphql`) → Brain `/
 | Envio indexes it within seconds: Receipt (agentId 2227), Agent #2227 executed 1 / volume $12, Mandate perplKey | ok | — |
 | Brain `/traders` → Falcon stats from Envio (executedCount 1, volumeUsd 12) | ok | — |
 | Referee `--once` discovers both active mandates via Envio and reads the gateway's `/risk` | ok | — |
+
+## Hosting moved to Render free (2026-10-12, Fly trial ended)
+Brain https://leash-brain-api.onrender.com · gateway https://leash-perpl-gateway-testnet.onrender.com (both testnet, paper). ERC-8004
+agentURIs re-pointed with `setAgentURI` (gas tank, testnet): Falcon #2227 [https://testnet.monadvision.com/tx/0xc3535311…](https://testnet.monadvision.com/tx/0xc353531153b449cb6abc279011a04c112e1adaa3305d09cdf62d51d402057c5b) ·
+Otter #2228 [https://testnet.monadvision.com/tx/0x1d261e30…](https://testnet.monadvision.com/tx/0x1d261e30d496f8eccb33732791a24edc6dfe9485c3024700fb34793421cfe4bf) ·
+Owl #2229 [https://testnet.monadvision.com/tx/0x9aa78dab…](https://testnet.monadvision.com/tx/0x9aa78dab185384fdcfc06c3b46cb43f895a7b3c6ff361ada9f77cf264186c8da).

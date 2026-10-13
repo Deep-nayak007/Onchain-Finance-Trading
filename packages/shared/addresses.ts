@@ -143,8 +143,8 @@ export const KURU_TESTNET = {
 
 /** Live service URLs. Filled in as each deploys. */
 export const SERVICES = {
-  // Testnet (10143) gateway, the LIVE DEMO network: Fly app leash-perpl-gateway (STALE_BLOCKS_MAX=50).
-  gatewayUrl: 'https://leash-perpl-gateway.fly.dev' as string | null,
+  // Testnet (10143) gateway, the LIVE DEMO network: Render free service leash-perpl-gateway-testnet (deploy/render.testnet.yaml).
+  gatewayUrl: 'https://leash-perpl-gateway-testnet.onrender.com' as string | null,
   // Mainnet (143) gateway: Render free tier, reads Perpl mainnet. /health ok when cache lag <= STALE_BLOCKS_MAX (60 on Render).
   gatewayUrlMainnet: 'https://leash-gateway.onrender.com' as string | null,
   // Envio GraphQL endpoint (testnet 10143). TEMPORARY: self-hosted `envio dev` on Prem's Mac behind a READ-ONLY proxy
@@ -152,5 +152,5 @@ export const SERVICES = {
   // quick tunnel. Up while that Mac runs it; the hostname changes on tunnel restart (update here + Fly ENVIO_URL).
   // Envio Cloud is blocked on Envio's side (see docs/LIMITATIONS.md); swap in the Envio Cloud URL once hosted.
   // Do NOT publish a tunnel straight to Hasura: envio dev's default admin secret is "testing".
-  envioUrl: 'https://add-bush-herbal-raid.trycloudflare.com/v1/graphql' as string | null,
+  envioUrl: 'https://making-spyware-determines-establishing.trycloudflare.com/v1/graphql' as string | null,
 } as const;
