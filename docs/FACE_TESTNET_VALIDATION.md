@@ -1,6 +1,6 @@
 # Current Face service check — October 12, 2026
 
-Latest GitHub main `2563d64` is merged into Face. Native RP migration to `leash-brain-api.onrender.com` was explicitly approved by Deep before any LEASH passkeys existed.
+Latest GitHub main `823c224` is merged into Face (runtime changes through `2563d64`; the final update only documents gateway deployment/stubs). Native RP migration to `leash-brain-api.onrender.com` was explicitly approved by Deep before any LEASH passkeys existed.
 
 - The Render Brain API reports chain **10143**, `live:false`, real HTTP gateway, contracts and three registered personas.
 - Rails' shared service file selects **leash-perpl-gateway-testnet.onrender.com** for 10143 and **leash-gateway.onrender.com** for 143. Testnet has 15 markets, MON-PERP id 64; mainnet has MON-PERP id 10. The app rejects a known wrong-network URL and checks market IDs/cache health before gateway reads/preparation. Prepared transactions must match the configured chain.

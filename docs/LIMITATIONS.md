@@ -122,7 +122,7 @@ Updated 2026-10-12. Everything below sits behind an interface, so the real thing
 
 # LIMITATIONS — FACE lane
 
-Updated October 12, 2026 after merging main `2563d64` and checking the Render services. Current validation: [FACE_TESTNET_VALIDATION.md](FACE_TESTNET_VALIDATION.md).
+Updated October 12, 2026 after merging main `823c224` and checking the Render services. Current validation: [FACE_TESTNET_VALIDATION.md](FACE_TESTNET_VALIDATION.md).
 
 - The app imports Rails' shared gateway URLs by chain: testnet `leash-perpl-gateway-testnet.onrender.com`, mainnet `leash-gateway.onrender.com`. Live testnet markets, account risk, Perpl depth, Kuru SDK depth and Envio receipt metadata were checked. Free-instance wake-up can take about a minute; requests allow 90 seconds and the UI offers retry.
 - **Brain receipt reasoning is unavailable on Render:** both published hashes return 404, though their independent Envio/onchain records remain. Face retains feed rows and paper/slack metadata, shows pending verification and never invents reasoning, latency or a verification checkmark. The read-only cloud check intentionally exits 2 for this backend blocker. Prem was offline; no backend records were created or changed.
