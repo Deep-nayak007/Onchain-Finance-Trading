@@ -61,12 +61,14 @@ export class HttpGateway implements Gateway {
   constructor(
     private readonly baseUrl: string,
     private readonly timeoutMs = 8000,
+    /** Shared secret for the gateway's write paths (x-gateway-token). */
+    private readonly token?: string,
   ) {}
 
   private async call<S extends z.ZodType>(schema: S, path: string, body?: unknown): Promise<z.infer<S>> {
     const res = await fetch(new URL(path, this.baseUrl.endsWith("/") ? this.baseUrl : `${this.baseUrl}/`), {
       method: body === undefined ? "GET" : "POST",
-      headers: body === undefined ? undefined : { "content-type": "application/json" },
+      headers: { ...(body === undefined ? {} : { "content-type": "application/json" }), ...(this.token ? { "x-gateway-token": this.token } : {}) },
       body: body === undefined ? undefined : JSON.stringify(body),
       signal: AbortSignal.timeout(this.timeoutMs),
     });
@@ -141,6 +143,6 @@ export class MockGateway implements Gateway {
   }
 }
 
-export function makeGateway(cfg: { GATEWAY_URL?: string; MAX_ORDER_USD: number }): Gateway {
-  return cfg.GATEWAY_URL ? new HttpGateway(cfg.GATEWAY_URL) : new MockGateway({ maxOrderUsd: cfg.MAX_ORDER_USD });
+export function makeGateway(cfg: { GATEWAY_URL?: string; MAX_ORDER_USD: number; GATEWAY_API_TOKEN?: string }): Gateway {
+  return cfg.GATEWAY_URL ? new HttpGateway(cfg.GATEWAY_URL, 8000, cfg.GATEWAY_API_TOKEN) : new MockGateway({ maxOrderUsd: cfg.MAX_ORDER_USD });
 }

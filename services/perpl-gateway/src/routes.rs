@@ -138,10 +138,27 @@ pub async fn orders_prepare(
 
 // ---- /orders/execute ----
 
+/// Write paths that act with a user's trade key are callable only by Brain (shared secret).
+fn require_token(st: &AppState, headers: &axum::http::HeaderMap) -> Result<()> {
+    match &st.cfg.api_token {
+        None => Ok(()),
+        Some(want) => {
+            let got = headers.get("x-gateway-token").and_then(|v| v.to_str().ok()).unwrap_or("");
+            if got.len() == want.len() && got.as_bytes().iter().zip(want.as_bytes()).fold(0u8, |a, (x, y)| a | (x ^ y)) == 0 {
+                Ok(())
+            } else {
+                Err(GatewayError::new(Code::Unauthorized, "missing or bad x-gateway-token"))
+            }
+        }
+    }
+}
+
 pub async fn orders_execute(
     State(st): State<AppState>,
+    headers: axum::http::HeaderMap,
     Json(req): Json<ExecuteOrder>,
 ) -> Result<Json<ExecuteResult>> {
+    require_token(&st, &headers)?;
     let user = parse_addr(&req.account)?;
 
     // Idempotency first: a replay returns the original txHash without re-sending.
@@ -222,8 +239,10 @@ pub async fn keys_prepare(
 
 pub async fn keys_disable(
     State(st): State<AppState>,
+    headers: axum::http::HeaderMap,
     Json(req): Json<KeyRequest>,
 ) -> Result<Json<Ack>> {
+    require_token(&st, &headers)?;
     let _ = parse_addr(&req.account)?;
     st.store.set_disabled(&req.account, true)?;
     Ok(Json(Ack { ok: true }))

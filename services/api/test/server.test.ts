@@ -44,6 +44,7 @@ function setup(replies: string[] = []) {
     demoToken: "demo-secret",
     passkey: { appleTeamIds: ["ABCDE12345"], androidCertSha256: [`${"AB:".repeat(31)}AB`], appId: "app.leash.mobile" },
     log: () => {},
+    rateLimitPerMin: 1000,
   };
   const app = createApp(deps);
   const post = (path: string, body: unknown, headers: Record<string, string> = {}) =>
@@ -174,6 +175,20 @@ describe("API routes", () => {
     expect(j.registrations).toEqual([{ agentId: 2227, agentRegistry: "eip155:10143:0x8004A818BFB912233c491871b3d84c89A494BD9e" }]);
     expect((await app.request("/agents/eagle.json")).status).toBe(404);
     expect((await app.request("/agents/otter.svg")).headers.get("content-type")).toMatch(/image\/svg/);
+  });
+
+  it("kill is refused while the trader is active onchain; compile is rate-limited per IP", async () => {
+    const { app, deps, post } = setup();
+    deps.registry = { isActive: async () => true, getMandate: async () => null, activeSlack: async () => null };
+    const app2 = createApp({ ...deps, rateLimitPerMin: 2 });
+    const res = await app2.request("/agent/kill", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ account: USER }) });
+    expect(res.status).toBe(409);
+    const hit = () => app2.request("/mandate/compile", { method: "POST", headers: { "content-type": "application/json", "x-forwarded-for": "9.9.9.9" }, body: "{}" });
+    expect((await hit()).status).toBe(400);
+    expect((await hit()).status).toBe(400);
+    expect((await hit()).status).toBe(429);
+    void app;
+    void post;
   });
 
   it("alchemy webhook requires a valid HMAC signature and pushes deposits", async () => {

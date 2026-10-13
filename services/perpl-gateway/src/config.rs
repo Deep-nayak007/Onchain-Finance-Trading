@@ -23,6 +23,9 @@ pub struct Config {
     pub keystore_dir: String,
     /// SQLite path for idempotency + disabled-key records.
     pub db_path: String,
+    /// Shared secret required in `x-gateway-token` for write paths that act with a user's trade key
+    /// (`/orders/execute`, `/keys/disable`). Unset = open (local dev only).
+    pub api_token: Option<String>,
 }
 
 impl Config {
@@ -57,6 +60,7 @@ impl Config {
             keystore_password: env::var("GATEWAY_KEYSTORE_PASSWORD").unwrap_or_default(),
             keystore_dir: env::var("GATEWAY_KEYSTORE_DIR").unwrap_or_else(|_| "./keystore".into()),
             db_path: env::var("GATEWAY_DB_PATH").unwrap_or_else(|_| "./gateway.sqlite".into()),
+            api_token: env::var("GATEWAY_API_TOKEN").ok().filter(|t| !t.trim().is_empty()),
         })
     }
 }

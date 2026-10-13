@@ -39,6 +39,8 @@ export type AppDeps = {
   kuru: Kuru | null;
   alchemyNotifyToken?: string;
   demoToken?: string;
+  /** Per-IP requests/minute on compile/drip (spot gets 2x). Default 12. */
+  rateLimitPerMin?: number;
   passkey?: { appleTeamIds: string[]; androidCertSha256: string[]; appId: string };
   corsOrigins?: string[];
   log?: (m: string) => void;
@@ -69,6 +71,22 @@ export function createApp(d: AppDeps) {
   const app = new Hono();
   const log = d.log ?? ((m: string) => console.log(m));
   app.use("*", cors({ origin: d.corsOrigins?.length ? d.corsOrigins : "*" }));
+
+  // Per-IP rate limit on endpoints that create resources or cost money (Privy wallets, LLM calls, gas, quotes).
+  const hits = new Map<string, number[]>();
+  const limited = (max: number, windowMs: number) => async (c: Context, next: () => Promise<void>) => {
+    const ip = (c.req.header("x-forwarded-for") ?? c.req.header("x-real-ip") ?? "local").split(",")[0]!.trim();
+    const key = `${c.req.path.split("/")[1]}:${ip}`;
+    const now = Date.now();
+    const recent = (hits.get(key) ?? []).filter((t) => now - t < windowMs);
+    if (recent.length >= max) return c.json({ error: "too many requests, slow down" }, 429);
+    recent.push(now);
+    hits.set(key, recent);
+    await next();
+  };
+  app.use("/mandate/compile", limited(d.rateLimitPerMin ?? 12, 60_000));
+  app.use("/gas/drip", limited(d.rateLimitPerMin ?? 12, 60_000));
+  app.use("/spot/prepare", limited((d.rateLimitPerMin ?? 12) * 2, 60_000));
 
   app.onError((err, c) => {
     if (err instanceof HttpError) return c.json({ error: err.message, ...(err.details ? { details: err.details } : {}) }, err.status);
@@ -207,6 +225,10 @@ export function createApp(d: AppDeps) {
   app.post("/agent/kill", async (c) => {
     const req = await body(c, z.object({ account: Address, txHash: Hash32.optional() }));
     const account = req.account as ViemAddress;
+    // Authorization without a session: kill only takes effect once the trader is paused ONCHAIN, which only the user
+    // (or the Referee) can do. Stops anyone from killing someone else's running trader.
+    if (req.txHash) await d.publicClient.waitForTransactionReceipt({ hash: req.txHash as `0x${string}`, timeout: 60_000 }).catch(() => undefined);
+    if (d.registry && (await d.registry.isActive(account))) throw new HttpError(409, "trader is still active onchain; pause it first (pull the leash)");
     d.scheduler?.stopUser(account);
     const user = d.store.getUser(account);
     if (user) d.store.setUserState(account, "KILLED");
@@ -328,7 +350,12 @@ export function createApp(d: AppDeps) {
   app.post("/spot/prepare", async (c) => {
     if (!d.kuru) throw new HttpError(503, "Kuru not configured on this chain");
     const req = await body(c, z.object({ account: Address, side: z.enum(["BUY", "SELL"]), sizeUsd: z.coerce.number().positive().max(100) }));
-    return c.json(await d.kuru.prepare(req.account as ViemAddress, req.side, req.sizeUsd));
+    try {
+      return c.json(await d.kuru.prepare(req.account as ViemAddress, req.side, req.sizeUsd));
+    } catch (e) {
+      // e.g. no liquidity on that side: a client-visible condition, not a server crash.
+      throw new HttpError(409, (e as Error).message.slice(0, 200));
+    }
   });
 
   // ---- demo (filming only) ----
