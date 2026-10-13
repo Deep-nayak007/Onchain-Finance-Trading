@@ -4,8 +4,14 @@ import { request } from './http';
 import { riskSchema } from './schemas';
 import { demoStore } from '../mocks/store';
 import { bookFixture } from '../mocks/fixtures';
-const level = z.tuple([z.string().regex(/^\d+(?:\.\d+)?$/), z.string().regex(/^\d+(?:\.\d+)?$/)]);
-export const bookSchema = z.object({ bids: z.array(level), asks: z.array(level), ts: z.string() });
+const num = z.string().regex(/^\d+(?:\.\d+)?$/);
+// Accepts the app's tuple shape and the gateway's {price,size} levels with a unix ts (gateway.openapi.yaml).
+const level = z.union([z.tuple([num, num]), z.object({ price: num, size: num }).transform((l) => [l.price, l.size] as [string, string])]);
+export const bookSchema = z.object({
+  bids: z.array(level),
+  asks: z.array(level),
+  ts: z.union([z.string(), z.number()]).transform((v) => (typeof v === 'number' ? new Date(v * 1000).toISOString() : v)),
+});
 export const gateway = {
   risk: (account: string) =>
     config.useMocks

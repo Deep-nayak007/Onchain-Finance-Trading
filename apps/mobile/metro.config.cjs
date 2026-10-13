@@ -9,8 +9,11 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
     if (process.env.EXPO_PUBLIC_USE_MOCKS !== 'false') {
       return { filePath: path.join(__dirname, 'mocks/canonical.ts'), type: 'sourceFile' };
     }
-    const shared = path.join(root, 'packages/shared/canonical.ts');
-    if (fs.existsSync(shared)) return { filePath: shared, type: 'sourceFile' };
+    // Prem's canonical JSON lives in packages/shared/src/ (exported as @leash/shared/canonical).
+    for (const rel of ['packages/shared/src/canonical.ts', 'packages/shared/canonical.ts']) {
+      const shared = path.join(root, rel);
+      if (fs.existsSync(shared)) return { filePath: shared, type: 'sourceFile' };
+    }
     throw new Error('Live mode requires Prem’s packages/shared/canonical.ts.');
   }
   return context.resolveRequest(context, moduleName, platform);

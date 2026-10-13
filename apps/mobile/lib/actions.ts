@@ -20,7 +20,7 @@ export async function signPrepared(account: Address, prepared: TxRequest): Promi
   if (config.useMocks) throw new Error('Demo mode does not sign or send transactions.');
   const request = txRequestSchema.parse(prepared);
   const bindings = requireBindings();
-  if ((await publicClient.getChainId()) !== 143)
+  if ((await publicClient.getChainId()) !== config.chainId)
     throw new Error(
       'The RPC is serving another network. Check your Monad connection before signing.',
     );

@@ -68,8 +68,8 @@ services:
       - key: GATEWAY_DB_PATH
         value: /tmp/gateway.sqlite
 
-  # Web front end: Face's Expo app exported for the browser (static, free). Demo mode = clearly labelled sample data,
-  # every screen/flow clickable. Live mode needs passkeys on the permanent RP domain + Face's integration/team.ts.
+  # Web front end: Face's Expo app exported for the browser (static, free), LIVE on testnet: browser passkeys with
+  # RP = this site's own host, real Brain API / gateway / Envio / Monad testnet RPC.
   - type: web
     name: leash-app
     runtime: static
@@ -89,7 +89,11 @@ services:
       - key: NODE_VERSION
         value: "22"
       - key: EXPO_PUBLIC_USE_MOCKS
-        value: "true"
+        value: "false"
+      - key: EXPO_PUBLIC_PASSKEY_RP_ID
+        value: leash-app.onrender.com
+      - key: EXPO_PUBLIC_ENVIO_URL_POINTER
+        value: https://raw.githubusercontent.com/yashpy/Onchain-Finance-Trading/main/deploy/envio-url.txt
       - key: EXPO_PUBLIC_CHAIN_ID
         value: "10143"
       - key: EXPO_PUBLIC_RPC_URL

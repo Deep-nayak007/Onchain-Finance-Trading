@@ -193,6 +193,8 @@ export function createApp(d: AppDeps) {
       if (d.wallets.configured) {
         const w = await d.wallets.restore(account, persona);
         if (w.address.toLowerCase() !== m.agentWallet.toLowerCase()) throw new HttpError(409, "mandate agentWallet doesn't match this trader's wallet; re-sign setMandate with the compiled agentWallet");
+        // The agent wallet pays gas for logReceipt: top it up once from the gas tank (drip is one-per-address).
+        await drip({ ...d.drip, store: d.store }, w.address as ViemAddress).catch(() => undefined);
       }
     }
     const policy = policyHash ? d.store.getPolicy(policyHash) : null;
@@ -309,7 +311,20 @@ export function createApp(d: AppDeps) {
     return c.json(await drip({ ...d.drip, store: d.store }, (req.address ?? req.account) as ViemAddress));
   });
 
+  // ---- policy (the user's compiled rules behind their onchain policyHash) ----
+  app.get("/policy/:account", (c) => {
+    const p = AccountParam.safeParse(c.req.param());
+    if (!p.success) throw new HttpError(400, "invalid account");
+    const u = d.store.getUser(p.data.account);
+    if (!u) throw new HttpError(404, "no compiled rules for this account");
+    return c.json({ policy: u.policy, policyHash: u.policyHash, persona: u.persona });
+  });
+
   // ---- spot (Kuru helper for Face's spot screen; additive) ----
+  app.get("/spot/book", async (c) => {
+    if (!d.kuru) throw new HttpError(503, "Kuru not configured on this chain");
+    return c.json(await d.kuru.book());
+  });
   app.post("/spot/prepare", async (c) => {
     if (!d.kuru) throw new HttpError(503, "Kuru not configured on this chain");
     const req = await body(c, z.object({ account: Address, side: z.enum(["BUY", "SELL"]), sizeUsd: z.coerce.number().positive().max(100) }));

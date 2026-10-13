@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import { networkLabel } from '../lib/config';
 import { Modal, View } from 'react-native';
 import { formatEther } from 'viem';
 import { colors } from '../theme';
@@ -36,7 +37,7 @@ export function TransactionReview() {
             </Type>
             <Row style={{ justifyContent: 'space-between' }}>
               <Label>Network</Label>
-              <Type>Monad · 143</Type>
+              <Type>{networkLabel}</Type>
             </Row>
             <Row style={{ justifyContent: 'space-between' }}>
               <Label>Native value sent</Label>

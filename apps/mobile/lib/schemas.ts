@@ -99,13 +99,17 @@ export const slackSchema = z.object({
   expiresAt: iso,
   status: z.enum(['PENDING', 'APPROVED', 'DENIED', 'EXPIRED']),
 });
+// The gateway (packages/shared/gateway.openapi.yaml) sends ts as unix seconds and percentages as decimal strings;
+// normalise to the app's view model (ISO time, numbers).
+const pctNumber = z.union([z.number().finite(), decimal]).transform(Number);
+const isoOrUnix = z.union([iso, z.number().int().nonnegative()]).transform((v) => (typeof v === 'number' ? new Date(v * 1000).toISOString() : v));
 export const riskSchema = z.object({
   account: addressSchema,
-  ts: iso,
+  ts: isoOrUnix,
   equityUsd: decimal,
   collateralUsd: decimal,
   marginUsedUsd: decimal,
-  weeklyPnlPct: z.number().finite(),
+  weeklyPnlPct: pctNumber,
   fundingPaidUsd: decimal,
   slackLeftUsd: positiveDecimal,
   positions: z.array(
@@ -116,7 +120,7 @@ export const riskSchema = z.object({
       entryPrice: positiveDecimal,
       markPrice: positiveDecimal,
       liqPrice: positiveDecimal,
-      liqDistancePct: z.number().finite(),
+      liqDistancePct: pctNumber,
       unrealizedPnlUsd: decimal,
     }),
   ),
@@ -127,13 +131,17 @@ export const txRequestSchema = z.object({
   data: z.string().regex(/^0x(?:[0-9a-fA-F]{2})*$/),
   value: z.string().regex(/^\d+$/),
   gas: z.string().regex(/^[1-9]\d*$/),
-  chainId: z.literal(143),
+  chainId: z.union([z.literal(143), z.literal(10143)]),
 });
 export const compileSchema = z.object({
   policy: policySchema,
   policyHash: hashSchema,
   leashCard: z.array(z.string()),
   warnings: z.array(z.string()),
+  // ARCHITECTURE §7.4 additive fields: everything setMandate needs. Null (with a warning) if a service is unavailable.
+  agentId: z.string().optional(),
+  agentWallet: addressSchema.nullable().optional(),
+  perplKey: addressSchema.nullable().optional(),
 });
 export const agentStatusSchema = z.object({
   state: z.string(),

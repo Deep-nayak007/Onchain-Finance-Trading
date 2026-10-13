@@ -86,6 +86,14 @@ describe("API routes", () => {
     await expect(e.gateway.execute({ account: USER, market: "MON-PERP", side: "LONG", sizeUsd: "5", price: "2", leverage: 1, idempotencyKey: "k" })).rejects.toThrow(/KEY_DISABLED/);
   });
 
+  it("GET /policy/:account returns the stored rules after activate", async () => {
+    const { app, post } = setup();
+    expect((await app.request(`/policy/${USER}`)).status).toBe(404);
+    await post("/mandate/compile", { account: USER, text: "x", persona: "falcon" });
+    await post("/agent/activate", { account: USER });
+    expect(await (await app.request(`/policy/${USER}`)).json()).toMatchObject({ persona: "falcon", policy: { version: 1 } });
+  });
+
   it("activate without compile → 409; unknown status → 404", async () => {
     const { app, post } = setup();
     expect((await post("/agent/activate", { account: USER })).status).toBe(409);

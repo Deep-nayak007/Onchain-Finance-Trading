@@ -6,7 +6,7 @@
 //   value = amount in native units when the paid asset is native MON (address 0).
 import { createRequire } from "node:module";
 import { monadChain, prepareTxRequest, sendTxAndWait, type Intent, type PersonaId, type TxRequest } from "@leash/shared";
-import { CostEstimator, ParamFetcher, type MarketParams } from "@kuru-labs/kuru-sdk";
+import { CostEstimator, OrderBook, ParamFetcher, type MarketParams } from "@kuru-labs/kuru-sdk";
 import { ethers } from "ethers";
 import { createWalletClient, encodeFunctionData, erc20Abi, http, parseUnits, zeroAddress, type Abi, type Address, type Hex, type PublicClient } from "viem";
 import type { Wallets } from "../wallet/wallets";
@@ -105,6 +105,13 @@ export class Kuru implements SpotExecutor {
 
   async marketParams(): Promise<Params> {
     return toParams(await this.rawParams());
+  }
+
+  /** Live L2 order book (formatted prices/sizes) for the spot screen. */
+  async book(depth = 20): Promise<{ bids: [string, string][]; asks: [string, string][]; ts: string }> {
+    const ob = await OrderBook.getFormattedL2OrderBook(this.provider, this.o.market, await this.rawParams());
+    const fmt = (rows: number[][]) => rows.slice(0, depth).map(([p, s]) => [String(p), String(s)] as [string, string]);
+    return { bids: fmt(ob.bids), asks: fmt(ob.asks), ts: new Date().toISOString() };
   }
 
   /** Quote + minOut with slippage. amount: quote (BUY) or base (SELL). */
