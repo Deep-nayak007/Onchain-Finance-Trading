@@ -17,7 +17,7 @@ primary_region = "lax"
   ENVIO_INDEXER_PORT = "9898"
   CONFIG_FILE = "config.yaml"
   LOG_LEVEL = "info"
-  LOG_STRATEGY = "console-plain"
+  LOG_STRATEGY = "console-raw"
   TUI_OFF = "true"
 
 [[vm]]

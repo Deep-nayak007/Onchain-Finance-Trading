@@ -19,16 +19,23 @@
  * - PnL fields and PnlSnapshot are populated at CP3 once Perpl fills + Kuru
  *   trades are indexed; until then they keep their defaults.
  */
-import { indexer } from "envio";
+import { BigDecimal, indexer } from "envio";
 
 // Status / venue enum decoding (uint8 on-chain, arrives as bigint).
+// BigDecimal schema fields must be BigDecimal values (bignumber.js), not JS numbers.
+const ZERO = new BigDecimal(0);
+
 const STATUS = ["EXECUTED", "REJECTED", "FAILED", "SHADOW"] as const;
 const VENUE = ["PERPL", "KURU"] as const;
 
-// Known persona wallets (lowercased). Fill from addresses.ts PERSONAS at CP1;
+// Known persona wallets (lowercased): Brain's Privy persona wallets (addresses.ts PERSONAS).
 // Envio counts a shadow receipt only when its emitter is one of these.
 const PERSONA_WALLETS = new Set<string>(
-  ([] as string[]).map((a) => a.toLowerCase())
+  [
+    "0x2477150BBA80a4E9127151eB863892f346211994", // falcon
+    "0x1780E260D175e975c6FFD31ed1FfaE9b6e7D0FB6", // otter
+    "0x38581aaaf757d195e2343651Ada5E7cE58F9d22C", // owl
+  ].map((a) => a.toLowerCase())
 );
 
 // ---- MandateRegistry ----
@@ -67,10 +74,10 @@ indexer.onEvent(
       executed: 0,
       rejected: 0,
       shadow: 0,
-      volumeUsd: 0,
-      realizedPnlUsd: 0,
-      shadowPnlUsd: 0,
-      maxDrawdownPct: 0,
+      volumeUsd: ZERO,
+      realizedPnlUsd: ZERO,
+      shadowPnlUsd: ZERO,
+      maxDrawdownPct: ZERO,
     });
   }
 );
@@ -176,15 +183,15 @@ indexer.onEvent(
       executed: 0,
       rejected: 0,
       shadow: 0,
-      volumeUsd: 0,
-      realizedPnlUsd: 0,
-      shadowPnlUsd: 0,
-      maxDrawdownPct: 0,
+      volumeUsd: ZERO,
+      realizedPnlUsd: ZERO,
+      shadowPnlUsd: ZERO,
+      maxDrawdownPct: ZERO,
     });
 
     const status = STATUS[Number(event.params.status)] ?? "FAILED";
     const venue = VENUE[Number(event.params.venue)] ?? "PERPL";
-    const sizeUsd = Number(event.params.sizeUsd6) / 1e6;
+    const sizeUsd = new BigDecimal(event.params.sizeUsd6.toString()).div(1e6);
 
     context.Receipt.set({
       id: `${event.transaction.hash}-${event.logIndex}`,
@@ -213,7 +220,7 @@ indexer.onEvent(
     let { executed, rejected, shadow, volumeUsd } = agent;
     if (status === "EXECUTED") {
       executed += 1;
-      volumeUsd += sizeUsd;
+      volumeUsd = volumeUsd.plus(sizeUsd); // BigDecimal math (number += BigDecimal would string-concatenate)
     } else if (status === "REJECTED") {
       rejected += 1;
     } else if (status === "SHADOW") {
@@ -226,24 +233,27 @@ indexer.onEvent(
   }
 );
 
-// ---- Kuru spot (CP3) ----
-//
-// Enable once the Kuru MON/AUSD order-book address is known (Q3). Uncomment the
-// KuruOrderBook contract block in config.yaml, run `pnpm codegen`, then:
-//
-// indexer.onEvent(
-//   { contract: "KuruOrderBook", event: "Trade" },
-//   async ({ event, context }) => {
-//     context.KuruTrade.set({
-//       id: `${event.transaction.hash}-${event.logIndex}`,
-//       account: event.params.takerAddress.toLowerCase(),
-//       market: event.srcAddress.toLowerCase(),
-//       side: event.params.isBuy ? 1 : -1,
-//       baseAmount: 0,  // scaled once MON/AUSD decimals are confirmed (Q3)
-//       quoteAmount: 0,
-//       price: Number(event.params.price),
-//       blockTimestamp: BigInt(event.block.timestamp),
-//       txHash: event.transaction.hash,
-//     });
-//   }
-// );
+// ---- Kuru spot ----
+// Testnet market MON/USDC 0xa241…D2D9 (no MON/AUSD on testnet). Scaling from the market's onchain params
+// (Kuru SDK ParamFetcher): pricePrecision 1e8, sizePrecision 1e10 (same on mainnet MON/AUSD).
+const KURU_PRICE_PRECISION = new BigDecimal(1e8);
+const KURU_SIZE_PRECISION = new BigDecimal(1e10);
+
+indexer.onEvent(
+  { contract: "KuruOrderBook", event: "Trade" },
+  async ({ event, context }) => {
+    const price = new BigDecimal(event.params.price.toString()).div(KURU_PRICE_PRECISION);
+    const base = new BigDecimal(event.params.filledSize.toString()).div(KURU_SIZE_PRECISION);
+    context.KuruTrade.set({
+      id: `${event.transaction.hash}-${event.logIndex}`,
+      account: event.params.takerAddress.toLowerCase(),
+      market: event.srcAddress.toLowerCase(),
+      side: event.params.isBuy ? 1 : -1,
+      baseAmount: base,
+      quoteAmount: base.times(price),
+      price,
+      blockTimestamp: BigInt(event.block.timestamp),
+      txHash: event.transaction.hash,
+    });
+  }
+);
