@@ -50,3 +50,6 @@ apps/mobile/ios/
 apps/mobile/android/
 artifacts/raw/
 artifacts/*.zip
+
+# Local Envio run (generated)
+indexer/config.local.yaml
