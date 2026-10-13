@@ -1,0 +1,57 @@
+# Render Blueprint: LEASH testnet demo on the FREE plan (no card). Brain API + Perpl gateway (Rails' code, testnet settings).
+# Dashboard → New + → Blueprint → public repo https://github.com/yashpy/Onchain-Finance-Trading → Blueprint file path:
+#   deploy/render.testnet.yaml
+# Secrets are NOT here: after creation, open each service → Environment → "Add from .env" and upload
+#   services/api/.env.render            (Brain)     — generated locally, gitignored
+#   services/perpl-gateway/.env.render  (gateway)   — generated locally, gitignored
+# Free-plan limits: sleeps after 15 min idle (kept warm by .github/workflows/keepalive.yml), no persistent disk
+# (Brain's SQLite + gateway keystore reset on restart/redeploy).
+services:
+  - type: web
+    name: leash-brain-api
+    runtime: docker
+    plan: free
+    region: oregon
+    branch: main
+    dockerfilePath: ./services/api/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: CHAIN_ID
+        value: "10143"
+      - key: LIVE
+        value: "false"
+      - key: MAX_ORDER_USD
+        value: "25"
+      - key: DATABASE_PATH
+        value: /tmp/leash.db
+      - key: GATEWAY_URL
+        value: https://leash-perpl-gateway-testnet.onrender.com
+
+  - type: web
+    name: leash-perpl-gateway-testnet
+    runtime: docker
+    plan: free
+    region: oregon
+    branch: main
+    rootDir: services/perpl-gateway
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: CHAIN_ID
+        value: "10143"
+      - key: MANDATE_REGISTRY_ADDRESS
+        value: "0x81bbeaf263eeae41cfd4be137427af3ba7248467"
+      - key: MARKET_ALLOWLIST
+        value: MON-PERP
+      - key: MAX_ORDER_USD
+        value: "25"
+      - key: STALE_BLOCKS_MAX
+        value: "60"
+      - key: GATEWAY_KEYSTORE_DIR
+        value: /tmp/keystore
+      - key: GATEWAY_DB_PATH
+        value: /tmp/gateway.sqlite
