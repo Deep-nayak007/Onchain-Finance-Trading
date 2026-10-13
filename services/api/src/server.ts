@@ -242,7 +242,9 @@ export function createApp(d: AppDeps) {
       d.gateway.keysDisable(account),
     ]);
     results.forEach((r, i) => r.status === "rejected" && log(`[kill] ${i === 0 ? "privy deny-all" : "gateway keys/disable"} failed: ${r.reason}`));
-    return c.json(statusOf(d, account));
+    // Additive: which cleanup legs succeeded (the onchain pause is what actually stops the trader).
+    const cleanup = { wallet: results[0].status === "fulfilled", gatewayKey: results[1].status === "fulfilled" };
+    return c.json({ ...statusOf(d, account), cleanup });
   });
 
   app.get("/agent/status/:account", (c) => {
