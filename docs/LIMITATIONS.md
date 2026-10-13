@@ -76,6 +76,14 @@ Updated 2026-10-12. Everything below sits behind an interface, so the real thing
   repo `yashpy/Onchain-Finance-Trading` and (2) keep all indexer imports inside `indexer/` (config.yaml reads `../packages/shared/abis`).
   Self-hosting on Fly was prepared (`indexer/deploy/`) but the Fly trial blocks more apps. Until then `/traders` has no stats and the
   Referee watches `REFEREE_WATCH` instead of all active mandates; receipts still verify via the API + chain.
+- **Envio (indexer)**: running **temporarily** as local `envio dev` on Rails' laptop, exposed through a Cloudflare
+  quick tunnel (`SERVICES.envioUrl`). It is only reachable while that laptop is awake with both processes up, and the
+  hostname changes on every tunnel restart. Envio Cloud is blocked on Envio's side for org `yashpy`: its linked-repo
+  list is frozen (repos added after the original install never appear, even a brand-new repo), and `indexer add` for
+  the fresh mirror `yashpy/leash-indexer` fails server-side (`Failed to add indexer`). The code is Envio-Cloud-ready:
+  standalone mirrors `yashpy/leash-indexer` and `prempagare07/leash-indexer` (branch `envio`, root `./`, config
+  `config.yaml`, pnpm 10 lockfile), verified with a frozen-lockfile install + codegen. Self-hosting files are in
+  `indexer/deploy/` (Fly). Swap `SERVICES.envioUrl` to the hosted endpoint once either org deploys.
 - **Gateway staleness**: `STALE_BLOCKS_MAX=50` (~20s). The default 20 (~8s at 0.4s blocks) flapped `ok:false` under the gateway's 20 req/s
   RPC throttle, which would have caused false Referee stale-pauses and refused executes.
 - **Live Perpl orders on testnet**: need ≥ 100 testnet AUSD (no public faucet found) in an account owned by the agent trade key, plus

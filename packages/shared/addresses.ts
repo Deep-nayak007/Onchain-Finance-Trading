@@ -147,6 +147,10 @@ export const SERVICES = {
   gatewayUrl: 'https://leash-perpl-gateway.fly.dev' as string | null,
   // Mainnet (143) gateway: Render free tier, reads Perpl mainnet. /health ok when cache lag <= STALE_BLOCKS_MAX (60 on Render).
   gatewayUrlMainnet: 'https://leash-gateway.onrender.com' as string | null,
-  // Envio Cloud GraphQL endpoint (CP2).
-  envioUrl: null as string | null,
+  // Envio GraphQL endpoint (testnet 10143). TEMPORARY: self-hosted `envio dev` on Prem's Mac behind a READ-ONLY proxy
+  // (scripts/envio-local: only POST /v1/graphql as the public role, admin headers stripped, mutations refused) + Cloudflare
+  // quick tunnel. Up while that Mac runs it; the hostname changes on tunnel restart (update here + Fly ENVIO_URL).
+  // Envio Cloud is blocked on Envio's side (see docs/LIMITATIONS.md); swap in the Envio Cloud URL once hosted.
+  // Do NOT publish a tunnel straight to Hasura: envio dev's default admin secret is "testing".
+  envioUrl: 'https://add-bush-herbal-raid.trycloudflare.com/v1/graphql' as string | null,
 } as const;
