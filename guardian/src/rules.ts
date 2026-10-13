@@ -8,7 +8,8 @@ export type RefereeConfig = {
   maxCacheLagBlocks: number;
 };
 
-export const DEFAULT_REFEREE: RefereeConfig = { staleFailsMax: 3, minLiqDistancePct: 5, maxCacheLagBlocks: 20 };
+// Monad blocks are ~0.4s: 50 blocks ≈ 20s of gateway cache lag (20 flapped in practice under the RPC throttle).
+export const DEFAULT_REFEREE: RefereeConfig = { staleFailsMax: 3, minLiqDistancePct: 5, maxCacheLagBlocks: 50 };
 
 export type RefereeInput = {
   /** null = no mandate (nothing to watch). */

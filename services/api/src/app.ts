@@ -89,6 +89,11 @@ export function buildApp(cfg: Config, opts: { store?: Store; startLoops?: boolea
     kuru,
     alchemyNotifyToken: cfg.ALCHEMY_WEBHOOK_SIGNING_KEY,
     demoToken: cfg.DEMO_TOKEN,
+    passkey: {
+      appleTeamIds: (cfg.APPLE_TEAM_ID ?? "").split(",").map((s) => s.trim()).filter((s) => /^[A-Z0-9]{10}$/.test(s)),
+      androidCertSha256: (cfg.ANDROID_CERT_SHA256 ?? "").split(",").map((s) => s.trim().toUpperCase()).filter((s) => /^([0-9A-F]{2}:){31}[0-9A-F]{2}$/.test(s)),
+      appId: cfg.MOBILE_APP_ID,
+    },
     corsOrigins: cfg.CORS_ORIGINS?.split(",").map((s) => s.trim()),
     log,
   };

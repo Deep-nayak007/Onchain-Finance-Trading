@@ -1,0 +1,41 @@
+# Fly.io deploy file for the Perpl gateway on Monad testnet (added by Brain; logic untouched).
+#   cd services/perpl-gateway && fly deploy --remote-only
+app = "leash-perpl-gateway"
+primary_region = "lax"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  CHAIN_ID = "10143"
+  MANDATE_REGISTRY_ADDRESS = "0x81bbeaf263eeae41cfd4be137427af3ba7248467"
+  MARKET_ALLOWLIST = "MON-PERP"
+  MAX_ORDER_USD = "25"
+  STALE_BLOCKS_MAX = "50"   # Monad ~0.4s blocks: 50 ≈ 20s. 20 (8s) flapped under the 20 req/s RPC throttle
+  GATEWAY_BIND = "0.0.0.0:8080"
+  GATEWAY_KEYSTORE_DIR = "/data/keystore"
+  GATEWAY_DB_PATH = "/data/gateway.sqlite"
+  RUST_LOG = "info"
+
+[mounts]
+  source = "gw_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  # One always-on machine: the Perpl cache streams events continuously.
+  auto_stop_machines = "off"
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    grace_period = "60s"
+    interval = "30s"
+    method = "GET"
+    path = "/health"
+    timeout = "5s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "1gb"

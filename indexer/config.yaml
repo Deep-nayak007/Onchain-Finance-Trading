@@ -17,7 +17,7 @@ name: leash-monad
 
 contracts:
   - name: MandateRegistry
-    abi_file_path: ../packages/shared/abis/MandateRegistry.json
+    abi_file_path: ./abis/MandateRegistry.json
     handler: src/EventHandlers.ts
     events:
       - event: MandateSet(address indexed user, uint256 indexed agentId, bytes32 policyHash, uint64 maxNotionalUsd6, uint16 maxLeverageX10, uint16 maxWeeklyLossBps, address agentWallet, address perplKey)
@@ -26,7 +26,7 @@ contracts:
       - event: Paused(address indexed user, address indexed by, string reason)
       - event: Resumed(address indexed user)
   - name: ReceiptLog
-    abi_file_path: ../packages/shared/abis/ReceiptLog.json
+    abi_file_path: ./abis/ReceiptLog.json
     handler: src/EventHandlers.ts
     events:
       - event: TradeReceipt(address indexed user, uint256 indexed agentId, uint64 indexed seq, uint8 venue, bytes32 market, int8 side, uint128 sizeUsd6, uint256 price1e18, uint8 status, bool usedSlack, bytes32 reasonHash, bytes32 signalHash, bytes32 execTxHash)
@@ -35,10 +35,11 @@ contracts:
   # (https://github.com/monad-developers/kuru-terminal). Uncomment this block
   # AND the chain-level KuruOrderBook address once Q3 (MON/AUSD order book) is
   # known, then run `pnpm codegen`.
-  # - name: KuruOrderBook
-  #   handler: src/EventHandlers.ts
-  #   events:
-  #     - event: Trade(uint40 orderId, address makerAddress, bool isBuy, uint256 price, uint96 updatedSize, address takerAddress, address txOrigin, uint96 filledSize)
+  # Signature verified against @kuru-labs/kuru-sdk abi/OrderBook.json (Trade event).
+  - name: KuruOrderBook
+    handler: src/EventHandlers.ts
+    events:
+      - event: Trade(uint40 orderId, address makerAddress, bool isBuy, uint256 price, uint96 updatedSize, address takerAddress, address txOrigin, uint96 filledSize)
 
 # Global field selection: expose the tx hash to handlers (used for entity ids).
 field_selection:
@@ -59,9 +60,10 @@ chains:
       - name: ReceiptLog
         address:
           - "0x21b168148e7c47ca0f1fab8bf9f69faff3aed6b3"
-      # - name: KuruOrderBook
-      #   address:
-      #     - "0x..."  # Kuru MON/AUSD order book on testnet — Q3 from Brain
+      # Kuru MON/USDC order book on testnet (no MON/AUSD on testnet). Source: docs.kuru.io/contracts/Contract-addresses
+      - name: KuruOrderBook
+        address:
+          - "0xa241896A7Dbe8a550D2E5fF7A914bB1989ceD2D9"
 
   # Mainnet (143) — fill in from addresses.ts LEASH.mainnet after the CP1
   # deploy, then switch the indexer to this chain.
