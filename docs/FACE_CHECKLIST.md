@@ -4,7 +4,7 @@ Dates use America/Phoenix: CP0 Sun Oct 11 at 23:00; CP1 Mon Oct 12 at 12:00; CP2
 
 | Brief row | Checkpoint | Implementation | Remaining acceptance |
 |---|---|---|---|
-| Permanent domain + Face ID passkey | CP0 | Mera native/web create, restore, session lifecycle; association generator | Domain, signing team, real PRF-capable phone; actual address + 10143 proof |
+| Permanent domain + Face ID passkey | CP0 | Confirmed leash-brain-api.fly.dev; native configs + Android debug fingerprint; Mera lifecycle | Published association files; paid-team iPhone build or Android setup; real PRF-capable device + 10143 proof |
 | Onboarding: gas + devices | CP1 | Welcome/setup, one-time 0.2 test MON drip + RPC confirmation; optional push | Real passkey wallet; physical device token |
 | Home | CP1 | Dollar balance, animated ring, status, P&L, rule summary, hold button | Shared balance/current mandate + live status/risk |
 | Rules writer | CP1 | Cloud compilation + policy hash + wallet/key fields verified; editable card | Real passkey signature |

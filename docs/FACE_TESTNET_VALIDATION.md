@@ -30,7 +30,7 @@ Keep Metro running for development builds. The cloud API does not depend on Prem
 
 ## Still required
 
-- The team-selected permanent passkey RP domain and device association/signing setup. Real Face ID login/recovery and signed rules/slack/pause/resume have not been validated.
+- Device association/signing setup for the now-confirmed permanent RP `leash-brain-api.fly.dev`; see [FACE_PASSKEY_SETUP.md](FACE_PASSKEY_SETUP.md). Both association URLs are awaiting signing details; Deep has no paid Apple account. Real Face ID login/recovery and signed rules/slack/pause/resume have not been validated.
 - Gateway and Envio URLs from Rails. General history/PnL/risk/order preparation waits for those services; there is no sample fallback. The bounded, explicit receipt transaction proof is only for public checks until Envio arrives.
 - ERC-8004 registrations, real venue liquidity/funding and final footage. Mainnet and real-money trading remain unproven.
 

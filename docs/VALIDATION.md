@@ -2,6 +2,8 @@
 
 October 12 update: the deployed testnet API, public receipt in browser and iOS Simulator, 0.2 test MON drip, cloud rule compilation, unsigned mandate preparation and unsigned Kuru BUY quote have now been checked. Shared sender/hash tests also pass. See [FACE_TESTNET_VALIDATION.md](FACE_TESTNET_VALIDATION.md) for current evidence and remaining blockers. The table below records the earlier sample build, before the live handoff.
 
+Passkey setup follow-up: the fixed RP hostname is configured, both native prebuilds completed, and the actual Android debug certificate fingerprint was independently checked. TypeScript and 29 mobile tests pass; the public testnet browser receipt still verifies. Association files remain 404 and no real passkey ceremony is claimed. See [FACE_PASSKEY_SETUP.md](FACE_PASSKEY_SETUP.md).
+
 Validated October 11, 2026, America/Phoenix, on this Mac with Xcode.
 
 | Check | Result |

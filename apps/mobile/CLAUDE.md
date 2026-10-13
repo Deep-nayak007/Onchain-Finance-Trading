@@ -13,6 +13,7 @@ Every live transaction must use the team's sendTx through integration/team.ts.
 No EIP-7702. Accept Monad mainnet 143 and testnet 10143; every request and RPC must match EXPO_PUBLIC_CHAIN_ID.
 Mera 0.2.0 + react-native-passkey 3.6.1; native client on mobile, browser on web.
 RP ID is permanent; do not choose it for the team.
+The team has now chosen leash-brain-api.fly.dev. Signing handoff: ../../docs/FACE_PASSKEY_SETUP.md. Deep has no paid Apple Developer account; do not configure his Personal Team as the passkey signing team.
 Prompt per transaction; always end session in finally and clear secret buffers.
 Store credentialId and transports only in SecureStore; never store PRF/key.
 Check signer matches the signed-in wallet before sending.

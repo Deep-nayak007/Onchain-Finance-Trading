@@ -6,7 +6,7 @@ The project uses npm workspaces because npm is installed on this machine. Expo S
 
 ## Passkeys
 
-1. Choose the permanent RP hostname with the team. Do not change it after accounts are created.
+1. The team confirmed `leash-brain-api.fly.dev` as the permanent RP. It is configured now; do not change it after accounts are created. Signing fingerprints and the remaining acceptance steps are in [FACE_PASSKEY_SETUP.md](FACE_PASSKEY_SETUP.md).
 2. Copy `apps/mobile/.env.example` to `.env`. Set `EXPO_PUBLIC_PASSKEY_RP_ID`, the actual Apple Team ID and/or Android signing certificate fingerprint. Bundle/package name is provisionally `app.leash.mobile`; settle it before registration.
 3. Run `npm run associations --workspace @leash/mobile` from the root. The generator produces actual association files under `artifacts/associations/.well-known/` and rejects missing or malformed signing information.
 4. Host both files on the RP domain over HTTPS, with JSON content type and without redirects. The generator does not deploy or publish anything.
