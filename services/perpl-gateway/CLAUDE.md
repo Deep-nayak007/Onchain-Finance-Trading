@@ -20,6 +20,14 @@ Fail-closed Rust (axum + tokio + alloy + perpl-sdk) gateway over Perpl on Monad.
   `idempotencyKey` (SQLite `key → txHash`).
 - Local Perpl SDK tests need the Monad anvil from category-labs/foundry
   v1.5.0-monad.0.2.0 on PATH.
-- `cargo build`; deploy via `Dockerfile`. Put the public URL in
-  `packages/shared/addresses.ts` → `SERVICES.gatewayUrl`.
-- Q1/Q2 answered in `docs/perpl-notes.md`.
+- `cargo build`; deploy via `Dockerfile`. Hosted on **Render free**
+  (`render.yaml`): testnet demo = `leash-perpl-gateway-testnet.onrender.com`,
+  mainnet = `leash-gateway.onrender.com`. (Fly was used first but its trial
+  ended.) Render free sleeps on idle, so keep a /health ping warm; `PORT` is
+  injected (config falls back to it when `GATEWAY_BIND` is unset). URLs live in
+  `packages/shared/addresses.ts` → `SERVICES.gatewayUrl` / `gatewayUrlMainnet`.
+- RPC is throttled to 20 req/s (`cache.rs`) so the snapshot stays under
+  QuickNode's 50/s cap; `STALE_BLOCKS_MAX=50` (~20s) to avoid flapping.
+- Q1/Q2 answered in `docs/perpl-notes.md`. `/deposit/prepare` + the enrollment
+  leg of `/keys/prepare` are deliberately stubbed (BAD_REQUEST / null) until
+  Perpl test collateral exists — this is the app's "Fund the Leash" 400.
