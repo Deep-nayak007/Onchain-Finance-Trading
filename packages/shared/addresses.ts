@@ -143,8 +143,10 @@ export const KURU_TESTNET = {
 
 /** Live service URLs. Filled in as each deploys. */
 export const SERVICES = {
-  // Public HTTPS Perpl gateway (CP1).
-  gatewayUrl: 'https://leash-perpl-gateway.fly.dev' as string | null, // testnet (10143), Fly app leash-perpl-gateway
+  // Testnet (10143) gateway, the LIVE DEMO network: Fly app leash-perpl-gateway (STALE_BLOCKS_MAX=50).
+  gatewayUrl: 'https://leash-perpl-gateway.fly.dev' as string | null,
+  // Mainnet (143) gateway: Render free tier, reads Perpl mainnet. /health ok when cache lag <= STALE_BLOCKS_MAX (60 on Render).
+  gatewayUrlMainnet: 'https://leash-gateway.onrender.com' as string | null,
   // Envio Cloud GraphQL endpoint (CP2).
   envioUrl: null as string | null,
 } as const;
