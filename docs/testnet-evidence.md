@@ -68,3 +68,15 @@ Registered on IdentityRegistry `0x8004A818BFB912233c491871b3d84c89A494BD9e` by t
 | Falcon | 2227 | [https://testnet.monadvision.com/tx/0x954b8e92…005c](https://testnet.monadvision.com/tx/0x954b8e92ecbaf4fc866a5d02c15eabd88a133d6c802ecca4be8b8c3652a3005c) | https://leash-brain-api.fly.dev/agents/falcon.json |
 | Otter | 2228 | [https://testnet.monadvision.com/tx/0x0052a0a6…4140](https://testnet.monadvision.com/tx/0x0052a0a606a2133dcb47d3e13eadd68481591ba95b9b0c87e655b9a4876d4140) | https://leash-brain-api.fly.dev/agents/otter.json |
 | Owl | 2229 | [https://testnet.monadvision.com/tx/0xa366ba97…5467](https://testnet.monadvision.com/tx/0xa366ba97890e107dbb572ea090913d08245e584b1b2cbb2974eb14ad47065467) | https://leash-brain-api.fly.dev/agents/owl.json |
+
+## Run 4: full stack on testnet, gateway + Envio + ERC-8004 (2026-10-12 night)
+Brain API → real gateway (`leash-perpl-gateway.fly.dev`, `/keys/prepare` now returns the per-user trade key) → onchain receipt →
+Envio (`https://add-bush-herbal-raid.trycloudflare.com/v1/graphql`) → Brain `/traders`.
+| Step | Result | Tx |
+|---|---|---|
+| Compile → agentId **2227** (Falcon's ERC-8004 id), Privy agentWallet, real `perplKey` 0xa097…eefc from the gateway | ok | — |
+| User signs `setMandate` with agentId 2227 + gateway trade key | ok | [https://testnet.monadvision.com/tx/0xe45bff67…](https://testnet.monadvision.com/tx/0xe45bff67b767f05ee4efbc3000e72bf394812f768bbf90c6aa7ce3f6df102564) |
+| Paper intent → **EXECUTED** receipt, gateway mark $0.02486, **639 ms** decision→confirmed, `GET /receipts` ✓ | reasonHash `0xd8b7b0c3…` | [https://testnet.monadvision.com/tx/0x6812046a…](https://testnet.monadvision.com/tx/0x6812046a7d53b5ca99108f3f2343f4d6386ba400a61e482792a2544682eee782) |
+| Envio indexes it within seconds: Receipt (agentId 2227), Agent #2227 executed 1 / volume $12, Mandate perplKey | ok | — |
+| Brain `/traders` → Falcon stats from Envio (executedCount 1, volumeUsd 12) | ok | — |
+| Referee `--once` discovers both active mandates via Envio and reads the gateway's `/risk` | ok | — |
