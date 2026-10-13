@@ -70,7 +70,7 @@ export default function Risk() {
                 </Type>
               </Row>
             </Card>
-            {Date.now() - Date.parse(r.ts) > 15000 && (
+            {Date.now() - r.ts * 1000 > 15000 && (
               <Message
                 tone="info"
                 text="This risk snapshot is stale. New trades should wait for fresh data."
@@ -138,8 +138,16 @@ export default function Risk() {
                   <Type color={colors.muted}>/ {limit === undefined ? '—' : percent(limit)}</Type>
                 </Type>
                 <Pill
-                  label={limit !== undefined && loss >= limit ? 'LIMIT REACHED' : 'WITHIN RULES'}
-                  color={limit !== undefined && loss >= limit ? colors.bad : colors.ok}
+                  label={
+                    limit === undefined
+                      ? 'RULES UNAVAILABLE'
+                      : loss >= limit
+                        ? 'LIMIT REACHED'
+                        : 'WITHIN RULES'
+                  }
+                  color={
+                    limit === undefined ? colors.muted : loss >= limit ? colors.bad : colors.ok
+                  }
                 />
               </Row>
               <View style={{ height: 6, backgroundColor: colors.line, borderRadius: 3 }}>

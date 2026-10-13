@@ -7,7 +7,7 @@ import {
 } from './schemas';
 import type { Address, Hex } from 'viem';
 import * as Haptics from 'expo-haptics';
-import { config, requireMainnet } from './config';
+import { config, requireConfiguredChain } from './config';
 import { requireBindings } from '../integration/team';
 import { withSigner } from './mera';
 import { publicClient } from './chain';
@@ -16,9 +16,9 @@ import { demoStore } from '../mocks/store';
 import { reviewTransaction } from './transactionReview';
 import { ConfirmedActionError, type PendingCallback } from './confirmedAction';
 export async function signPrepared(account: Address, prepared: TxRequest): Promise<Hex> {
-  requireMainnet();
   if (config.useMocks) throw new Error('Demo mode does not sign or send transactions.');
   const request = txRequestSchema.parse(prepared);
+  requireConfiguredChain(request.chainId);
   const bindings = requireBindings();
   if ((await publicClient.getChainId()) !== config.chainId)
     throw new Error(
@@ -61,7 +61,7 @@ export async function pullLeash(account: Address) {
     await api.kill(account);
   } catch {
     throw new Error(
-      'Your onchain pause confirmed. The backend cleanup did not respond; retry cleanup from Home.',
+      'Your onchain pause confirmed. The backend cleanup is incomplete; retry cleanup from Home.',
     );
   }
 }
@@ -106,4 +106,10 @@ export async function retryConfirmedCallback(pending: PendingCallback) {
   else if (pending.kind === 'resume')
     await requireBindings().resumeAgent(pending.account, pending.txHash);
   else await api.approveSlack(pending.id, pending.txHash);
+}
+export async function reconnectTrader(account: Address) {
+  const policy = await requireBindings().readPolicy(account);
+  if (!policy)
+    throw new Error('Your signed rules are unavailable. Review and sign your rules again to reconnect.');
+  return api.activate({ account });
 }

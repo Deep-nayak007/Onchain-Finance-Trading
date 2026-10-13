@@ -1,20 +1,33 @@
+import { serviceUrls } from './serviceUrls';
+import { testnetHandoff } from '../integration/testnet';
+export type MonadChainId = 143 | 10143;
+export function parseChainId(value: string | number): MonadChainId {
+  const id = Number(value);
+  if (id !== 143 && id !== 10143)
+    throw new Error('Choose Monad mainnet (143) or Monad testnet (10143).');
+  return id;
+}
+export const networkName = (id: MonadChainId) => (id === 10143 ? 'Monad testnet' : 'Monad mainnet');
+const chainId = parseChainId(process.env.EXPO_PUBLIC_CHAIN_ID || '143');
 export const config = {
   useMocks: process.env.EXPO_PUBLIC_USE_MOCKS !== 'false',
-  chainId: Number(process.env.EXPO_PUBLIC_CHAIN_ID || '143'),
-  rpcUrl: process.env.EXPO_PUBLIC_RPC_URL || 'https://rpc.monad.xyz',
-  apiUrl: process.env.EXPO_PUBLIC_API_URL || '',
-  gatewayUrl: process.env.EXPO_PUBLIC_GATEWAY_URL || '',
-  envioUrl: process.env.EXPO_PUBLIC_ENVIO_URL || '',
-  // Optional one-line file holding the CURRENT Envio URL (rotated when a tunnel restarts); preferred over envioUrl.
-  envioUrlPointer: process.env.EXPO_PUBLIC_ENVIO_URL_POINTER || '',
+  chainId,
+  networkName: networkName(chainId),
+  rpcUrl:
+    process.env.EXPO_PUBLIC_RPC_URL ||
+    (chainId === 10143 ? 'https://testnet-rpc.monad.xyz' : 'https://rpc.monad.xyz'),
+  apiUrl: process.env.EXPO_PUBLIC_API_URL || (chainId === 10143 ? testnetHandoff.apiUrl : ''),
+  ...serviceUrls(chainId, {
+    gatewayUrl: process.env.EXPO_PUBLIC_GATEWAY_URL,
+    envioUrl: process.env.EXPO_PUBLIC_ENVIO_URL,
+    envioUrlPointer: process.env.EXPO_PUBLIC_ENVIO_URL_POINTER,
+  }),
   rpId: process.env.EXPO_PUBLIC_PASSKEY_RP_ID || '',
   easProjectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID || '',
 };
-// Monad mainnet (143) or testnet (10143); the network is a config switch (EXPO_PUBLIC_CHAIN_ID).
-export const SUPPORTED_CHAINS = [143, 10143] as const;
-export const isTestnet = config.chainId === 10143;
-export const networkLabel = isTestnet ? 'Monad testnet · 10143' : 'Monad · 143';
-export function requireMainnet() {
-  if (!(SUPPORTED_CHAINS as readonly number[]).includes(config.chainId))
-    throw new Error(`Unsupported network ${config.chainId}. Set EXPO_PUBLIC_CHAIN_ID to 143 or 10143.`);
+export function requireConfiguredChain(requestChainId: number = config.chainId) {
+  if (parseChainId(requestChainId) !== config.chainId)
+    throw new Error(
+      `This transaction is for another network. Expected ${config.networkName} (${config.chainId}).`,
+    );
 }

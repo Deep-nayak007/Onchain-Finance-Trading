@@ -42,7 +42,11 @@ export function TraderCard({
               value: trader.sevenDayPct === null ? '—' : percent(trader.sevenDayPct, true),
               color: (trader.sevenDayPct ?? 0) >= 0 ? colors.ok : colors.bad,
             },
-            { label: 'receipts', value: String(trader.receipts), color: colors.fg },
+            {
+              label: 'receipts',
+              value: trader.receipts === null ? '—' : String(trader.receipts),
+              color: colors.fg,
+            },
             {
               label: 'max drop',
               value: trader.maxDrawdownPct === null ? '—' : percent(trader.maxDrawdownPct),

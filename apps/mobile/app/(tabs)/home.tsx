@@ -23,7 +23,12 @@ import { colors } from '../../theme';
 import { useRisk, useStatus, useReceipts, useSlack, usePolicy } from '../../lib/queries';
 import { useSession } from '../../lib/session';
 import { useAction } from '../../lib/useAction';
-import { pullLeash, resumeTrader, retryConfirmedCallback } from '../../lib/actions';
+import {
+  pullLeash,
+  resumeTrader,
+  retryConfirmedCallback,
+  reconnectTrader,
+} from '../../lib/actions';
 import { dollars, percent } from '../../lib/money';
 import { envio } from '../../lib/envio';
 import { config } from '../../lib/config';
@@ -42,7 +47,8 @@ export default function Home() {
     refetchInterval: 4000,
   });
   const action = useAction();
-  const paused = status.data?.state === 'PAUSED';
+  const paused = status.data?.state === 'PAUSED' || status.data?.state === 'KILLED';
+  const active = status.data?.state === 'RUNNING' || status.data?.state === 'ACTIVE';
   const persona = status.data?.persona ?? 'your trader';
   const budget = policy.data
     ? (Number(policy.data.sleeveUsd) * policy.data.maxWeeklyLossPct) / 100
@@ -74,8 +80,18 @@ export default function Home() {
         )}
         <Row>
           <Pill
-            label={paused ? 'PAUSED' : status.data ? 'ON A LEASH' : 'CONNECTING'}
-            color={paused ? colors.rope : colors.ok}
+            label={
+              paused
+                ? 'PAUSED'
+                : active
+                  ? 'ON A LEASH'
+                  : status.data?.state === 'RECOVERY_REQUIRED'
+                    ? 'RECONNECT'
+                    : status.data?.state === 'NOT_STARTED'
+                      ? 'SET RULES'
+                      : 'CONNECTING'
+            }
+            color={paused || !active ? colors.rope : colors.ok}
           />
           <Type color={colors.muted} style={{ fontSize: 11 }}>
             Your keys stay yours.
@@ -97,13 +113,15 @@ export default function Home() {
                 {persona}
               </Type>
               <Pill
-                label={paused ? 'PAUSED' : 'TRADER ACTIVE'}
-                color={paused ? colors.rope : colors.ok}
+                label={paused ? 'PAUSED' : active ? 'TRADER ACTIVE' : 'WAITING'}
+                color={paused || !active ? colors.rope : colors.ok}
               />
               <Type color={colors.muted} style={{ fontSize: 11, lineHeight: 17 }}>
                 {paused
                   ? 'Waiting for you. Only you can resume.'
-                  : 'Room to trade. Bound by your rules.'}
+                  : active
+                    ? 'Room to trade. Bound by your rules.'
+                    : 'Set your rules or reconnect your trader to start.'}
               </Type>
             </View>
           </Row>
@@ -199,6 +217,22 @@ export default function Home() {
         )}
       </View>
       <Message text={action.error} />
+      {!config.useMocks && status.data?.state === 'RECOVERY_REQUIRED' && (
+        <>
+          <Message
+            tone="info"
+            text="Your rules are onchain, but Brain has no current trader record. Reconnect using your saved rules; Brain verifies their onchain hash."
+          />
+          <Button
+            label="Reconnect my trader"
+            variant="secondary"
+            loading={action.busy}
+            onPress={() =>
+              void action.run(() => reconnectTrader(account!), 'Your trader reconnected.')
+            }
+          />
+        </>
+      )}
       {action.pending && (
         <Button
           variant="secondary"

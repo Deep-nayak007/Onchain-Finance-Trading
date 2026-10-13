@@ -41,8 +41,22 @@ export const personaSchema = z.object({
   name: z.string(),
   style: z.string(),
   mode: z.enum(['LIVE', 'SHADOW']),
-  wallet: addressSchema,
+  wallet: addressSchema.nullable(),
   defaultPolicy: policySchema,
+});
+export const traderResponseSchema = personaSchema.extend({
+  stats: z
+    .object({
+      executedCount: z.number().int().nonnegative(),
+      rejectedCount: z.number().int().nonnegative(),
+      shadowCount: z.number().int().nonnegative(),
+      volumeUsd: decimal,
+      realizedPnlUsd: decimal,
+      shadowPnlUsd: decimal,
+      maxDrawdownPct: z.number().finite(),
+    })
+    .nullable()
+    .optional(),
 });
 export const intentSchema = z.object({
   id: z.uuid(),
@@ -99,17 +113,13 @@ export const slackSchema = z.object({
   expiresAt: iso,
   status: z.enum(['PENDING', 'APPROVED', 'DENIED', 'EXPIRED']),
 });
-// The gateway (packages/shared/gateway.openapi.yaml) sends ts as unix seconds and percentages as decimal strings;
-// normalise to the app's view model (ISO time, numbers).
-const pctNumber = z.union([z.number().finite(), decimal]).transform(Number);
-const isoOrUnix = z.union([iso, z.number().int().nonnegative()]).transform((v) => (typeof v === 'number' ? new Date(v * 1000).toISOString() : v));
-export const riskSchema = z.object({
+export const riskWireSchema = z.object({
   account: addressSchema,
-  ts: isoOrUnix,
+  ts: z.number().int().nonnegative(),
   equityUsd: decimal,
   collateralUsd: decimal,
   marginUsedUsd: decimal,
-  weeklyPnlPct: pctNumber,
+  weeklyPnlPct: decimal.refine((v) => Number.isFinite(Number(v))),
   fundingPaidUsd: decimal,
   slackLeftUsd: positiveDecimal,
   positions: z.array(
@@ -120,12 +130,21 @@ export const riskSchema = z.object({
       entryPrice: positiveDecimal,
       markPrice: positiveDecimal,
       liqPrice: positiveDecimal,
-      liqDistancePct: pctNumber,
+      liqDistancePct: decimal.refine((v) => Number.isFinite(Number(v))),
       unrealizedPnlUsd: decimal,
     }),
   ),
   exposureByMarket: z.record(z.string(), positiveDecimal),
 });
+// Normalize only the percentages used by the UI; retain the exact gateway wire contract above.
+export const riskSchema = riskWireSchema.transform((risk) => ({
+  ...risk,
+  weeklyPnlPct: Number(risk.weeklyPnlPct),
+  positions: risk.positions.map((position) => ({
+    ...position,
+    liqDistancePct: Number(position.liqDistancePct),
+  })),
+}));
 export const txRequestSchema = z.object({
   to: addressSchema,
   data: z.string().regex(/^0x(?:[0-9a-fA-F]{2})*$/),
@@ -138,10 +157,9 @@ export const compileSchema = z.object({
   policyHash: hashSchema,
   leashCard: z.array(z.string()),
   warnings: z.array(z.string()),
-  // ARCHITECTURE §7.4 additive fields: everything setMandate needs. Null (with a warning) if a service is unavailable.
-  agentId: z.string().optional(),
-  agentWallet: addressSchema.nullable().optional(),
-  perplKey: addressSchema.nullable().optional(),
+  agentId: z.string().regex(/^\d+$/),
+  agentWallet: addressSchema.nullable(),
+  perplKey: addressSchema.nullable(),
 });
 export const agentStatusSchema = z.object({
   state: z.string(),
@@ -162,20 +180,49 @@ export type CompileResult = z.infer<typeof compileSchema>;
 export type ReceiptStatus = 'EXECUTED' | 'REJECTED' | 'FAILED' | 'SHADOW' | 'PAUSED';
 export type IndexedReceipt = {
   id: string;
+  agentId?: string;
+  account?: string;
+  proofTxHash?: string;
+  anchorSource?: 'envio' | 'rpc';
+  usedSlack?: boolean;
+  execTxHash?: string | null;
   seq: number;
-  persona: Persona['id'];
+  persona: Persona['id'] | null;
   status: ReceiptStatus;
   reasonHash: string | null;
   signalHash: string | null;
   createdAt: string;
   detail?: ReceiptDetail;
+  reasoningFetched?: boolean;
   pauseReason?: string;
 };
 export type TraderStats = {
   persona: Persona;
   sevenDayPct: number | null;
-  receipts: number;
+  receipts: number | null;
   maxDrawdownPct: number | null;
   identityUrl?: string;
 };
 export type Book = { bids: [string, string][]; asks: [string, string][]; ts: string };
+export const apiHealthSchema = z.object({
+  ok: z.boolean(),
+  chainId: z.union([z.literal(143), z.literal(10143)]),
+  live: z.boolean(),
+  gateway: z.string(),
+  contracts: z.boolean(),
+});
+export const apiConfigSchema = z.object({
+  chainId: z.union([z.literal(143), z.literal(10143)]),
+  addresses: z.object({ mandateRegistry: addressSchema, receiptLog: addressSchema }).nullable(),
+  personas: z.array(personaSchema),
+  live: z.boolean(),
+});
+export const spotPrepareSchema = z
+  .object({
+    txs: z.array(txRequestSchema).min(1),
+    estimatedOut: z.number().finite().positive(),
+    minOut: z.number().finite().positive(),
+  })
+  .refine((value) => value.minOut <= value.estimatedOut, {
+    message: 'Minimum output exceeds the quote.',
+  });

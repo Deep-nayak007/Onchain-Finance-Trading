@@ -1,12 +1,12 @@
 # Connect the Face lane
 
-The workspace originally contained no implementation or shared package. The supplied architecture and three briefs are copied verbatim to the repository. All bootstrap data and code stay inside `apps/mobile`; no Brain or Rails implementation files were invented.
+The workspace originally contained no implementation or shared package. On October 12, Brain/Rails' merged main branch was imported so Face can use their actual delivered code. All Face bootstrap data stays inside `apps/mobile/mocks`; no owner implementation files are invented or edited by the adapter. The testnet acceptance status is in [FACE_TESTNET_VALIDATION.md](FACE_TESTNET_VALIDATION.md).
 
 The project uses npm workspaces because npm is installed on this machine. Expo SDK 57 has automatic monorepo support; Metro also watches the repository root. TypeScript is strict. `apps/mobile/CLAUDE.md` is the short reload guide.
 
 ## Passkeys
 
-1. Choose the permanent RP hostname with the team. Do not change it after accounts are created.
+1. Deep approved `leash-brain-api.onrender.com` as the native RP before any LEASH passkeys existed. It is configured now; do not change it after accounts are created. Signing fingerprints and the remaining acceptance steps are in [FACE_PASSKEY_SETUP.md](FACE_PASSKEY_SETUP.md).
 2. Copy `apps/mobile/.env.example` to `.env`. Set `EXPO_PUBLIC_PASSKEY_RP_ID`, the actual Apple Team ID and/or Android signing certificate fingerprint. Bundle/package name is provisionally `app.leash.mobile`; settle it before registration.
 3. Run `npm run associations --workspace @leash/mobile` from the root. The generator produces actual association files under `artifacts/associations/.well-known/` and rejects missing or malformed signing information.
 4. Host both files on the RP domain over HTTPS, with JSON content type and without redirects. The generator does not deploy or publish anything.
@@ -19,31 +19,31 @@ Only credential ID and transports are stored. Each transaction obtains fresh PRF
 
 ## Shared code and live services
 
-Brain supplies `packages/shared/canonical.ts`, schemas, fixtures, and `sendTx.ts`. Rails supplies actual ABIs, source-backed deployed addresses, and `queries.graphql`. Mock mode always uses the local mock canonicalizer so incoming teammate code cannot break isolated testing. Live mode selects the team's canonical function and refuses a bundle if it is missing. The mock canonicalizer is explicitly a bootstrap and must match the team's vectors before live use.
+Brain supplies `packages/shared/src/canonical.ts`, schemas, fixtures, and `sendTx.ts`. Rails supplies actual ABIs, source-backed deployed addresses, and `queries.graphql`. Metro selects the real shared canonicalizer in testnet/live mode and the isolated mock function in mock mode; TypeScript and tests use the shared implementation. Both agree on the pinned vectors and deployed receipt.
 
-Fill the FACE-owned `apps/mobile/integration/team.ts` adapter with imports from the actual delivered files. Its interface maps existing interfaces into app view models; it does not modify architecture §7 or require a new backend endpoint. Use the actual exports rather than renaming or recreating the owners' package.
+The FACE-owned `integration/team.ts` adapter is implemented by `integration/live.ts`, `indexer.ts` and `receiptProof.ts`. It uses the existing API/OpenAPI and shared exports; no frozen interface is changed. The regular profile uses `.env`; `testnet:ios` / `testnet:web` load optional connection settings and force the deployed API/chain/RPC. `mock:ios` / `mock:web` exclude dotenv context modules so Expo 57 cannot override mock isolation with a live `.env`.
 
 | Binding | Actual implementation required |
 |---|---|
-| `sendTx` | Delegate every send to the shared gas-explicit sender; confirm chain 143 |
+| `sendTx` | Shared gas-explicit sender; confirm the configured chain, 143 or 10143, before review/signing |
 | `prepareMandate`, `prepareSlack`, `preparePause`, `prepareResume` | Shared MandateRegistry ABI + verified address; estimate gas + 10% |
 | `activateAgent`, `resumeAgent` | Brain's actual `/agent/activate` payload; wait for the contract receipt, then restore loop/policy/key enrollment on resume |
-| `readReceipts`, `readReceipt`, `readPnl`, `readTraderStats` | Shared Envio queries and actual entity fields, with consumer validation |
+| `readReceipts`, `readReceipt`, `readPnl`, `readTraderStats` | Envio query fields copied from shared queries, consumer validation; API personas/stats; unknown returns stay blank |
 | `readPolicy`, `readBalanceUsd` | Current mandate and real AUSD token/decimals; no historical RPC calls |
 | `prepareDeposit`, `prepareKeyEnrollment`, `prepareManualOrder` | Rails' actual gateway request payloads; Q1 must be resolved for enrollment |
-| `readSpotBook`, `quoteSwap` | Brain's actual Kuru helper; quote expiry, minimum output, token approvals |
+| `readSpotBook`, `quoteSwap` | Delivered `/spot/book` SDK depth; `/spot/prepare` supplies unsigned transactions, nonzero minimum output and a locally limited quote review window |
 
-The `queryEnvio` transport uses graphql-request with timeout and runtime validation; the adapter supplies the real shared query document and schema.
+The `queryEnvio` transport follows `deploy/envio-url.txt` on GitHub main with a bounded lookup and 60-second cache, then falls back to the shared/explicit endpoint. It uses graphql-request with timeout and runtime validation; the adapter supplies the real shared query document and schema.
 
 All live prepared transactions pass the app's schema check, then a transaction-review sheet, then a fresh passkey prompt. The app verifies the receipt status before subsequent work. Confirmed mandates/slack/resumes retain their backend callback for retry without another signature. Multi-transaction deposits retain confirmed progress so a retry does not repeat an already confirmed transaction. Swap approvals currently require a fresh quote if a later step expires; review confirmed approvals before retrying.
 
-Set `EXPO_PUBLIC_API_URL`, `EXPO_PUBLIC_GATEWAY_URL`, `EXPO_PUBLIC_ENVIO_URL`, and `EXPO_PUBLIC_EAS_PROJECT_ID`. The REST clients implement only the paths named in §7. Status/risk/receipts/slack refresh every 3–4 seconds; trader stats refresh every 5 seconds. No endpoint falls back to demo data in live mode. The exact `/slack/pending` response container must be confirmed with Brain; the consumer currently accepts `SlackRequest[]`.
+Set `EXPO_PUBLIC_API_URL=https://leash-brain-api.onrender.com`, `EXPO_PUBLIC_CHAIN_ID=10143` and `EXPO_PUBLIC_RPC_URL=https://testnet-rpc.monad.xyz`. Leave gateway/Envio overrides empty to use the shared Rails URLs; the app follows the team's rotating Envio pointer. Push still needs EAS. Status/risk/receipts/slack refresh every 3–4 seconds; trader stats every 5 seconds. Brain confirmed the slack response is `SlackRequest[]`. Compile includes `agentId`, nullable `agentWallet` and nullable `perplKey`; missing wallet/key prevents signing. Gateway percentages are decimal strings, timestamp is unix seconds, and depth levels are `{price,size}` objects normalized for UI use.
 
-After connecting the adapter and fixtures, switch `EXPO_PUBLIC_USE_MOCKS=false`, rebuild, and run the live checklist. The sender adapter must preserve prepared destination, calldata, native value, and explicit gas. Confirm deployed bytecode and policy fingerprints before signing. Never accept an API-provided hash as the chain anchor: the detail check separately fetches the indexed receipt for the connected account.
+The sender preserves destination, calldata, value and explicit gas. Contract preparation checks RPC/chain, deployed registry bytecode, backend deployment agreement and policy fingerprint. User pause preparation checks the chain and deployed registry directly so Brain downtime cannot prevent the kill switch. Receipt detail is public and does not require a connected wallet. Envio supplies independent anchors once configured. Until then, the first-check receipt uses the transaction hash from Brain's evidence and independently decodes its successful ReceiptLog event; a caller can also provide a `proofTxHash` receipt-link parameter. Other unanchored receipts remain pending. A paper receipt (`execTxHash: null`) never presents a venue trade as executed.
 
 ## Native proof and notifications
 
-The 0-value testnet proof is still an acceptance task: use the delivered shared sender on chain 10143, not the mainnet-only `TxRequest` screen path. Record the real device address and transaction hash. No testnet or mainnet proof has been fabricated.
+The 0-value user-signed testnet proof is still an acceptance task: use the delivered shared sender on chain 10143 after the RP domain/device is ready. The testnet transaction path is now accepted; the gas-drip transaction and paper receipt have been independently checked without a user signature. No mainnet proof is claimed.
 
 Push registration is optional and requests permission on a physical phone. It posts only `{account, expoPushToken}`. Missing permissions, simulator use, and a missing EAS project ID leave requests available through polling. Notification routes accept only `{type:'slack', id:uuid}`; the sheet also checks the pending request's account. A real launch-from-terminated notification must still be tested.
 

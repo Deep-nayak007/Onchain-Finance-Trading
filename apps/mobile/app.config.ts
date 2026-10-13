@@ -1,5 +1,8 @@
 import type { ExpoConfig } from 'expo/config';
 const rpId = process.env.EXPO_PUBLIC_PASSKEY_RP_ID?.trim();
+const appleTeamId = process.env.APPLE_TEAM_ID?.trim();
+if (appleTeamId && !/^[A-Z0-9]{10}$/.test(appleTeamId))
+  throw new Error('APPLE_TEAM_ID must be your actual 10-character developer team ID.');
 if (rpId && !/^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/i.test(rpId)) {
   throw new Error(
     'EXPO_PUBLIC_PASSKEY_RP_ID must be a permanent hostname, without https:// or a path.',
@@ -16,6 +19,7 @@ const config: ExpoConfig = {
   ios: {
     bundleIdentifier: 'app.leash.mobile',
     supportsTablet: false,
+    ...(appleTeamId ? { appleTeamId } : {}),
     ...(rpId ? { associatedDomains: [`webcredentials:${rpId}`] } : {}),
     infoPlist: {
       NSAppTransportSecurity: {

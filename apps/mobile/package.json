@@ -19,15 +19,21 @@
     "format": "prettier --write .",
     "video": "node scripts/video-preview.mjs",
     "mock:ios": "node scripts/start-mocks.mjs --ios",
-    "mock:web": "node scripts/start-mocks.mjs --web"
+    "mock:web": "node scripts/start-mocks.mjs --web",
+    "testnet:ios": "node scripts/start-testnet.mjs --ios",
+    "testnet:web": "node scripts/start-testnet.mjs --web",
+    "testnet:check": "tsx scripts/check-testnet.ts",
+    "smoke:testnet": "node scripts/smoke-testnet.mjs"
   },
   "dependencies": {
     "@category-labs/mera": "0.2.0",
     "@expo-google-fonts/big-shoulders-display": "^0.2.3",
     "@expo-google-fonts/ibm-plex-mono": "^0.4.1",
     "@expo-google-fonts/ibm-plex-sans": "^0.4.1",
+    "@expo/env": "^2.4.3",
     "@expo/metro-runtime": "~57.0.16",
     "@expo/vector-icons": "^15.0.2",
+    "@leash/shared": "file:../../packages/shared",
     "@scure/bip32": "^2.4.0",
     "@scure/bip39": "^2.4.0",
     "@tanstack/react-query": "^5.104.2",

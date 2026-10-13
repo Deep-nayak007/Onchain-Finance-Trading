@@ -1,11 +1,11 @@
 import { useSyncExternalStore } from 'react';
-import { networkLabel } from '../lib/config';
 import { Modal, View } from 'react-native';
 import { formatEther } from 'viem';
 import { colors } from '../theme';
 import { Button, Card, Label, Row, Type } from './ui';
 import { finishReview, reviewSnapshot, subscribeReview } from '../lib/transactionReview';
 import { useReducedMotion } from '../lib/useReducedMotion';
+import { networkName } from '../lib/config';
 export function TransactionReview() {
   const review = useSyncExternalStore(subscribeReview, reviewSnapshot, () => null);
   const reducedMotion = useReducedMotion();
@@ -37,7 +37,9 @@ export function TransactionReview() {
             </Type>
             <Row style={{ justifyContent: 'space-between' }}>
               <Label>Network</Label>
-              <Type>{networkLabel}</Type>
+              <Type>
+                {networkName(review.request.chainId)} · {review.request.chainId}
+              </Type>
             </Row>
             <Row style={{ justifyContent: 'space-between' }}>
               <Label>Native value sent</Label>

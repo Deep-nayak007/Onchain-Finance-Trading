@@ -1,11 +1,11 @@
 import type { ZodType } from 'zod';
-export class HttpError extends Error {
+export class ServiceError extends Error {
   constructor(
     readonly status: number,
     message: string,
   ) {
     super(message);
-    this.name = 'HttpError';
+    this.name = 'ServiceError';
   }
 }
 export async function request<T>(
@@ -13,11 +13,12 @@ export async function request<T>(
   path: string,
   schema: ZodType<T>,
   body?: unknown,
+  options: { timeoutMs?: number } = {},
 ): Promise<T> {
   if (!base) throw new Error('This service is not connected yet. Add its URL to apps/mobile/.env.');
   const controller = new AbortController();
-  // Compile (LLM + wallet + key) and free-tier cold starts can exceed 12s.
-  const timeout = setTimeout(() => controller.abort(), 45000);
+  // Render's free Brain and gateway instances can take about a minute to wake up.
+  const timeout = setTimeout(() => controller.abort(), options.timeoutMs ?? 90000);
   try {
     const response = await fetch(`${base.replace(/\/$/, '')}${path}`, {
       method: body === undefined ? 'GET' : 'POST',
@@ -26,15 +27,19 @@ export async function request<T>(
       signal: controller.signal,
     });
     if (!response.ok) {
-      // Show the service's own reason (our APIs return {error} / {message}) instead of a bare status code.
-      let reason = '';
-      try {
-        const j = (await response.json()) as { error?: string; message?: string };
-        reason = j.error ?? j.message ?? '';
-      } catch {
-        // non-JSON body
-      }
-      throw new HttpError(response.status, reason ? `${reason} (${response.status})` : `The service returned ${response.status}. Refresh or try again shortly.`);
+      const payload: unknown = await response.json().catch(() => null);
+      const message =
+        payload && typeof payload === 'object' && ('error' in payload || 'message' in payload)
+          ? 'error' in payload
+            ? payload.error
+            : (payload as { message: unknown }).message
+          : null;
+      throw new ServiceError(
+        response.status,
+        typeof message === 'string'
+          ? message.slice(0, 500)
+          : `The service returned ${response.status}. Refresh or try again shortly.`,
+      );
     }
     const result = schema.safeParse(response.status === 204 ? null : await response.json());
     if (!result.success)

@@ -13,9 +13,13 @@ import { requireBindings } from '../integration/team';
 import { signPrepared } from '../lib/actions';
 import { demoStore } from '../mocks/store';
 import { makeReceipt } from '../mocks/fixtures';
+import { useApiHealth } from '../lib/queries';
 export default function Trade() {
   const { account } = useSession();
   const action = useAction();
+  const health = useApiHealth();
+  const canExecute =
+    config.useMocks || (health.data?.chainId === config.chainId && health.data.live);
   const [side, setSide] = useState<'LONG' | 'SHORT'>('LONG');
   const [amount, setAmount] = useState('25');
   const [leverage, setLeverage] = useState(3);
@@ -27,6 +31,12 @@ export default function Trade() {
   return (
     <Screen back title="Your call." subtitle="Place a manual trade. You review it. You sign it.">
       <Card style={{ gap: 19 }}>
+        {!config.useMocks && health.data?.live === false && (
+          <Message
+            tone="info"
+            text="Perpl runs in paper mode. You can follow live prices and your trader’s paper decisions, but manual exchange orders are unavailable until deposits and trade-only enrollment are ready."
+          />
+        )}
         <Row style={{ justifyContent: 'space-between' }}>
           <Type kind="display" style={{ fontSize: 30 }}>
             MON-PERP
@@ -105,7 +115,7 @@ export default function Trade() {
         <Button
           label={config.useMocks ? 'Place demo trade' : 'Confirm trade with Face ID'}
           icon="face"
-          disabled={!account || !validAmount(amount) || !book.data}
+          disabled={!account || !validAmount(amount) || !book.data || !canExecute}
           loading={action.busy}
           onPress={() =>
             void action.run(

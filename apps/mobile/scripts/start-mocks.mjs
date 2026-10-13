@@ -21,6 +21,7 @@ const child = spawn(
     env: {
       ...process.env,
       EXPO_PUBLIC_USE_MOCKS: 'true',
+      EXPO_NO_DOTENV: '1',
       EXPO_PACKAGER_PROXY_URL: 'http://localhost:8081',
     },
   },
