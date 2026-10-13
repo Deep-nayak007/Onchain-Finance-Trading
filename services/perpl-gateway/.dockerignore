@@ -1,0 +1,7 @@
+target/
+keystore/
+*.sqlite
+*.sqlite-journal
+.env
+.git
+fly.toml

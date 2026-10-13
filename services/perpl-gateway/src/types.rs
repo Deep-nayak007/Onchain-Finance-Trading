@@ -152,6 +152,11 @@ pub struct KeyRequest {
 
 #[derive(Serialize)]
 pub struct KeyPrepareResult {
+    /// Public address of the generated per-user trade-only key — the key the
+    /// user authorizes on Perpl. (Requested by Brain for the mandate/enroll UI.)
+    #[serde(rename = "keyAddress")]
+    pub key_address: String,
+    /// Alias of `keyAddress`, kept for backward compatibility.
     #[serde(rename = "tradeKey")]
     pub trade_key: String,
     /// Enrollment payload the user signs to authorize the trade-only key (Q1).
