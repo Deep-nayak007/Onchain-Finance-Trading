@@ -147,6 +147,9 @@ export const SERVICES = {
   gatewayUrl: 'https://leash-perpl-gateway.fly.dev' as string | null,
   // Mainnet (143) gateway: Render free tier, reads Perpl mainnet. /health ok when cache lag <= STALE_BLOCKS_MAX (60 on Render).
   gatewayUrlMainnet: 'https://leash-gateway.onrender.com' as string | null,
-  // Envio Cloud GraphQL endpoint (CP2).
-  envioUrl: null as string | null,
+  // Envio GraphQL endpoint (testnet 10143). TEMPORARY: local `envio dev` on Rails' Mac exposed via a
+  // Cloudflare quick tunnel — up only while that laptop runs it, and the hostname changes on every
+  // tunnel restart (update here when it does). Envio Cloud is blocked on Envio's side for org `yashpy`
+  // (see docs/LIMITATIONS.md); swap in the Envio Cloud URL once hosted.
+  envioUrl: 'https://delivering-stack-utility-ultra.trycloudflare.com/v1/graphql' as string | null,
 } as const;
