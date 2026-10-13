@@ -7,7 +7,12 @@ Brain status: API live at `https://leash-brain-api.fly.dev` (chain 10143, paper)
 - ✅ **Gateway live on testnet**: `https://leash-perpl-gateway.fly.dev` (Brain hosted Rails' code on Fly; deploy file only, logic untouched).
   Wired into the Brain API (`GATEWAY_URL`). Health ok, 15 perps, deep MON book, real `/risk`.
 - ✅ **Indexer is Envio-Cloud-ready** on branch `envio` (c0450de): ABIs inside `indexer/`, Kuru testnet market, persona wallets,
-  BigDecimal fix; verified locally against testnet. ⏳ Remaining: the GitHub-app grant + Envio Cloud indexer (needs the repo owner's login).
+  BigDecimal fix; verified locally against testnet.
+- ✅ **Envio Cloud source repo (fallback)**: https://github.com/prempagare07/leash-indexer (Prem-owned, `git subtree split` of `indexer/`,
+  history kept, pnpm 10.32.0 lockfile). The monorepo's transferred ownership blocked the Envio GitHub app for collaborators.
+  Envio Cloud: root `./`, config `config.yaml`, branch `envio`. Re-sync after indexer changes (from the monorepo root):
+  `git subtree split --prefix=indexer origin/envio -b indexer-split && git push https://github.com/prempagare07/leash-indexer.git indexer-split:envio`
+  (drop `deploy/` as in the first standalone commit if needed). ⏳ Remaining: Prem installs the Envio app on that repo + adds the indexer.
 - ✅ **ERC-8004 on testnet**: Falcon #2227, Otter #2228, Owl #2229 on IdentityRegistry `0x8004A818…BD9e`; agentURI served by the Brain API
   (`/agents/<persona>.json`). In `addresses.ts` PERSONAS.
 - ℹ️ Rails also runs a **mainnet** gateway on Render (`https://leash-gateway.onrender.com`, `SERVICES.gatewayUrlMainnet`).
