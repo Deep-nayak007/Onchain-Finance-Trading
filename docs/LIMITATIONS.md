@@ -68,6 +68,11 @@ Updated 2026-10-12. Everything below sits behind an interface, so the real thing
   to 143 and fills `LEASH.mainnet` in `addresses.ts`; re-point persona-wallet Privy policies to chain 143; fund agent/persona/
   referee/gas-tank wallets; gateway with `CHAIN_ID=143`; Face sets `EXPO_PUBLIC_CHAIN_ID=143`. No code changes. Proven on mainnet so
   far: Kuru market params read live on 143; Perpl mainnet exchange/collateral + ERC-8004 bytecode checked (Rails).
+- **Web app (live)**: https://leash-app.onrender.com runs the Face app on real testnet services with a browser passkey wallet
+  (free, no Apple account). Works where the browser supports WebAuthn PRF (Safari 18 / iCloud Keychain, Chrome with Google
+  Password Manager). With iCloud Keychain the creation step may not return PRF, and browsers block the automatic follow-up
+  prompt: tap "I already have a passkey" to unlock with a fresh tap. Perpl deposit/enrollment stay stubbed (no test AUSD), PnL
+  series is empty (not indexed), Kuru testnet has no bids.
 - **Envio Cloud blocked**: the indexer `leash-monad` exists on Envio Cloud (org prempagare07, repo `prempagare07/leash-indexer`)
   but Envio never receives the repo's push events (dashboard shows "GitHub app removed" even after reinstall; 0 commits). Until Envio
   support fixes it, the indexer is **self-hosted on Prem's Mac** behind a read-only proxy + Cloudflare quick tunnel (`scripts/envio-local`):

@@ -45,3 +45,12 @@ Blockers outside Face: passkey RP domain (team decision; then `assetlinks.json` 
   emulator; colon-separated) and, for iPhone, the **Apple Team ID** (paid Apple Developer account). Prem sets them on Fly
   (`ANDROID_CERT_SHA256`, `APPLE_TEAM_ID`: public identifiers) and they go live after a restart.
 - Then rebuild the native app (associated domains are baked in at build time).
+
+## Done by Brain at Prem's request (2026-10-13): live web app
+`integration/team.ts` is implemented (all TeamBindings from @leash/shared + Brain/gateway/Envio/RPC). Also changed:
+`lib/config.ts` (chain is config: 143|10143, `networkLabel`, `envioUrlPointer`), `lib/chain.ts` (active chain), `lib/actions.ts`
+(chain check uses config), `lib/schemas.ts` (TxRequest 143|10143, compile agentId/agentWallet/perplKey, risk normalised from the
+gateway's unix ts + string %), `lib/gateway.ts` (book accepts {price,size} + unix ts), `lib/envioTransport.ts` (Envio URL pointer),
+`lib/mera.ts` (shows the browser's real passkey error), `components/TransactionReview.tsx` (network label), `metro.config.cjs`
+(finds packages/shared/src/canonical.ts). Typecheck + your 21 tests pass. Web: https://leash-app.onrender.com (RP = that host).
+Please run `npm install` at the root and commit `package-lock.json` (it predates packages/shared).

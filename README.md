@@ -11,7 +11,7 @@ code decides; five independent knots can stop it.
 
 | What | Where |
 |---|---|
-| **Web app (demo mode)** | **https://leash-app.onrender.com**: Face's Expo app in the browser, labelled sample data; the phone build runs live on testnet |
+| **Web app (live, testnet)** | **https://leash-app.onrender.com**: Face's Expo app in the browser on real data: browser passkey wallet (RP = this host), Brain API, gateway, Envio, Monad testnet RPC |
 | Brain API | **https://leash-brain-api.onrender.com** (`/health`, `/config`, `/traders`, `/receipts/:reasonHash`; spec `services/api/openapi.yaml`) |
 | MandateRegistry | [`0x81bbeaf263eeae41cfd4be137427af3ba7248467`](https://testnet.monadvision.com/address/0x81bbeaf263eeae41cfd4be137427af3ba7248467) |
 | ReceiptLog | [`0x21b168148e7c47ca0f1fab8bf9f69faff3aed6b3`](https://testnet.monadvision.com/address/0x21b168148e7c47ca0f1fab8bf9f69faff3aed6b3) |

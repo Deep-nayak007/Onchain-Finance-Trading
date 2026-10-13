@@ -6,8 +6,9 @@
 `services/perpl-gateway/.env.render`. Free plan: sleeps after 15 min idle (`.github/workflows/keepalive.yml` pings every 10 min), no
 persistent disk (Brain SQLite + gateway keystore reset on restart: re-run compile → setMandate → activate for the demo user).
 When the Envio tunnel URL changes: update `ENVIO_URL` on the leash-brain-api service (Environment) + `SERVICES.envioUrl`.
-Web front end: static site `leash-app` (https://leash-app.onrender.com), Face's Expo web export in demo mode (`EXPO_PUBLIC_USE_MOCKS=true`);
-live mode on web needs passkeys on the RP domain + `apps/mobile/integration/team.ts`.
+Web front end: static site `leash-app` (https://leash-app.onrender.com), Face's Expo web export **live on testnet**
+(`EXPO_PUBLIC_USE_MOCKS=false`, passkey RP = `leash-app.onrender.com`, Envio via the `deploy/envio-url.txt` pointer). Native builds
+use RP `leash-brain-api.onrender.com`; a passkey made on one is not valid on the other.
 The Fly apps below were stopped when the Fly trial ended (kept for reference).
 
 **Live:** `API_URL=https://leash-brain-api.onrender.com` (Fly.io, app `leash-brain-api`, region lax, 1 GB volume `leash_data`,
