@@ -1,6 +1,6 @@
 // REST API for the app (ARCHITECTURE §7.4, services/api/openapi.yaml). Every body/param validated with zod.
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
-import { Address, Hash32, Intent, PersonaId, type ChainId } from "@leash/shared";
+import { Address, ERC8004, ERC8004_TESTNET, Hash32, Intent, PersonaId, type ChainId } from "@leash/shared";
 import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
 import type { Address as ViemAddress, PublicClient } from "viem";
@@ -106,6 +106,36 @@ export function createApp(d: AppDeps) {
         target: { namespace: "android_app", package_name: d.passkey!.appId, sha256_cert_fingerprints: certs },
       },
     ]);
+  });
+
+  // ---- ERC-8004 agent registration files (agentURI of each persona's identity NFT) ----
+  // Shape per erc-8004-contracts ERC8004SPEC.md "registration-v1".
+  app.get("/agents/:file", (c) => {
+    const file = c.req.param("file");
+    const id = file.replace(/\.(json|svg)$/, "");
+    const p = PERSONA_IDS.find((x) => x === id);
+    if (!p) throw new HttpError(404, "unknown persona");
+    if (file.endsWith(".svg")) {
+      const name = personaOf(p).name;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256"><rect width="256" height="256" rx="32" fill="#0b0d10"/><circle cx="128" cy="108" r="54" fill="none" stroke="#f5b942" stroke-width="10"/><text x="128" y="210" fill="#f5f5f5" font-family="monospace" font-size="28" text-anchor="middle">${name}</text></svg>`;
+      return c.body(svg, 200, { "content-type": "image/svg+xml" });
+    }
+    const persona = personaOf(p, d.store.getWallet(Wallets.personaKey(p))?.address ?? null);
+    const base = new URL(c.req.url).origin.replace(/^http:/, "https:");
+    return c.json({
+      type: "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
+      name: `LEASH ${persona.name}`,
+      description: `${persona.style} ${persona.mode === "LIVE" ? "Live trader" : "Shadow trader: calls are committed onchain before outcomes"}. Every decision is receipted on Monad (ReceiptLog) and checked by pure code before execution.`,
+      image: `${base}/agents/${p}.svg`,
+      services: [
+        { name: "web", endpoint: `${base}/traders` },
+        { name: "wallet", endpoint: `eip155:${d.chainId}:${persona.wallet}` },
+      ],
+      x402Support: false,
+      active: true,
+      registrations: persona.agentId !== "0" ? [{ agentId: Number(persona.agentId), agentRegistry: `eip155:${d.chainId}:${d.chainId === 143 ? ERC8004.identityRegistry : ERC8004_TESTNET.identityRegistry}` }] : [],
+      supportedTrust: ["reputation"],
+    });
   });
 
   app.get("/health", (c) => c.json({ ok: true, chainId: d.chainId, live: d.live, gateway: d.gateway.kind, markets: "marketsSource" in d.gateway ? d.gateway.marketsSource : d.gateway.kind, llm: !!d.chat, privy: d.wallets.configured, contracts: !!d.addresses }));

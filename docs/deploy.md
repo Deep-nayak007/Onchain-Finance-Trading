@@ -5,6 +5,14 @@ chain 10143, `LIVE=false`). Deployed 2026-10-12. Redeploy from the repo root:
 `fly deploy . --config services/api/fly.toml --remote-only`. Secrets: `fly secrets list --app leash-brain-api` (names only).
 When Rails' URLs exist: `fly secrets set GATEWAY_URL=... ENVIO_URL=... --app leash-brain-api`.
 
+**Perpl gateway (Rails' code, Brain-hosted):** `GATEWAY_URL=https://leash-perpl-gateway.fly.dev` (Fly app `leash-perpl-gateway`, lax,
+1 GB volume `gw_data` at /data, chain 10143). Config: `services/perpl-gateway/fly.toml` (public env); secrets `MONAD_RPC` and
+`GATEWAY_KEYSTORE_PASSWORD` in Fly only (password backed up in gitignored `services/perpl-gateway/.env`). Redeploy:
+`cd services/perpl-gateway && fly deploy --remote-only`. Brain uses it via the `GATEWAY_URL` Fly secret on `leash-brain-api`.
+
+**Envio:** hosted on **Envio Cloud** (Rails' account), see docs/TESTNET_PLAN.md. A self-host recipe (Hasura + `envio start` + Fly
+Postgres) is in `indexer/deploy/` but not deployed: the Fly trial org blocks additional apps without a card.
+
 The API needs a **persistent disk** (SQLite at `DATABASE_PATH`) and **public HTTPS** (the app calls it).
 Any of Railway, Fly.io or Render works. Secrets go in the host's env settings, never in the image.
 

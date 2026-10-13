@@ -105,10 +105,13 @@ export const LEASH = {
  * Envio counts a shadow receipt only when msg.sender matches one of these
  * persona wallets.
  */
+// Testnet (10143) ERC-8004 identities, registered 2026-10-12 on IdentityRegistry 0x8004A818…BD9e (owner: gas tank);
+// agentURI = https://leash-brain-api.fly.dev/agents/<persona>.json. Wallets: Brain's Privy persona wallets (logShadow only).
+// Register txs: falcon 0x954b8e92…005c, otter 0x0052a0a6…4140, owl 0xa366ba97…7065467.
 export const PERSONAS = {
-  falcon: { agentId: null as string | null, wallet: null as `0x${string}` | null, mode: 'LIVE' },
-  otter: { agentId: null as string | null, wallet: null as `0x${string}` | null, mode: 'SHADOW' },
-  owl: { agentId: null as string | null, wallet: null as `0x${string}` | null, mode: 'SHADOW' },
+  falcon: { agentId: '2227' as string | null, wallet: '0x2477150BBA80a4E9127151eB863892f346211994' as `0x${string}` | null, mode: 'LIVE' },
+  otter: { agentId: '2228' as string | null, wallet: '0x1780E260D175e975c6FFD31ed1FfaE9b6e7D0FB6' as `0x${string}` | null, mode: 'SHADOW' },
+  owl: { agentId: '2229' as string | null, wallet: '0x38581aaaf757d195e2343651Ada5E7cE58F9d22C' as `0x${string}` | null, mode: 'SHADOW' },
 } as const;
 
 /**
@@ -140,9 +143,10 @@ export const KURU_TESTNET = {
 
 /** Live service URLs. Filled in as each deploys. */
 export const SERVICES = {
-  // Public HTTPS Perpl gateway (CP1). Render free tier, reads Perpl mainnet
-  // (chain 143). /health ok when cache lag <= STALE_BLOCKS_MAX (60 on Render).
-  gatewayUrl: 'https://leash-gateway.onrender.com' as string | null,
+  // Testnet (10143) gateway, the LIVE DEMO network: Fly app leash-perpl-gateway (STALE_BLOCKS_MAX=50).
+  gatewayUrl: 'https://leash-perpl-gateway.fly.dev' as string | null,
+  // Mainnet (143) gateway: Render free tier, reads Perpl mainnet. /health ok when cache lag <= STALE_BLOCKS_MAX (60 on Render).
+  gatewayUrlMainnet: 'https://leash-gateway.onrender.com' as string | null,
   // Envio Cloud GraphQL endpoint (CP2).
   envioUrl: null as string | null,
 } as const;

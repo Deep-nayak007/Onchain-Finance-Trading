@@ -6,5 +6,5 @@
   "envioUrl": "",
   "watch": ["0xE7f1FFcC13C1384a2a1d7eaC19edF0F69e85f4FD"],
   "minLiqDistancePct": 5,
-  "maxCacheLagBlocks": 20
+  "maxCacheLagBlocks": 50
 }

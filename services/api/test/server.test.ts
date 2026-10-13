@@ -159,6 +159,15 @@ describe("API routes", () => {
     expect(al[0]!.target.sha256_cert_fingerprints).toHaveLength(1);
   });
 
+  it("serves ERC-8004 registration files with the persona's onchain agentId", async () => {
+    const { app } = setup();
+    const j = (await (await app.request("/agents/falcon.json")).json()) as { type: string; registrations: { agentId: number; agentRegistry: string }[] };
+    expect(j.type).toBe("https://eips.ethereum.org/EIPS/eip-8004#registration-v1");
+    expect(j.registrations).toEqual([{ agentId: 2227, agentRegistry: "eip155:10143:0x8004A818BFB912233c491871b3d84c89A494BD9e" }]);
+    expect((await app.request("/agents/eagle.json")).status).toBe(404);
+    expect((await app.request("/agents/otter.svg")).headers.get("content-type")).toMatch(/image\/svg/);
+  });
+
   it("alchemy webhook requires a valid HMAC signature and pushes deposits", async () => {
     const { post, e } = setup();
     e.store.addDevice(USER, "ExponentPushToken[abc]");

@@ -3,8 +3,13 @@
 Decision (2026-10-12): the whole demo runs on **Monad testnet (10143)**. No mainnet deploy now. Mainnet stays a config-only switch.
 Brain status: API live at `https://leash-brain-api.fly.dev` (chain 10143, paper), proven end to end. See `docs/testnet-evidence.md`.
 
+## Status (2026-10-12, evening)
+- ✅ **Gateway live on testnet**: `https://leash-perpl-gateway.fly.dev` (Brain hosted Rails' code on Fly; deploy file only, logic untouched).
+  Wired into the Brain API (`GATEWAY_URL`). Health ok, 15 perps, deep MON book, real `/risk`.
+- ⏳ **Envio**: Envio Cloud via Rails (checklist below). Self-host on Fly blocked by the trial (files in `indexer/deploy/`).
+
 ## Rails (Yadnesh)
-1. **Gateway on testnet.** Env:
+1. ✅ **DONE by Brain** (`https://leash-perpl-gateway.fly.dev`, `services/perpl-gateway/fly.toml`, STALE_BLOCKS_MAX=50). Original spec, for reference:
    ```
    CHAIN_ID=10143
    MONAD_RPC=https://testnet-rpc.monad.xyz
@@ -14,7 +19,18 @@ Brain status: API live at `https://leash-brain-api.fly.dev` (chain 10143, paper)
    ```
    `cache.rs` already picks `Chain::testnet()` when `CHAIN_ID != 143`, and `find_perp` maps `MON-PERP` → testnet symbol `MON` (perp id 64).
    Deploy it (Fly/Railway) and send `GATEWAY_URL`.
-2. **Envio Cloud on testnet**: MandateRegistry + ReceiptLog (start block 70331260), and add the **Perpl testnet exchange**
+2. **Envio Cloud on testnet: checklist** (official: docs.envio.dev/docs/HyperIndex/hosted-service-deployment; requires
+   envio ≥ 2.21.5, not 2.29.x (we're on 3.14.0 ✓), pnpm 10.32.0-compatible, repo < 100 MB ✓, **all imports inside the indexer root**):
+   a. GitHub (yashpy) → Settings → Applications → Installed GitHub Apps → **Envio Deployments** → Configure → grant
+      `Onchain-Finance-Trading` (the repo was transferred, so the old grant doesn't apply).
+   b. **Make the indexer self-contained** (your code): copy `packages/shared/abis/{MandateRegistry,ReceiptLog}.json` into
+      `indexer/abis/` and change both `abi_file_path` in `indexer/config.yaml` to `./abis/...`. Optional: commit an
+      `indexer/pnpm-lock.yaml` (`cd indexer && pnpm install --ignore-workspace`).
+   c. Envio dashboard: delete the stale `leash-monad` indexer, re-add it on `yashpy/Onchain-Finance-Trading` with **root dir `indexer`**,
+      config `config.yaml`, **branch `envio`** (CLI: `pnpx envio-cloud indexer add --name leash-monad --repo Onchain-Finance-Trading`
+      + root/config/branch flags, after `envio-cloud login`).
+   d. Merge `main` into `envio`, push → watch the deployment (`envio-cloud deployment status … -o json`) → send `ENVIO_URL` (GraphQL).
+   Then also index: MandateRegistry + ReceiptLog (start block 70331260), and add the **Perpl testnet exchange**
    `0x1964C32f0bE608E7D29302AFF5E61268E72080cc` (from block **62953**) and the **Kuru testnet MON/USDC market**
    `0xa241896A7Dbe8a550D2E5fF7A914bB1989ceD2D9` (base MON 18 dec, quote USDC 6 dec, pricePrecision 1e8, sizePrecision 1e10).
    Fill `PERSONA_WALLETS` in `EventHandlers.ts`: Falcon `0x2477150BBA80a4E9127151eB863892f346211994`,
