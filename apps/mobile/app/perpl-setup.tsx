@@ -6,7 +6,7 @@ import { Icon } from '../components/Icon';
 import { colors } from '../theme';
 import { useSession } from '../lib/session';
 import { useAction } from '../lib/useAction';
-import { config } from '../lib/config';
+import { config, isTestnet } from '../lib/config';
 import { validAmount } from '../lib/money';
 import { requireBindings } from '../integration/team';
 import { signPrepared } from '../lib/actions';
@@ -156,7 +156,17 @@ export default function PerplSetup() {
           {query.data ? `$${Number(query.data.collateralUsd).toFixed(2)}` : '—'}
         </Type>
       </Row>
-      {keyDone && (
+      {isTestnet && !config.useMocks && (
+        <Card style={{ marginTop: 4, gap: 8 }}>
+          <Label>Monad testnet · paper trading</Label>
+          <Type color={colors.muted} style={{ fontSize: 12, lineHeight: 20 }}>
+            Perpl testnet collateral (AUSD) isn&apos;t available yet, so deposits and the exchange key are skipped. Your
+            trader still decides on live Perpl prices, every decision is checked by your rules and receipted onchain,
+            and orders are simulated (paper) until collateral exists.
+          </Type>
+        </Card>
+      )}
+      {(keyDone || (isTestnet && !config.useMocks)) && (
         <Button label="Write my rules" icon="arrow" onPress={() => router.push('/rules')} />
       )}
       <View style={{ marginTop: 15 }}>

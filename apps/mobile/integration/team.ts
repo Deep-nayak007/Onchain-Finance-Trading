@@ -251,8 +251,15 @@ export const teamBindings: TeamBindings | null = config.useMocks
         return frac ? `${whole}.${frac}` : `${whole}`;
       },
 
-      prepareDeposit: (account, amountUsd) =>
-        request(config.gatewayUrl, '/deposit/prepare', z.array(txRequestSchema), { account, amountUsd }),
+      prepareDeposit: async (account, amountUsd) => {
+        try {
+          return await request(config.gatewayUrl, '/deposit/prepare', z.array(txRequestSchema), { account, amountUsd });
+        } catch (e) {
+          if (isTestnet)
+            throw new Error('Perpl testnet deposits are not open yet (no test collateral exists). Skip this step: your trader runs in paper mode.');
+          throw e;
+        }
+      },
 
       // The gateway creates the per-user trade-only key; the enrollment tx is null until Perpl's format (Q1) is
       // confirmed, so there is nothing to sign yet.
