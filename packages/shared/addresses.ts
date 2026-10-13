@@ -140,8 +140,9 @@ export const KURU_TESTNET = {
 
 /** Live service URLs. Filled in as each deploys. */
 export const SERVICES = {
-  // Public HTTPS Perpl gateway (CP1).
-  gatewayUrl: null as string | null,
+  // Public HTTPS Perpl gateway (CP1). Render free tier, reads Perpl mainnet
+  // (chain 143). /health ok when cache lag <= STALE_BLOCKS_MAX (60 on Render).
+  gatewayUrl: 'https://leash-gateway.onrender.com' as string | null,
   // Envio Cloud GraphQL endpoint (CP2).
   envioUrl: null as string | null,
 } as const;
