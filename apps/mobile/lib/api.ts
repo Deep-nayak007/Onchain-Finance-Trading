@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { keccak256, toBytes } from 'viem';
 import { canonicalJSON } from '@leash/shared/canonical';
 import { config } from './config';
-import { request } from './http';
+import { HttpError, request } from './http';
 import {
   agentStatusSchema,
   compileSchema,
@@ -74,10 +74,14 @@ export const api = {
       warnings: ['Sample rule card. Review every line; the live AI compiler is not connected.'],
     };
   },
+  // One drip per address: a 409 means this wallet already received its gas, which is success for the user.
   drip: (account: string) =>
     config.useMocks
       ? Promise.resolve(null)
-      : request(config.apiUrl, '/gas/drip', acknowledgment, { account }),
+      : request(config.apiUrl, '/gas/drip', acknowledgment, { account }).catch((e: unknown) => {
+          if (e instanceof HttpError && e.status === 409) return null;
+          throw e;
+        }),
   registerDevice: (account: string, expoPushToken: string) =>
     config.useMocks
       ? Promise.resolve(null)

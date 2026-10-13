@@ -1,4 +1,13 @@
 import type { ZodType } from 'zod';
+export class HttpError extends Error {
+  constructor(
+    readonly status: number,
+    message: string,
+  ) {
+    super(message);
+    this.name = 'HttpError';
+  }
+}
 export async function request<T>(
   base: string,
   path: string,
@@ -16,8 +25,17 @@ export async function request<T>(
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
       signal: controller.signal,
     });
-    if (!response.ok)
-      throw new Error(`The service returned ${response.status}. Refresh or try again shortly.`);
+    if (!response.ok) {
+      // Show the service's own reason (our APIs return {error} / {message}) instead of a bare status code.
+      let reason = '';
+      try {
+        const j = (await response.json()) as { error?: string; message?: string };
+        reason = j.error ?? j.message ?? '';
+      } catch {
+        // non-JSON body
+      }
+      throw new HttpError(response.status, reason ? `${reason} (${response.status})` : `The service returned ${response.status}. Refresh or try again shortly.`);
+    }
     const result = schema.safeParse(response.status === 204 ? null : await response.json());
     if (!result.success)
       throw new Error(
