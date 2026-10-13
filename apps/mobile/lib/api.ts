@@ -152,7 +152,21 @@ export const api = {
       ...body,
       policy: recallPolicy(body.account),
     }),
-  kill: (account: string) => request(config.apiUrl, '/agent/kill', agentStatusSchema, { account }),
+  kill: async (account: string) => {
+    const result = await request(
+      config.apiUrl,
+      '/agent/kill',
+      agentStatusSchema.extend({
+        cleanup: z.object({ wallet: z.boolean(), gatewayKey: z.boolean() }).optional(),
+      }),
+      { account },
+    );
+    if (result.cleanup && (!result.cleanup.wallet || !result.cleanup.gatewayKey))
+      throw new Error(
+        'Your onchain pause is confirmed, but backend cleanup is incomplete. Retry cleanup from Home.',
+      );
+    return result;
+  },
   approveSlack: (id: string, txHash: string) =>
     request(
       config.apiUrl,

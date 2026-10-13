@@ -7,7 +7,7 @@
     "codegen": "envio codegen",
     "dev": "envio dev",
     "start": "envio start",
-    "test": "envio test"
+    "test": "echo \"indexer: no unit tests (envio 3.14 has no test cmd); verified live by services/api/scripts/e2e-live.ts\""
   },
   "dependencies": {
     "envio": "3.14.0"

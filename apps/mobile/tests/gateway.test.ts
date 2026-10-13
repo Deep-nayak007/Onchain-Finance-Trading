@@ -13,6 +13,8 @@ import { config } from '../lib/config';
 
 test('shared service selection keeps testnet history and gateways on their network', () => {
   assert.equal(serviceUrls(10143).gatewayUrl, SERVICES.gatewayUrl);
+  assert.equal(serviceUrls(10143).envioUrlPointer, SERVICES.envioUrlPointer);
+  assert.equal(serviceUrls(10143).envioUrl, SERVICES.envioUrl);
   assert.equal(serviceUrls(143).gatewayUrl, SERVICES.gatewayUrlMainnet);
   assert.equal(serviceUrls(143).envioUrl, '');
   assert.equal(serviceUrls(143).envioUrlPointer, '');

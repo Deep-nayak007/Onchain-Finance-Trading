@@ -61,7 +61,7 @@ export async function pullLeash(account: Address) {
     await api.kill(account);
   } catch {
     throw new Error(
-      'Your onchain pause confirmed. The backend cleanup did not respond; retry cleanup from Home.',
+      'Your onchain pause confirmed. The backend cleanup is incomplete; retry cleanup from Home.',
     );
   }
 }

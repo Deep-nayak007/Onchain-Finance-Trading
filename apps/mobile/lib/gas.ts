@@ -10,6 +10,8 @@ export async function coverGas(account: Address): Promise<void> {
     return;
   }
   requireConfiguredChain(await publicClient.getChainId());
+  // A wallet that already has gas does not depend on the tank still being funded.
+  if ((await publicClient.getBalance({ address: account })) > 0n) return;
   try {
     await api.drip(account);
   } catch (error) {

@@ -149,8 +149,11 @@ export const SERVICES = {
   gatewayUrlMainnet: 'https://leash-gateway.onrender.com' as string | null,
   // Envio GraphQL endpoint (testnet 10143). TEMPORARY: self-hosted `envio dev` on Prem's Mac behind a READ-ONLY proxy
   // (scripts/envio-local: only POST /v1/graphql as the public role, admin headers stripped, mutations refused) + Cloudflare
-  // quick tunnel. Up while that Mac runs it; the hostname changes on tunnel restart (update here + Fly ENVIO_URL).
+  // quick tunnel. The hostname CHANGES every tunnel restart (~every 1-2h): a watchdog republishes the current URL to
+  // `envioUrlPointer` (deploy/envio-url.txt on main). Clients MUST read the pointer (Brain: ENVIO_URL_POINTER, app:
+  // EXPO_PUBLIC_ENVIO_URL_POINTER); `envioUrl` below is only a last-known fallback and goes stale.
   // Envio Cloud is blocked on Envio's side (see docs/LIMITATIONS.md); swap in the Envio Cloud URL once hosted.
   // Do NOT publish a tunnel straight to Hasura: envio dev's default admin secret is "testing".
-  envioUrl: 'https://making-spyware-determines-establishing.trycloudflare.com/v1/graphql' as string | null,
+  envioUrlPointer: 'https://raw.githubusercontent.com/yashpy/Onchain-Finance-Trading/main/deploy/envio-url.txt',
+  envioUrl: 'https://retirement-eating-facilitate-eva.trycloudflare.com/v1/graphql' as string | null,
 } as const;

@@ -130,18 +130,19 @@ async function main() {
     const account = privateKeyToAccount(generatePrivateKey()).address;
     const drip = await api.drip(account);
     assert.ok(drip);
-    assert.equal(drip.amountMon, '0.2');
+    const drippedMon = parseEther(drip.amountMon);
+    assert.ok(drippedMon >= parseEther('0.01') && drippedMon <= parseEther('0.2'));
     assert.equal(
       (await publicClient.getTransactionReceipt({ hash: drip.txHash as `0x${string}` })).status,
       'success',
     );
-    assert.equal(await publicClient.getBalance({ address: account }), parseEther('0.2'));
+    assert.equal(await publicClient.getBalance({ address: account }), drippedMon);
     await assert.rejects(
       api.drip(account),
       (error: unknown) => error instanceof ServiceError && error.status === 409,
     );
     console.log(
-      `PASS: {account} receives 0.2 test MON once; repeat returns 409. Account: ${account}. Tx: ${drip.txHash}`,
+      `PASS: {account} receives ${drip.amountMon} test MON; repeat returns 409. Account: ${account}. Tx: ${drip.txHash}`,
     );
     const compiled = await api.compile(
       account,

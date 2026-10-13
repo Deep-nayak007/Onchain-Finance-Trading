@@ -1,11 +1,11 @@
 # Current Face service check — October 13, 2026 (Phoenix)
 
-Main `9e10b70` is incorporated into Face, including the latest tunnel pointer rotations; application/service code is unchanged from `c455393`. A GitHub push, a deployed web bundle, and a healthy service are separate checks. The website is still built from main; Face changes require a merge to publish.
+Main `8f5809e` is incorporated into Face, including the shared Envio pointer and corrected last-known fallback. A GitHub push, a deployed web bundle, and a healthy service are separate checks. The website is still built from main; Face changes require a merge to publish.
 
 | Check | Current result |
 |---|---|
-| Mobile TypeScript and unit tests | Pass, **38 tests**, including saved-policy integrity and onchain pause/recovery when Brain loses a record |
-| Latest Brain tests | **70 pass**, one live Privy integration test deliberately skipped; tested c455393 in the isolated backend checkout |
+| Mobile TypeScript and unit tests | Pass, **41 tests**, including pointer rotation/fallback, funded-wallet preflight, failed cleanup, saved-policy integrity and onchain pause/recovery |
+| Latest Brain tests | **71 pass**, one live Privy integration test deliberately skipped; tested 8f5809e in the isolated backend checkout |
 | Rust gateway | Locked compilation succeeds with installed Rust 1.95.0; crate defines **zero tests** |
 | Hosted app / Brain / gateway | HTTP 200; Brain reports testnet 10143 and `live:false`; gateway cache healthy |
 | Kuru BUY preparation | 200; two unsigned chain-10143 transactions, nonzero minimum output; no swap submitted |
@@ -25,6 +25,10 @@ Production web and iOS/Hermes exports succeed. The complete offline sample smoke
 Remaining service work: restore Envio with a reachable URL, persist full receipt reasoning outside `/tmp/leash.db`, finish Perpl deposit/enrollment, and obtain funded test tokens/liquidity for real trading. The deployment's restart recovery can recover policy/wallet links; it cannot reconstruct vanished reasoning from a hash.
 
 One live compilation used the prior disposable test account `0x2635…B708` and can create its backend wallet/key records; it did not sign or activate. Public persona feeds filter by the actual registered agentId, so Falcon's receipts include its user-wallet decisions as well as shadow records.
+
+Envio handoff confirmed: testnet defaults to `SERVICES.envioUrlPointer`, the public variable is explicit in the testnet env example and configured locally, pointer reads bypass the browser cache, valid values are cached for 60 seconds, failed/malformed refreshes retain the last valid value, and cold startup falls back to the shared last-known endpoint. Rotation/expiry/fallback checks pass. A fresh real service check finds indexed receipt #5 and the independent onchain proof; it still exits 2 because Brain has no reasoning for the old handoff receipt.
+
+The same main update sizes drips to the tank balance and adds kill cleanup results. Face accepts variable top-up amounts, lets an already funded wallet continue without another drip, and treats failed wallet/key cleanup as incomplete while retaining the confirmed onchain pause. At the current health check the tank held about **0.048 test MON**, below the backend's **0.06 MON** minimum tank balance for a useful new drip; new wallets need a team refill. No funding or kill request was submitted to test this.
 
 ## Previous Face service check — October 12, 2026
 

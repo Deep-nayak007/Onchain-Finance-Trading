@@ -47,6 +47,7 @@ async function main() {
   const h = await expectStatus("brain", "GET /health all wired", "GET", `${API}/health`, 200);
   const hj = h?.json as Record<string, unknown> | null;
   rec("brain", "health: testnet + paper + gateway http + llm + privy + contracts", !!hj && hj.chainId === 10143 && hj.live === false && hj.gateway === "http" && hj.llm === true && hj.privy === true && hj.contracts === true, JSON.stringify(hj));
+  rec("brain", "gas tank can fund new users (≥ 0.1 MON)", Number(hj?.gasTankMon ?? 0) >= 0.1, `${hj?.gasTankMon} MON`);
   await expectStatus("brain", "GET /config", "GET", `${API}/config`, 200);
   const t = await expectStatus("brain", "GET /traders", "GET", `${API}/traders`, 200);
   rec("brain", "traders: 3 personas with ERC-8004 ids", Array.isArray(t?.json) && (t!.json as { agentId: string }[]).map((x) => x.agentId).join() === "2227,2228,2229", JSON.stringify((t?.json as { agentId: string }[] | null)?.map((x) => x.agentId)));

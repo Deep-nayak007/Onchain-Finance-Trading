@@ -59,7 +59,8 @@ export default function Setup() {
       <View style={{ marginTop: 28 }}>
         {!config.useMocks && config.chainId === 10143 && (
           <Type color={colors.muted} style={{ fontSize: 12, marginBottom: 12 }}>
-            New wallets receive 0.2 test MON once. No MON purchase is needed.
+            New wallets receive a one-time test MON top-up, up to 0.2 MON depending on the gas
+            tank. No MON purchase is needed.
           </Type>
         )}
         <Button

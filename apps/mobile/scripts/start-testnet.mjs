@@ -32,6 +32,7 @@ const child = spawn(
       // Empty overrides select the current chain-specific Rails URLs from the shared package.
       EXPO_PUBLIC_GATEWAY_URL: process.env.EXPO_PUBLIC_GATEWAY_URL || '',
       EXPO_PUBLIC_ENVIO_URL: process.env.EXPO_PUBLIC_ENVIO_URL || '',
+      EXPO_PUBLIC_ENVIO_URL_POINTER: process.env.EXPO_PUBLIC_ENVIO_URL_POINTER || '',
       EXPO_PUBLIC_PASSKEY_RP_ID: permanentRpId,
       EXPO_PACKAGER_PROXY_URL: 'http://localhost:8081',
     },

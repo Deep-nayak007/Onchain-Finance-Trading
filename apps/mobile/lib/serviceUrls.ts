@@ -18,9 +18,6 @@ export function serviceUrls(
     gatewayUrl,
     envioUrl: overrides.envioUrl || (chainId === 10143 ? SERVICES.envioUrl : '') || '',
     envioUrlPointer:
-      overrides.envioUrlPointer ||
-      (chainId === 10143
-        ? 'https://raw.githubusercontent.com/yashpy/Onchain-Finance-Trading/main/deploy/envio-url.txt'
-        : ''),
+      overrides.envioUrlPointer || (chainId === 10143 ? SERVICES.envioUrlPointer : ''),
   };
 }
