@@ -1,6 +1,14 @@
 # Current Face service check — October 13, 2026 (Phoenix)
 
-Main `8f5809e` is incorporated into Face, including the shared Envio pointer and corrected last-known fallback. A GitHub push, a deployed web bundle, and a healthy service are separate checks. The website is still built from main; Face changes require a merge to publish.
+Face was merged into main and deployed with Deep's approval at `0eb54f4`. Render now serves bundle `index-4f1ce6f9f101346e0a598e497d9c25be.js` at https://leash-app.onrender.com, with chain 10143, live service data and paper execution. Perpl collateral/deposits/enrollment are **not required for this paper demo**. Onchain rules and receipts still require test MON for gas.
+
+## Hosted deployment verification — October 13, 2026 (Phoenix)
+
+The check used **the deployed app's actual assets**, without substituting a local build. Public markets, identities, demo risk and indexed Owl receipts load. A virtual PRF authenticator creates a browser account; an unsigned new wallet stays in SET RULES rather than TRADER ACTIVE. Paper setup exposes rules without collateral, deposits are disabled, manual Perpl orders are disabled, Kuru BUY quotes are readable and the no-bids SELL state is explicit. A simulated Envio outage still reads the known receipt through its actual confirmed RPC transaction; missing reasoning stays unverified. No browser runtime errors occurred.
+
+This verifies public browsing, virtual passkey creation and paper setup navigation. No gas drip, user signature, activation, collateral deposit, venue order or swap was sent. Real biometrics and funded signing still require the user. Current Brain health reports paper mode and approximately 0.048 test MON in the gas tank; new-wallet signing needs a team refill. The old receipt reasoning remains 404. GitHub's contracts and gateway CI checks both succeeded for the deployment merge.
+
+Capture: `artifacts/screenshots/web/11-hosted-testnet-paper.png`. The published overview is https://leash-app.onrender.com/live-demo.
 
 | Check | Current result |
 |---|---|
@@ -22,7 +30,7 @@ Paper-mode deposits/manual exchange orders and quotes for an empty book side are
 
 Production web and iOS/Hermes exports succeed. The complete offline sample smoke passes with zero external requests. A production Face browser candidate, served locally under the intended web origin, passes public live markets/identities/risk/receipts, virtual PRF passkey creation, new-user status, paper setup/rules navigation, disabled exchange orders and live Kuru BUY/no-bids SELL behavior with no runtime errors. A simulated Envio outage still renders the actual confirmed RPC receipt and pending reasoning. These checks establish UI/build behavior, not a physical Face ID ceremony or funded trade. No gas drip, signature, activation, deposit, exchange order or swap was submitted. The gateway deposit preparation still returns its documented 400 stub. Capture: `artifacts/screenshots/web/10-live-demo.png`.
 
-Remaining service work: restore Envio with a reachable URL, persist full receipt reasoning outside `/tmp/leash.db`, finish Perpl deposit/enrollment, and obtain funded test tokens/liquidity for real trading. The deployment's restart recovery can recover policy/wallet links; it cannot reconstruct vanished reasoning from a hash.
+Remaining paper-demo service work: maintain the Envio pointer/host, persist full receipt reasoning outside `/tmp/leash.db`, and refill the test MON gas tank. Perpl deposit/enrollment and funded venue execution are outside Deep's current paper-only scope. Restart recovery can recover policy/wallet links; it cannot reconstruct vanished reasoning from a hash.
 
 One live compilation used the prior disposable test account `0x2635…B708` and can create its backend wallet/key records; it did not sign or activate. Public persona feeds filter by the actual registered agentId, so Falcon's receipts include its user-wallet decisions as well as shadow records.
 

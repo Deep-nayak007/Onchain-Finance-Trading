@@ -136,6 +136,8 @@ Updated 2026-10-12. Everything below sits behind an interface, so the real thing
 
 Updated October 13, 2026 with main `c455393` and fresh Render checks. Current validation: [FACE_TESTNET_VALIDATION.md](FACE_TESTNET_VALIDATION.md).
 
+Face is now merged into main and published at https://leash-app.onrender.com with Deep's explicit approval (`0eb54f4`). Current scope is **testnet paper trading without collateral**; Perpl deposits/enrollment and funded venue execution are not acceptance requirements for this demo. Public hosted browsing and virtual PRF passkey creation passed; real signing still requires test MON and the user's biometric interaction. The live demo overview is available without a wallet.
+
 - **Intermittent Envio outage:** October 13 checks initially returned ENOTFOUND at the hostname in `deploy/envio-url.txt`; later pointer-based retries recovered feeds and counters as the team rotated tunnel URLs. The tunnel/host is not a durable deployment. Face offers a public live-demo overview and bounded RPC proof for the known paper receipt; unavailable history is visibly retryable.
 - **Restart recovery:** saved browser policies are validated and accepted only against their onchain hash. Face reads onchain pause state after a status 404 and offers an explicit reconnect action; it does not silently start an agent while polling. Native policy caching is session-only. The public demo never controls the team's wallet.
 
@@ -153,4 +155,4 @@ Updated October 13, 2026 with main `c455393` and fresh Render checks. Current va
 - The sample video/screenshots 01–06 are review artifacts; 07 records the earlier Fly paper receipt. New captures 08/09 record the current missing-reasoning state and live connection checks. These are not evidence of a real venue trade or Face ID ceremony.
 - The previous dependency audit retained 29 inherited reports (18 high, 11 moderate). Incompatible Expo downgrades were not applied. Build warnings from viem/noble export resolution fall back successfully; native Xcode has one script-dependency warning.
 
-No orders, swaps, deposits or app signatures were submitted during this integration. No teammate messages or deployments were sent. Source changes are pushed only to Face.
+No orders, swaps, deposits or app signatures were submitted during this integration. No teammate messages were sent. Face source was merged and pushed to main with Deep's deployment approval; the new Render build was checked against actual hosted assets.
