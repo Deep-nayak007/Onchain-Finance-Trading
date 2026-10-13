@@ -33,6 +33,9 @@ services:
         value: /tmp/leash.db
       - key: GATEWAY_URL
         value: https://leash-perpl-gateway-testnet.onrender.com
+      # Passkey association (RP = this host). Public identifiers, not secrets. App id app.leash.mobile.
+      - key: APPLE_TEAM_ID
+        value: WYHX7XQG8Y
       # ENVIO_URL comes from the uploaded .env (tunnel URL changes; update it in the dashboard)
 
   - type: web
