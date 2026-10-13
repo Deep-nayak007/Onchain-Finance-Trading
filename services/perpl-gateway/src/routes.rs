@@ -242,8 +242,12 @@ pub async fn keys_disable(
     headers: axum::http::HeaderMap,
     Json(req): Json<KeyRequest>,
 ) -> Result<Json<Ack>> {
-    require_token(&st, &headers)?;
-    let _ = parse_addr(&req.account)?;
+    let user = parse_addr(&req.account)?;
+    // Disabling a key is the safe direction: without the Brain token it is still allowed once the user's mandate is
+    // inactive onchain (paused / never set) — only the user or the Referee can do that, so nobody can grief a live trader.
+    if require_token(&st, &headers).is_err() && st.registry.is_active(user).await.map_err(GatewayError::from)? {
+        return Err(GatewayError::new(Code::Unauthorized, "missing or bad x-gateway-token (mandate is active)"));
+    }
     st.store.set_disabled(&req.account, true)?;
     Ok(Json(Ack { ok: true }))
 }
