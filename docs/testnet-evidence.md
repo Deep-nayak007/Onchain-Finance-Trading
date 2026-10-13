@@ -86,3 +86,10 @@ Brain https://leash-brain-api.onrender.com · gateway https://leash-perpl-gatewa
 agentURIs re-pointed with `setAgentURI` (gas tank, testnet): Falcon #2227 [https://testnet.monadvision.com/tx/0xc3535311…](https://testnet.monadvision.com/tx/0xc353531153b449cb6abc279011a04c112e1adaa3305d09cdf62d51d402057c5b) ·
 Otter #2228 [https://testnet.monadvision.com/tx/0x1d261e30…](https://testnet.monadvision.com/tx/0x1d261e30d496f8eccb33732791a24edc6dfe9485c3024700fb34793421cfe4bf) ·
 Owl #2229 [https://testnet.monadvision.com/tx/0x9aa78dab…](https://testnet.monadvision.com/tx/0x9aa78dab185384fdcfc06c3b46cb43f895a7b3c6ff361ada9f77cf264186c8da).
+
+## Run 5: full stack on free hosting (Render + self-hosted Envio), 2026-10-12 night
+Brain https://leash-brain-api.onrender.com → gateway https://leash-perpl-gateway-testnet.onrender.com → chain → Envio (URL via
+`deploy/envio-url.txt` pointer) → `/traders`. New Privy agent wallet `0x2d75…1E18`, new gateway trade key `0x74f4…8b60`.
+- `setMandate` (agentId 2227) [https://testnet.monadvision.com/tx/0x3afab0ed…](https://testnet.monadvision.com/tx/0x3afab0ed59d8dd6033586aeb020a13f0ec8cd82012fc03ccc85ad438b19850e3)
+- Paper intent → **EXECUTED**, mark $0.02483, **901 ms** → receipt [https://testnet.monadvision.com/tx/0x378d0c12…](https://testnet.monadvision.com/tx/0x378d0c1244c31f428e06efe3db87cb7c5c17333579db1c1beb8b8a8d5e1bca33), `GET /receipts/0x64a50261…` ✓
+- Envio Agent #2227: executed 2, volume $27 → Render `/traders` Falcon stats identical; Referee `--once`: 2 mandates via Envio, `ok`.
