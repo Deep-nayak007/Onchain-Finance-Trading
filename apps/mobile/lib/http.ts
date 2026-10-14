@@ -8,6 +8,25 @@ export class ServiceError extends Error {
     this.name = 'ServiceError';
   }
 }
+// "Failed to fetch" = the request never reached the service (a free-tier restart/deploy, or a network blip). Every
+// LEASH endpoint is safe to repeat (drip is one-per-address, activate/compile are idempotent), so retry briefly.
+const RETRY_DELAYS_MS = [2000, 5000, 10000];
+async function fetchWithRetry(url: string, init: RequestInit): Promise<Response> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await fetch(url, init);
+    } catch (error) {
+      const aborted = error instanceof Error && error.name === 'AbortError';
+      if (aborted || attempt >= RETRY_DELAYS_MS.length) {
+        if (aborted) throw error;
+        throw new Error(
+          'Could not reach the LEASH service. It may be restarting; wait a minute and try again.',
+        );
+      }
+      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAYS_MS[attempt]));
+    }
+  }
+}
 export async function request<T>(
   base: string,
   path: string,
@@ -20,7 +39,7 @@ export async function request<T>(
   // Render's free Brain and gateway instances can take about a minute to wake up.
   const timeout = setTimeout(() => controller.abort(), options.timeoutMs ?? 90000);
   try {
-    const response = await fetch(`${base.replace(/\/$/, '')}${path}`, {
+    const response = await fetchWithRetry(`${base.replace(/\/$/, '')}${path}`, {
       method: body === undefined ? 'GET' : 'POST',
       headers: { 'Content-Type': 'application/json' },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
