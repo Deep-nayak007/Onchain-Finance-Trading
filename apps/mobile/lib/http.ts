@@ -8,21 +8,26 @@ export class ServiceError extends Error {
     this.name = 'ServiceError';
   }
 }
-// "Failed to fetch" = the request never reached the service (a free-tier restart/deploy, or a network blip). Every
-// LEASH endpoint is safe to repeat (drip is one-per-address, activate/compile are idempotent), so retry briefly.
+export class ServiceConnectionError extends Error {
+  constructor(base: string) {
+    super(
+      `Could not connect to ${new URL(base).hostname}. Check your connection and retry. If your browser blocked this request, allow the service for this site.`,
+    );
+    this.name = 'ServiceConnectionError';
+  }
+}
+// A request that never reached the service (free-tier restart/deploy, network blip) is retried briefly: every LEASH
+// endpoint is safe to repeat (drip is one-per-address, activate/compile are idempotent). The last error is rethrown
+// unchanged, so the ServiceConnectionError mapping below still applies.
 const RETRY_DELAYS_MS = [2000, 5000, 10000];
 async function fetchWithRetry(url: string, init: RequestInit): Promise<Response> {
   for (let attempt = 0; ; attempt++) {
     try {
       return await fetch(url, init);
     } catch (error) {
-      const aborted = error instanceof Error && error.name === 'AbortError';
-      if (aborted || attempt >= RETRY_DELAYS_MS.length) {
-        if (aborted) throw error;
-        throw new Error(
-          'Could not reach the LEASH service. It may be restarting; wait a minute and try again.',
-        );
-      }
+      const network =
+        error instanceof TypeError && /failed to fetch|fetch failed|network|load failed/i.test(error.message);
+      if (!network || attempt >= RETRY_DELAYS_MS.length) throw error;
       await new Promise((resolve) => setTimeout(resolve, RETRY_DELAYS_MS[attempt]));
     }
   }
@@ -69,6 +74,11 @@ export async function request<T>(
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError')
       throw new Error('The service took too long to respond. Check your connection and retry.');
+    if (
+      error instanceof TypeError &&
+      /failed to fetch|fetch failed|network|load failed/i.test(error.message)
+    )
+      throw new ServiceConnectionError(base);
     throw error;
   } finally {
     clearTimeout(timeout);

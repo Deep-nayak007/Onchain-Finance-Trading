@@ -98,8 +98,7 @@ async function main() {
     detail,
   );
   assert.equal(proof.execTxHash, null);
-  assert.equal(proof.usedSlack, true);
-  console.log('PASS: independent confirmed ReceiptLog transaction; paper + usedSlack.');
+  console.log('PASS: independent confirmed ReceiptLog transaction; paper mode.');
   if (!detail) {
     console.error(
       'BLOCKED: Brain returned 404 for receipt reasoning. Onchain metadata is available; full hash verification and latency cannot be checked. Ask Brain to restore its receipt data.',
@@ -108,10 +107,10 @@ async function main() {
     return;
   }
   assert.equal(detail.execTxHash, null);
-  assert.equal(detail.decision.usedSlack, true);
+  assert.equal(proof.usedSlack, detail.decision.usedSlack);
   const verification = verifyReceipt(detail, proof, false);
   assert.equal(verification.state, 'verified');
-  assert.equal(verification.latencyMs, 886);
+  assert.ok(verification.latencyMs !== null && verification.latencyMs >= 0);
   assert.equal(
     verifyReceipt({ ...detail, intent: { ...detail.intent, sizeUsd: '999' } }, proof, false).state,
     'mismatch',
@@ -121,7 +120,7 @@ async function main() {
     'pending',
   );
   console.log(
-    `PASS: independent ReceiptLog proof; usedSlack; ${verification.latencyMs} ms; tampering rejected.`,
+    `PASS: independent ReceiptLog proof; usedSlack=${detail.decision.usedSlack}; ${verification.latencyMs} ms; tampering rejected.`,
   );
   if (serviceFailed) process.exitCode = 1;
 

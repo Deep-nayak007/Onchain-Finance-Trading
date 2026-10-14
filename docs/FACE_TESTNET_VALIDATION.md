@@ -1,5 +1,17 @@
 # Current Face service check — October 13, 2026 (Phoenix)
 
+## Gas-fetch investigation — October 13, 2026 (Phoenix)
+
+Deep reported “Failed to fetch” after passkey creation and Cover my gas in Brave on a MacBook Pro. Both the hosted app and direct browser requests were checked in Chromium and a separate temporary Brave profile. Brain and Monad RPC CORS requests succeed. Cover my gas returns the specific HTTP **503** gas-tank-empty response in both browsers: the tank contains approximately **0.053273 test MON**, below the backend's 0.06 MON minimum for a useful drip. The generic failure in Deep's own browser profile was not reproduced; its particular network request cannot be identified without that browser's request log. No test wallet received a transfer during these checks.
+
+Face now identifies the failed API host or RPC step instead of showing only a browser fetch error. When a funding response is interrupted, it checks the actual wallet balance and continues if gas arrived; it does not automatically repeat the funding POST. A blocked RPC fails before requesting gas. TypeScript, **45 mobile tests**, production web export, and simulated API/RPC interruptions in the Brave browser candidate pass.
+
+Latest main supplies reason hash `0x3bf7d6427c8ba39b934d7843b18a68ce2ef92bc766c9b0b50bafcd433984d3b6` and ReceiptLog transaction `0x08af80d053624c74d4caeb9e891e7edee47ca07599d28a3845f175aecce0b24c`. The API reasoning, independent confirmed transaction and indexed receipt #2 agree; hash tampering is rejected. It is paper, `usedSlack:false`, **760 ms**. The read-only `npm run testnet:check` passes. Checks now use the current receipt's values instead of assuming the old receipt's slack flag and 886 ms latency. The message's earlier `0xda76b9…d318b` reason hash still returns 404.
+
+Brain's latest main update adds a durable Neon mirror; live health reports it configured, with restored rows and no mirror error. This Face change edits only app code and validation documentation. New wallets still need the team to refill the test MON tank; already funded wallets can continue. Real device biometrics and a user-signed mandate remain pending.
+
+## Previous hosted deployment — October 13, 2026 (Phoenix)
+
 Face was merged into main and deployed with Deep's approval at `0eb54f4`. Render now serves bundle `index-4f1ce6f9f101346e0a598e497d9c25be.js` at https://leash-app.onrender.com, with chain 10143, live service data and paper execution. Perpl collateral/deposits/enrollment are **not required for this paper demo**. Onchain rules and receipts still require test MON for gas.
 
 ## Hosted deployment verification — October 13, 2026 (Phoenix)
