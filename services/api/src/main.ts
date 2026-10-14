@@ -1,4 +1,4 @@
-// Entrypoint: load .env (never printed), restore the durable store, build the app, start loops, serve.
+// Entrypoint: load .env (never printed), restore the durable store (Neon), build the app, start loops, serve.
 import "dotenv/config";
 import { serve } from "@hono/node-server";
 import { buildApp } from "./app";
