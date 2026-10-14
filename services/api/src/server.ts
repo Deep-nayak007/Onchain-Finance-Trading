@@ -22,6 +22,9 @@ import { livePending } from "./slack/requests";
 import type { Store } from "./store/db";
 import { Wallets } from "./wallet/wallets";
 
+/** Process start time: tells restarts apart in /health. */
+const BOOTED_AT = new Date().toISOString();
+
 export type AppDeps = {
   chainId: ChainId;
   live: boolean;
@@ -164,7 +167,7 @@ export function createApp(d: AppDeps) {
 
   app.get("/health", async (c) => {
     const tank = d.drip.wallet ? await d.drip.publicClient.getBalance({ address: d.drip.wallet.account.address }).catch(() => null) : null;
-    return c.json({ ok: true, chainId: d.chainId, live: d.live, gateway: d.gateway.kind, markets: "marketsSource" in d.gateway ? d.gateway.marketsSource : d.gateway.kind, llm: !!d.chat, privy: d.wallets.configured, contracts: !!d.addresses, durable: d.durable?.() ?? { configured: false }, gasTankMon: tank === null ? null : Number(formatEther(tank)) });
+    return c.json({ ok: true, chainId: d.chainId, live: d.live, gateway: d.gateway.kind, markets: "marketsSource" in d.gateway ? d.gateway.marketsSource : d.gateway.kind, llm: !!d.chat, privy: d.wallets.configured, contracts: !!d.addresses, durable: d.durable?.() ?? { configured: false }, bootedAt: BOOTED_AT, gasTankMon: tank === null ? null : Number(formatEther(tank)) });
   });
 
   // ---- mandate ----
