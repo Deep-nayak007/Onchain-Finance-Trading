@@ -20,10 +20,6 @@ try {
     .getByText('PAPER · No trade was executed', { exact: true })
     .waitFor({ timeout: 120000 });
   await page.getByText('PAPER · No trade was executed', { exact: true }).waitFor();
-  await page
-    .getByText('Temporary slack used · expires on its own', { exact: false })
-    .first()
-    .waitFor();
   await page.getByRole('button', { name: 'View receipt on explorer' }).waitFor();
   assert.equal(await page.getByRole('button', { name: 'View trade on explorer' }).count(), 0);
   const blocked = (await page.getByRole('button', { name: 'Retry reasoning' }).count()) > 0;

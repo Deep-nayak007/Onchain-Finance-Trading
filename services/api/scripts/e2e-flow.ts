@@ -40,7 +40,7 @@ async function main() {
 
   // Each run costs two drips (user + agent wallet); don't drain the shared tank.
   const tank = Number((await api("GET", "/health")).json?.gasTankMon ?? 0);
-  if (tank < 0.5) {
+  if (tank < Number(process.env.MIN_TANK ?? 0.5)) {
     console.log(`SKIP  gas tank has ${tank} MON (< 0.5); refill it before running the write-path test`);
     process.exit(2);
   }
@@ -106,7 +106,7 @@ async function main() {
         rec = ((await q.json()) as { data?: { Receipt?: unknown[] } }).data?.Receipt?.[0] ?? null;
       }
       check("receipt indexed onchain (Envio)", !!rec, rec);
-      console.log(`FRESH RECEIPT ${dj.reasonHash}`);
+      console.log(`FRESH RECEIPT ${dj.reasonHash} tx ${String((rec as { id?: string } | null)?.id ?? "").split("-")[0]}`);
     }
   }
 
@@ -117,6 +117,12 @@ async function main() {
     last = (await api("GET", `/agent/status/${user}`)).json;
   }
   check("trader ticked (decision made)", !!last?.lastTick && !!last?.lastDecision, last);
+  if (process.env.KEEP_RUNNING) {
+    // Public demo account: leave the trader RUNNING (paper). The Referee can pause it; nobody else holds this key.
+    console.log(`DEMO ACCOUNT ${user} (left running)`);
+    console.log(fails ? `\n${fails} FAILED` : "\nall checks passed");
+    process.exit(fails ? 1 : 0);
+  }
   const killEarly = await api("POST", "/agent/kill", { account: user });
   check("kill while active onchain → 409", killEarly.status === 409, killEarly);
 

@@ -5,8 +5,9 @@ export const testnetHandoff = {
   rpcUrl: 'https://testnet-rpc.monad.xyz',
   apiUrl: 'https://leash-brain-api.onrender.com',
   rpId: 'leash-brain-api.onrender.com',
-  // Public throwaway account from docs/testnet-evidence.md; viewing it grants no signing access.
-  account: '0xE7f1FFcC13C1384a2a1d7eaC19edF0F69e85f4FD',
-  reasonHash: '0x86e8ca275306825cbd9aed2c7d4dd40bc4a71f055823dd712cec166e70bb75c1',
-  receiptTxHash: '0x8d35d96b72148be12f25514366f98fc63c26970ad310ad24bee0dfd0f30869e4',
+  // Public demo account (2026-10-14, Brain e2e-flow KEEP_RUNNING): Falcon trader left RUNNING in paper mode; its
+  // throwaway key was never stored, only the Referee can pause it. Viewing it grants no signing access.
+  account: '0xc9f53D9f3086A4B4a6b6aAb69E09627A8b78d960',
+  reasonHash: '0xfded4f2db0ddc886f0b763b736976a03fd7b173e7175d2ad836be691a6cdbfb0',
+  receiptTxHash: '0xa4bc104a87c40b1e514e6c01ac9476b6b906eea746cb26d56ba7102df2cbd266',
 } as const;
