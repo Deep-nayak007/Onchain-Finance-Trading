@@ -8,6 +8,14 @@ export class ServiceError extends Error {
     this.name = 'ServiceError';
   }
 }
+export class ServiceConnectionError extends Error {
+  constructor(base: string) {
+    super(
+      `Could not connect to ${new URL(base).hostname}. Check your connection and retry. If your browser blocked this request, allow the service for this site.`,
+    );
+    this.name = 'ServiceConnectionError';
+  }
+}
 export async function request<T>(
   base: string,
   path: string,
@@ -50,6 +58,11 @@ export async function request<T>(
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError')
       throw new Error('The service took too long to respond. Check your connection and retry.');
+    if (
+      error instanceof TypeError &&
+      /failed to fetch|fetch failed|network|load failed/i.test(error.message)
+    )
+      throw new ServiceConnectionError(base);
     throw error;
   } finally {
     clearTimeout(timeout);

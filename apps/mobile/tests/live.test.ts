@@ -14,7 +14,7 @@ import {
 import { receiptFixtures, defaultPolicy } from '../mocks/fixtures';
 import { decodeReceiptProof } from '../integration/receiptProof';
 import { verifyReceipt } from '../lib/verify';
-import { request, ServiceError } from '../lib/http';
+import { request, ServiceConnectionError, ServiceError } from '../lib/http';
 import { z } from 'zod';
 
 test('only Monad networks are supported; a prepared request must match the selected chain', () => {
@@ -209,6 +209,18 @@ test('reverted, removed, wrong-contract and wrong-fingerprint logs cannot become
         '',
       ),
     /no matching/,
+  );
+});
+test('browser fetch failures identify the service without revealing URL credentials', async (t) => {
+  t.mock.method(globalThis, 'fetch', async () => {
+    throw new TypeError('Failed to fetch');
+  });
+  await assert.rejects(
+    request('https://example.test/private?token=hidden', '/health', z.unknown()),
+    (error: unknown) =>
+      error instanceof ServiceConnectionError &&
+      error.message.includes('example.test') &&
+      !error.message.includes('hidden'),
   );
 });
 test('API errors retain their status for one-time drip handling', async (t) => {

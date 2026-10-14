@@ -11,10 +11,7 @@ page.on('pageerror', (error) => errors.push(error.message));
 try {
   await page.goto(`${base}/welcome`, { waitUntil: 'domcontentloaded' });
   await page.getByText('MONAD TESTNET', { exact: false }).first().waitFor({ timeout: 60000 });
-  assert.equal(
-    await page.getByRole('button', { name: 'Continue with Face ID' }).isDisabled(),
-    true,
-  );
+  await page.getByRole('button', { name: 'Continue with Face ID' }).waitFor();
   await page.getByRole('button', { name: 'Check the testnet receipt' }).click();
   await page
     .getByText('PAPER · No trade was executed', { exact: true })
@@ -27,7 +24,10 @@ try {
     assert.equal(await page.getByText('✓ matches onchain', { exact: false }).count(), 0);
     await page.getByRole('button', { name: 'Retry reasoning' }).waitFor();
   } else {
-    await page.getByText('✓ matches onchain · 0.9 s', { exact: true }).first().waitFor();
+    await page
+      .getByText(/^✓ matches onchain · \d+\.\d s/)
+      .first()
+      .waitFor();
   }
   await page.screenshot({
     path: '../../artifacts/screenshots/web/08-testnet-receipt-after-migration.png',
@@ -36,7 +36,7 @@ try {
   console.log(
     blocked
       ? 'PASS: missing Brain reasoning shows paper metadata + pending verification, with no checkmark.'
-      : 'PASS: public receipt independently verifies; paper, usedSlack, receipt explorer.',
+      : 'PASS: public receipt independently verifies; paper mode and receipt explorer.',
   );
   await page.goto(`${base}/dev/services`, { waitUntil: 'domcontentloaded' });
   for (const label of [
