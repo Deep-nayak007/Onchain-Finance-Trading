@@ -1,5 +1,6 @@
 // Builds every dependency from config. Missing integrations degrade to safe stubs (logged once at boot).
 import { KURU, KURU_TESTNET, PERPL, monadChain } from "@leash/shared";
+import type { MirrorStatus } from "./store/mirror";
 import { createWalletClient, http, type Address } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { leashAddresses, makePublicClient, OnchainRegistry } from "./chain/contracts";
@@ -20,7 +21,7 @@ import { Store } from "./store/db";
 import { PrivyClient } from "./wallet/privy";
 import { Wallets } from "./wallet/wallets";
 
-export function buildApp(cfg: Config, opts: { store?: Store; startLoops?: boolean } = {}) {
+export function buildApp(cfg: Config, opts: { store?: Store; startLoops?: boolean; durable?: () => MirrorStatus | null } = {}) {
   const log = (m: string) => console.log(m);
   const store = opts.store ?? new Store(cfg.DATABASE_PATH);
   const url = rpcUrl(cfg);
@@ -89,6 +90,7 @@ export function buildApp(cfg: Config, opts: { store?: Store; startLoops?: boolea
     kuru,
     alchemyNotifyToken: cfg.ALCHEMY_WEBHOOK_SIGNING_KEY,
     demoToken: cfg.DEMO_TOKEN,
+    durable: opts.durable,
     passkey: {
       appleTeamIds: (cfg.APPLE_TEAM_ID ?? "").split(",").map((s) => s.trim()).filter((s) => /^[A-Z0-9]{10}$/.test(s)),
       androidCertSha256: (cfg.ANDROID_CERT_SHA256 ?? "").split(",").map((s) => s.trim().toUpperCase()).filter((s) => /^([0-9A-F]{2}:){31}[0-9A-F]{2}$/.test(s)),

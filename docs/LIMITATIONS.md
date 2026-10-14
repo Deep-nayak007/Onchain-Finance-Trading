@@ -73,6 +73,9 @@ Updated 2026-10-12. Everything below sits behind an interface, so the real thing
   Password Manager). With iCloud Keychain the creation step may not return PRF, and browsers block the automatic follow-up
   prompt: tap "I already have a passkey" to unlock with a fresh tap. Perpl deposit/enrollment stay stubbed (no test AUSD), PnL
   series is empty (not indexed), Kuru testnet has no bids.
+- **Durable Brain store (Neon Postgres, free)**: `services/api/src/store/mirror.ts` mirrors every SQLite write to Neon
+  (`DATABASE_URL`, project `leash-testnet`) and restores it on boot before the scheduler starts, so redeploys keep receipts'
+  reasoning, rules, wallet links and RUNNING traders. Without `DATABASE_URL` the fallback below applies.
 - **Free hosting = ephemeral Brain disk** (`/tmp/leash.db`): a redeploy wipes the cache. Recovery without a paid DB: the agent
   wallet is re-linked from Privy by the address in the onchain mandate, and the app re-sends its signed policy (accepted only
   if it hashes to the onchain `policyHash`). Mandates and receipt commitments persist onchain, but complete reasoning and

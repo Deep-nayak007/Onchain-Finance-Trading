@@ -31,6 +31,9 @@ services:
         value: "25"
       - key: DATABASE_PATH
         value: /tmp/leash.db
+      # Durable store (Neon Postgres, free): every write is mirrored there and restored on boot. Secret → dashboard.
+      - key: DATABASE_URL
+        sync: false
       - key: GATEWAY_URL
         value: https://leash-perpl-gateway-testnet.onrender.com
       # Shared secret for the gateway's write paths; generated on the gateway, read here (never in git).

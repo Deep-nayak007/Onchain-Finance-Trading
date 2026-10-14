@@ -14,6 +14,8 @@ const opt = z
 export const ConfigSchema = z.object({
   PORT: num(8787),
   DATABASE_PATH: z.string().default("./data/leash.db"),
+  /** Durable Postgres (Neon) mirror of the store; unset = SQLite only (lost on free-hosting redeploys). */
+  DATABASE_URL: opt,
   CHAIN_ID: z.coerce.number().pipe(z.union([z.literal(143), z.literal(10143)])).default(10143),
   MONAD_RPC_URL: opt,
   MONAD_TESTNET_RPC_URL: opt,

@@ -1,5 +1,6 @@
 // REST API for the app (ARCHITECTURE §7.4, services/api/openapi.yaml). Every body/param validated with zod.
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
+import type { MirrorStatus } from "./store/mirror";
 import { Address, ERC8004, ERC8004_TESTNET, Hash32, Intent, PersonaId, Policy, policyHash as policyHash_, type ChainId } from "@leash/shared";
 import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
@@ -40,6 +41,8 @@ export type AppDeps = {
   kuru: Kuru | null;
   alchemyNotifyToken?: string;
   demoToken?: string;
+  /** Durable store status (Neon mirror), if configured. */
+  durable?: () => MirrorStatus | null;
   /** Delay between gateway retries (tests set 0). */
   retryDelayMs?: number;
   /** Per-IP requests/minute on compile/drip (spot gets 2x). Default 12. */
@@ -161,7 +164,7 @@ export function createApp(d: AppDeps) {
 
   app.get("/health", async (c) => {
     const tank = d.drip.wallet ? await d.drip.publicClient.getBalance({ address: d.drip.wallet.account.address }).catch(() => null) : null;
-    return c.json({ ok: true, chainId: d.chainId, live: d.live, gateway: d.gateway.kind, markets: "marketsSource" in d.gateway ? d.gateway.marketsSource : d.gateway.kind, llm: !!d.chat, privy: d.wallets.configured, contracts: !!d.addresses, gasTankMon: tank === null ? null : Number(formatEther(tank)) });
+    return c.json({ ok: true, chainId: d.chainId, live: d.live, gateway: d.gateway.kind, markets: "marketsSource" in d.gateway ? d.gateway.marketsSource : d.gateway.kind, llm: !!d.chat, privy: d.wallets.configured, contracts: !!d.addresses, durable: d.durable?.() ?? { configured: false }, gasTankMon: tank === null ? null : Number(formatEther(tank)) });
   });
 
   // ---- mandate ----

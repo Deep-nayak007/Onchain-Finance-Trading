@@ -77,8 +77,41 @@ export type WalletRow = { key: string; walletId: string; address: `0x${string}`;
 
 type Row = Record<string, unknown>;
 
+/** Primary-key columns per table: the unit the durable mirror copies. */
+export const TABLE_PKS: Record<string, string[]> = {
+  users: ["account"],
+  policies: ["policy_hash"],
+  receipt_details: ["reason_hash"],
+  slack_requests: ["id"],
+  devices: ["account", "token"],
+  drips: ["address"],
+  wallets: ["key"],
+  kv: ["k"],
+};
+
 export class Store {
   readonly db: DatabaseSync;
+  /** Called after every write with the touched row's primary key (the durable mirror subscribes). */
+  onWrite?: (table: string, key: unknown[]) => void;
+
+  private touched(table: string, ...key: unknown[]) {
+    this.onWrite?.(table, key);
+  }
+
+  /** Current row for a primary key, or null if it no longer exists. */
+  rowOf(table: string, key: unknown[]): Row | null {
+    const pks = TABLE_PKS[table];
+    if (!pks) throw new Error(`unknown table ${table}`);
+    const r = this.db.prepare(`select * from ${table} where ${pks.map((c) => `${c} = ?`).join(" and ")}`).get(...(key as never[])) as Row | undefined;
+    return r ?? null;
+  }
+
+  /** Writes a row back (boot-time restore from the durable mirror). Does not re-trigger onWrite. */
+  restoreRow(table: string, row: Row) {
+    if (!TABLE_PKS[table]) return;
+    const cols = Object.keys(row);
+    this.db.prepare(`insert or replace into ${table} (${cols.join(", ")}) values (${cols.map(() => "?").join(", ")})`).run(...(cols.map((c) => row[c]) as never[]));
+  }
 
   constructor(path = ":memory:") {
     if (path !== ":memory:") mkdirSync(dirname(path), { recursive: true });
@@ -92,6 +125,7 @@ export class Store {
     this.db
       .prepare("insert or ignore into policies (policy_hash, policy_json, created_at) values (?, ?, ?)")
       .run(policyHash.toLowerCase(), JSON.stringify(policy), Date.now());
+    this.touched("policies", policyHash.toLowerCase());
   }
 
   getPolicy(policyHash: string): Policy | null {
@@ -107,16 +141,19 @@ export class Store {
            policy_hash=excluded.policy_hash, state=excluded.state, updated_at=excluded.updated_at`,
       )
       .run(u.account.toLowerCase(), u.persona, JSON.stringify(u.policy), u.policyHash, u.state, Date.now());
+    this.touched("users", u.account.toLowerCase());
   }
 
   setUserState(account: string, state: UserRow["state"]) {
     this.db.prepare("update users set state = ?, updated_at = ? where account = ?").run(state, Date.now(), account.toLowerCase());
+    this.touched("users", account.toLowerCase());
   }
 
   recordTick(account: string, decision: unknown) {
     this.db
       .prepare("update users set last_tick = ?, last_decision_json = ?, updated_at = ? where account = ?")
       .run(new Date().toISOString(), decision === undefined ? null : JSON.stringify(decision), Date.now(), account.toLowerCase());
+    this.touched("users", account.toLowerCase());
   }
 
   getUser(account: string): UserRow | null {
@@ -136,6 +173,7 @@ export class Store {
          on conflict(reason_hash) do update set detail_json=excluded.detail_json, status=excluded.status`,
       )
       .run(d.reasonHash.toLowerCase(), meta.account?.toLowerCase() ?? null, d.intent.persona, meta.status, JSON.stringify(d), Date.now());
+    this.touched("receipt_details", d.reasonHash.toLowerCase());
   }
 
   updateReceipt(reasonHash: string, patch: Partial<Pick<ReceiptDetail, "confirmedAtMs" | "execTxHash">> & { logTxHash?: string }) {
@@ -146,6 +184,7 @@ export class Store {
     this.db
       .prepare("update receipt_details set detail_json = ?, log_tx_hash = coalesce(?, log_tx_hash) where reason_hash = ?")
       .run(JSON.stringify(next), logTxHash ?? null, reasonHash.toLowerCase());
+    this.touched("receipt_details", reasonHash.toLowerCase());
   }
 
   getReceipt(reasonHash: string): ReceiptDetail | null {
@@ -177,6 +216,7 @@ export class Store {
          on conflict(id) do update set status=excluded.status, request_json=excluded.request_json`,
       )
       .run(req.id, req.account.toLowerCase(), req.status, JSON.stringify(req), JSON.stringify(intent), Date.now());
+    this.touched("slack_requests", req.id);
   }
 
   getSlack(id: string): { request: SlackRequest; intent: unknown } | null {
@@ -193,6 +233,7 @@ export class Store {
   // ---- devices ----
   addDevice(account: string, token: string) {
     this.db.prepare("insert or ignore into devices (account, token, created_at) values (?, ?, ?)").run(account.toLowerCase(), token, Date.now());
+    this.touched("devices", account.toLowerCase(), token);
   }
 
   devices(account: string): string[] {
@@ -203,12 +244,14 @@ export class Store {
   /** Atomically claims the drip slot for an address. False if already claimed. */
   claimDrip(address: string): boolean {
     const res = this.db.prepare("insert or ignore into drips (address, created_at) values (?, ?)").run(address.toLowerCase(), Date.now());
+    if (Number(res.changes) === 1) this.touched("drips", address.toLowerCase()); // one-per-address must survive restarts
     return Number(res.changes) === 1;
   }
 
   setDripTx(address: string, txHash: string | null) {
     if (txHash === null) this.db.prepare("delete from drips where address = ?").run(address.toLowerCase());
     else this.db.prepare("update drips set tx_hash = ? where address = ?").run(txHash, address.toLowerCase());
+    this.touched("drips", address.toLowerCase());
   }
 
   dripsSince(sinceMs: number): number {
@@ -229,6 +272,7 @@ export class Store {
          on conflict(key) do update set policy_id=excluded.policy_id`,
       )
       .run(w.key, w.walletId, w.address, w.policyId, Date.now());
+    this.touched("wallets", w.key);
   }
 
   // ---- kv (caches) ----
@@ -242,6 +286,7 @@ export class Store {
     this.db
       .prepare("insert into kv (k, v, updated_at) values (?, ?, ?) on conflict(k) do update set v=excluded.v, updated_at=excluded.updated_at")
       .run(k, JSON.stringify(v), Date.now());
+    this.touched("kv", k);
   }
 }
 
