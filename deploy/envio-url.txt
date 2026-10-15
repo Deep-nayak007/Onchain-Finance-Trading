@@ -1,1 +1,1 @@
-Binary file /Users/prempagare/.leash-local/tunnel.log matches/v1/graphql
+https://incurred-female-journalist-chef.trycloudflare.com/v1/graphql
