@@ -1,1 +1,1 @@
-https://short-against-duke-expiration.trycloudflare.com/v1/graphql
+https://api.trycloudflare.com/v1/graphql
